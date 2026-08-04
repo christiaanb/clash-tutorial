@@ -1,0 +1,159 @@
+{-# START_FILE {{name}}.cabal #-}
+cabal-version:       2.4
+name:                {{name}}
+version:             0.1.0.0
+license:             BSD-2-Clause
+author:              {{author-name}}{{^author-name}}Author name here{{/author-name}}
+maintainer:          {{author-email}}{{^author-email}}example@example.com{{/author-email}}
+
+common common-options
+  default-extensions:
+    BangPatterns
+    BinaryLiterals
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveAnyClass
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    NumericUnderscores
+    PolyKinds
+    QuasiQuotes
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    TemplateHaskell
+    TemplateHaskellQuotes
+    TupleSections
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    -- Clash specific. See the Clash documentation for why each of these is
+    -- required rather than merely convenient.
+    MagicHash
+    NoImplicitPrelude
+    NoMonomorphismRestriction
+    NoStarIsType
+    NoStrictData
+
+  ghc-options:
+    -Wall -Wcompat
+    -haddock
+    -- Type level natural number solvers. Without these, arithmetic on vector
+    -- lengths does not typecheck.
+    -fplugin GHC.TypeLits.Extra.Solver
+    -fplugin GHC.TypeLits.Normalise
+    -fplugin GHC.TypeLits.KnownNat.Solver
+    -- Clash needs to see through to the definitions it compiles.
+    -fexpose-all-unfoldings
+    -fno-worker-wrapper
+
+  build-depends:
+    base,
+    clash-prelude,
+    ghc-typelits-natnormalise,
+    ghc-typelits-extra,
+    ghc-typelits-knownnat,
+
+  default-language: Haskell2010
+
+library
+  import:          common-options
+  hs-source-dirs:  src
+  exposed-modules: Example.Project
+
+-- Run with: stack run clash -- Example.Project --vhdl
+executable clash
+  import:         common-options
+  main-is:        bin/Clash.hs
+  build-depends:  base, clash-ghc, {{name}}
+  if !os(windows)
+    ghc-options:  -dynamic
+
+-- Run with: stack run clashi
+executable clashi
+  import:         common-options
+  main-is:        bin/Clashi.hs
+  build-depends:  base, clash-ghc, {{name}}
+  if !os(windows)
+    ghc-options:  -dynamic
+
+test-suite doctests
+  import:         common-options
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: tests
+  main-is:        doctests.hs
+  build-depends:  base, {{name}}, doctest-parallel
+
+{-# START_FILE stack.yaml #-}
+# Pinned deliberately. The tutorial's transcripts are captured against exactly
+# this resolver, and changing it invalidates them.
+resolver: lts-24.38
+
+packages:
+  - .
+
+# VERIFY: mirror the extra-deps from the current clash-starters stack.yaml.
+# Do not guess version bounds here; copy them from a configuration known to
+# build, and record the date it was copied.
+extra-deps: []
+
+{-# START_FILE src/Example/Project.hs #-}
+module Example.Project where
+
+import Clash.Explicit.Prelude
+
+plus :: Signed 8 -> Signed 8 -> Signed 8
+plus a b = a + b
+
+topEntity :: Signed 8 -> Signed 8 -> Signed 8
+topEntity = plus
+
+{-# START_FILE bin/Clash.hs #-}
+import Clash.Main (defaultMain)
+
+main :: IO ()
+main = defaultMain
+
+{-# START_FILE bin/Clashi.hs #-}
+import Clash.Main (defaultMain)
+
+main :: IO ()
+main = defaultMain ["--interactive"]
+
+{-# START_FILE tests/doctests.hs #-}
+import Test.DocTest (mainFromCabal)
+import System.Environment (getArgs)
+
+main :: IO ()
+main = mainFromCabal "{{name}}" =<< getArgs
+
+{-# START_FILE .gitignore #-}
+dist-newstyle/
+.stack-work/
+vhdl/
+verilog/
+systemverilog/
+*.fst
+*.vcd
+work/
+
+{-# START_FILE README.md #-}
+# {{name}}
+
+Created from the `clash-tutorial` project template.
+
+Open the interpreter:
+
+    stack run clashi
+
+Generate VHDL:
+
+    stack run clash -- Example.Project --vhdl

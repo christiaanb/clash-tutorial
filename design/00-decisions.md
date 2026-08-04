@@ -1,0 +1,199 @@
+# Decisions
+
+Each entry records what was decided and why. Reopening one is allowed; doing it
+silently is not.
+
+---
+
+## D1. Diátaxis, strictly
+
+The document is a tutorial in the Diátaxis sense: the reader learns by doing,
+under the guidance of the author, and every step produces a result they can see.
+It is not a how-to guide, reference or explanation, and material belonging to
+those modes is moved out rather than annotated.
+
+Consequences that bite in practice: no alternatives, no troubleshooting sections,
+ruthlessly minimal explanation, and no step that fails.
+
+---
+
+## D2. Two tracks, Track B first
+
+- **Track B**: hardware background (VHDL or SystemVerilog), no Haskell. Primary.
+- **Track A**: neither background. A scaffolding variant, written later.
+
+Both tracks lack Haskell, so the difference between them is digital design, not
+the language. Track A adds a short prologue and denser step granularity; it does
+not change the artifact or the chapter boundaries.
+
+The honest cost: Track A roughly doubles authoring effort for the population least
+likely to become Clash users. If the budget is one track, Track B is the one that
+ships.
+
+---
+
+## D3. Artifact: Conway's Life on an 8×8 grid, with a command input
+
+Chosen over a seven-segment display spine and a UART transmitter because:
+
+- It prints as ASCII from `sampleN` immediately, so results are visible from the
+  first working version without hardware.
+- It needs `Vec` of `Vec`, `map`, `zipWith`, pattern matching, registers and
+  feedback, and nothing else.
+- Sixty-four instantiations of one combinational function is the Clash argument
+  made physical rather than rhetorical.
+- A known start state has a known state after *n* generations, so the test bench
+  writes itself.
+
+The weakness — no input ports, thin `topEntity` — is fixed by the command input,
+which restores the port interface and carries the algebraic data type lesson.
+
+Life is not useful for anything. It does not need to be useful, it needs to be
+*representative*, and an array of identical combinational cells with a control
+FSM, a valid-signalled input and a scanned output is the shape of a great many
+real designs. Say this once in the introduction and do not defend it again.
+
+---
+
+## D4. `Clash.Explicit.Prelude` throughout, hidden prelude as chapter 13
+
+Explicit clock, reset and enable for chapters 1–12; chapter 13 switches to
+`Clash.Prelude` as an exercise the reader performs.
+
+In favour of explicit:
+
+- `:i register` returns something actionable. Under `Clash.Prelude` it leads to
+  `HiddenClockResetEnable`, which bottoms out in implicit parameters — a reader
+  sees `?clk :: Clock dom` and cannot parse or search for it. Since `:i` is the
+  reader's primary instrument, that is a broken promise.
+- Errors degrade to ordinary type errors instead of unresolved constraints.
+- It removes `@System` type applications from the tutorial entirely: the domain is
+  fixed by passing `systemClockGen`, an ordinary value.
+- `topEntity` stops being a discontinuity. No `exposeClockResetEnable` appearing
+  once and doing something invisible.
+- One style end to end. `Clash.Explicit.Testbench` is used either way, so the
+  hidden route forces a style switch mid-tutorial.
+- It keeps chapter 1's promise that nothing is inferred behind the reader's back.
+
+Against it, and the reason chapter 13 exists: the explicit style is not what the
+reader will meet in any real Clash project, the plumbing compounds with hierarchy,
+and `enableGen` is pure ritual. Chapter 13 pays that debt by having the reader
+make the switch themselves and diff the generated VHDL.
+
+Explicit narrows the bad-error surface; it does not eliminate it. `KnownDomain`
+and `NFDataX` still appear.
+
+---
+
+## D5. Simulator: NVC, not GHDL
+
+NVC 1.20.1. Windows installer on the releases page and `winget install
+NickGasson.NVC`; `brew install nvc` on macOS. Linux may require
+`configure`/`make`, which this audience is used to and Windows users are not.
+
+The single-command form `nvc -a … -e testBench -r` gives one command and one
+result. NVC states plainly that it is not a synthesizer, which usefully draws the
+line between the test bench chapter and the optional board chapter.
+
+---
+
+## D6. Waveform viewing: Surfer's browser build
+
+`https://app.surfer-project.org/`. No install, and the reader is already in a
+browser. The dependency is isolated to one chapter, so if it becomes unavailable
+one chapter degrades rather than the spine.
+
+The waveform is its own chapter, not folded into the test bench chapter, so the
+reliable binary result (it passes) does not depend on a third-party web
+application.
+
+Division of labour: the REPL shows the data (64 cells as ASCII), the waveform
+shows the control (clock, reset, command bus). The command bus is where the reader
+*sees* the algebraic data type as a tag and a payload.
+
+---
+
+## D7. Installation: Stack, and a dedicated project template
+
+The reader uses Stack. One invocation, no Cabal alternative offered.
+
+A dedicated template lives in `template/clash-tutorial.hsfiles` so that we control
+`default-extensions` — specifically `NumericUnderscores`, which the seed literals
+depend on for legibility.
+
+**Mirroring requirement.** Stack resolves `username/template-name` to a repository
+literally named `stack-templates` under that username. So `stack new life
+christiaanb/clash-tutorial` requires the file at
+`github.com/christiaanb/stack-templates/clash-tutorial.hsfiles`. The source of
+truth stays in this repository; CI mirrors it. The alternative is a raw
+`githubusercontent.com` URL in chapter 1's first command, which is long, ugly and
+the first thing the reader ever types.
+
+---
+
+## D8. Module name stays `Example.Project`
+
+Matches `clash-starters`, so file paths in existing how-to guides and blog posts
+transfer to the reader's project unchanged. The cost is that the reader writes a
+Game of Life in a module called `Example.Project` and sees `*Example.Project>` as
+their prompt for thirteen chapters. Mildly absurd, entirely survivable, and a
+five-minute change if you disagree.
+
+---
+
+## D9. Chapter 12 replaced — `foldl1` versus `fold` is out
+
+**Superseded decision.** The original chapter 12 had the reader replace `foldl1`
+with `fold` in the neighbour summation, turning a seven-deep adder chain into a
+three-deep tree, and observe the difference in the generated VHDL.
+
+**Why it is out.** The difference is very hard to see. Clash emits the fold as
+nested expressions rather than distinguishable structure, and without a synthesis
+tool in the spine there is nothing that reports path depth. Asking a reader to
+look for a difference they cannot find is worse than not making the point.
+
+**Replacement: "One description, two sizes".** Make the board size a type
+parameter and generate two entities from one description — 8×8 and 16×16 — with
+visibly different port widths in the generated VHDL.
+
+Why this works better:
+
+- The result is unmissable. Two entities, different widths, one source.
+- It lands on familiar ground. This reader writes VHDL generics; the new part is
+  that vector lengths are checked at compile time against the parameter.
+- It puts polymorphism exactly where our conventions want it: in the one chapter
+  where it is the subject.
+
+The risk, and it is real: this is the chapter most likely to generate type errors
+the reader cannot decode. Mitigation is that every signature is given explicitly
+and the reader never relies on inference. If it proves fragile in practice, the
+safe fallback is to drop chapter 12 entirely and ship thirteen chapters — the
+abstraction argument is already carried by chapter 4 (`map` and `zipWith` as
+`for … generate`) and chapter 13 (same circuit, shorter description).
+
+The `fold` depth argument should move to an explanation page, where it can be
+stated rather than discovered.
+
+---
+
+## D10. Debouncing: not mentioned
+
+Development kits debounce at board level. The word does not appear.
+
+---
+
+## D11. Edge behaviour: wrapping, silently
+
+The board wraps. This is a choice; the tutorial makes it without mentioning that
+there was one.
+
+---
+
+## Open, deliberately
+
+**Chapter 14, the optional board chapter.** An 8×8 display is not standard on
+cheap development kits, which is the one place this artifact is weaker than a
+seven-segment spine would have been. Options are eight LEDs scanned through eight
+rows (weak visual), an external matrix module (adds SPI and soldering), or a board
+with a display connector (much longer chapter). Settle it after chapters 1–13
+exist and work, rather than letting the board decide the tutorial.
