@@ -13,12 +13,76 @@ that someone looked.
 
 ## Blocking: answer before drafting the chapter
 
-- [ ] **V1 — Chapter 12 is buildable at all.** Parameterising `Board n` propagates
-      `KnownNat n` through `step`, `neighbourCounts` and the four shifts. Confirm
-      it compiles with explicit signatures throughout, and capture the error the
-      reader gets if they omit one. If the constraint plumbing is worse than a
-      chapter can carry, invoke the D9 fallback and ship thirteen chapters.
-      *Blocks: ch. 12.*
+- [x] **V1 — Chapter 12 is buildable at all.** *Checked 2026-08-05, Stack
+      3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, on the fixed
+      project template (see the V14/V15/V16 note below).*
+
+      `type Board n = Vec n (Vec n Bool)` with `KnownNat n` added to `step`,
+      `neighbourCounts`, `countBoard`, `addCounts` and the four shifts
+      compiles and elaborates as-is — no structural changes beyond adding the
+      constraint, exactly as D9 predicted. `neighbourBoards` correctly stays
+      `Vec 8` (eight directions) while returning `Vec 8 (Board n)`.
+
+      One spot needs more than "add the constraint": deriving `BitPack` for
+      `data Command n = Load (Board n) | Step | Run | Pause` via
+      `deriving (Generic, NFDataX, BitPack, Eq, Show)` fails —
+
+      ```
+      Example/Project.hs:74:31: error: [GHC-95822]
+          * solveWanteds: too many iterations (limit = 4)
+              Unsolved: WC {wc_simple = [W] $dKnownNat_ahtP {0}:: KnownNat n (CNonCanonical) ...}
+          * When deriving the instance for (BitPack (Command n))
+          Suggested fix:
+            Set limit with -fconstraint-solver-iterations=n; n=0 for no limit
+      ```
+
+      GHC's generics-based derivation can't resolve `KnownNat (BitSize (Command n))`
+      within the default iteration limit when `BitSize` itself depends on `n`
+      through `Board n`. The fix is one line, and it's a good chapter beat
+      rather than a dead end — pull `BitPack` (and `NFDataX`, same reasoning)
+      out into standalone deriving with an explicit context:
+
+      ```haskell
+      data Command n = Load (Board n) | Step | Run | Pause
+        deriving (Generic, Eq, Show)
+
+      deriving instance KnownNat n => NFDataX (Command n)
+      deriving instance KnownNat n => BitPack (Command n)
+      ```
+
+      `StandaloneDeriving` is already in the template's `default-extensions`,
+      so this costs the reader no new pragma.
+
+      Omitting `KnownNat n` from a plain function (tried on `step`) gives a
+      readable, actionable error, not a wall of generics:
+
+      ```
+      Example/Project.hs:67:40: error: [GHC-39999]
+          * No instance for `KnownNat n'
+              arising from a use of `neighbourCounts'
+            Possible fix:
+              add (KnownNat n) to the context of
+                the type signature for:
+                  step :: forall (n :: Nat). Board n -> Board n
+      ```
+
+      With both `topEntity8 :: … -> Signal System (Maybe (Command 8)) -> Signal
+      System (Board 8)` and `topEntity16 :: … -> Signal System (Maybe (Command
+      16)) -> Signal System (Board 16)` defined from one `life`, `clash
+      Example.Project -main-is topEntity8 --vhdl` and `-main-is topEntity16`
+      (note: `-main-is`, not a plain module argument, is how Clash 1.10.0
+      picks a top-level binder that isn't literally named `topEntity`) each
+      normalise and elaborate in under two seconds and produce genuinely
+      different port widths — confirmed by counting `out boolean` ports in the
+      generated VHDL: 64 for `topEntity8`, 256 for `topEntity16`. One
+      description, two entities, visibly different widths, as D9's
+      replacement chapter claims.
+
+      **Verdict: ship chapter 12 as designed.** The constraint plumbing is not
+      worse than a chapter can carry; the `BitPack`-deriving snag is small
+      enough to *be* the chapter's pre-flagged pitfall rather than a reason to
+      invoke the D9 fallback.
+      *Blocks: ch. 12. Unblocked.*
 
 - [ ] **V2 — Test bench generation route.** Does `-main-is testBench` on the
       command line work, avoiding the `TestBench` annotation and Template Haskell
@@ -89,6 +153,26 @@ that someone looked.
 - [ ] **V15 — Template builds.** `stack new` from the template, then `stack build`,
       then `stack run clashi`, on a clean machine. Time the first build and put the
       real number in chapter 1.
+
+      *Partial, 2026-08-05, while working V1.* The template as written did not
+      build: `extra-deps: []` left `clash-prelude`/`clash-ghc` unresolvable
+      against lts-24.38, and the `executable clash`/`clashi` stanzas imported
+      `common-options` (hence `NoImplicitPrelude`) while `bin/Clash.hs` and
+      `bin/Clashi.hs` used the plain `Prelude`'s `IO` unqualified — `stack
+      build` failed on `bin/Clashi.hs` with "Not in scope: type constructor or
+      class `IO'" before ever reaching chapter 12's code. Separately,
+      `defaultMain` in `clash-ghc-1.10.0` is `[String] -> IO ()`, not `IO ()`,
+      so `bin/Clash.hs`'s `main = defaultMain` doesn't typecheck either. Fixed
+      all three in `template/clash-tutorial.hsfiles`: `extra-deps` copied from
+      `clash-lang/clash-starters/simple/stack.yaml` (the pinned versions for
+      Clash 1.10.0 on lts-24.38); the two executables dropped
+      `common-options` in favour of plain `default-language: Haskell2010`;
+      `bin/Clash.hs`/`bin/Clashi.hs` now do `getArgs >>= defaultMain`, matching
+      upstream `clash-starters`. Confirmed clean: `stack new` → `stack build`
+      → `stack run clash -- Example.Project -main-is topEntity8 --vhdl`
+      succeeded from a fresh template instance. Still open: this was not a
+      literal clean machine (GHC 9.10.3 was already installed) and the first
+      build was not timed — do both before writing chapter 1's number.
 
 - [ ] **V16 — `default-extensions` sufficiency.** Confirm the template's set covers
       `BinaryLiterals`, `NumericUnderscores`, `DeriveGeneric`, `DeriveAnyClass`,
