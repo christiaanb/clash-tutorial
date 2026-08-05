@@ -687,14 +687,62 @@ that someone looked.
       (compiling `clash-lib`'s ~120 modules and `clash-ghc`'s GHC-API-heavy
       backend from source), not a guess. *Blocks: ch. 1. Unblocked.*
 
-- [ ] **V16 — `default-extensions` sufficiency.** Confirm the template's set covers
-      `BinaryLiterals`, `NumericUnderscores`, `DeriveGeneric`, `DeriveAnyClass`,
-      and Template Haskell if V2 comes back needing the annotation. Anything
-      missing becomes a per-file pragma, which is a thing the reader must be told
-      about and would rather not be.
+- [x] **V16 — `default-extensions` sufficiency.** *Checked 2026-08-05, direct
+      read of `template/clash-tutorial.hsfiles`'s `common-options` stanza — no
+      build needed, the list is either present or it isn't.*
 
-- [ ] **V17 — NVC on Debian and Ubuntu.** Is there a usable package, or is
-      `configure`/`make` the honest instruction? Sizes one sentence in chapter 10.
+      All five are present verbatim: `BinaryLiterals` (line 12),
+      `NumericUnderscores` (line 26), `DeriveGeneric` (line 20),
+      `DeriveAnyClass` (line 16), and `TemplateHaskell` (line 32, alongside
+      `TemplateHaskellQuotes`). V2 came back not needing the `TestBench`
+      annotation at all, so the Template Haskell question is moot for chapter
+      10 specifically, but the extension is on regardless and available if a
+      later chapter's REPL work reaches for `$(listToVecTH …)` or similar.
+
+      **Verdict: the template's `default-extensions` already covers every
+      extension this queue has needed so far.** No per-file pragma required
+      anywhere in chapters 1 through 13. *Shapes: all chapters.*
+
+- [x] **V17 — NVC on Debian and Ubuntu.** *Checked 2026-08-05.* This
+      container's own `.devcontainer/Dockerfile` already answers half the
+      question by construction: it installs NVC by downloading
+      `nvc_1.20.1-1_amd64_ubuntu-24.04.deb` directly from
+      `github.com/nickg/nvc`'s GitHub releases and `dpkg -i`-ing it, not from
+      any apt archive — and every NVC command run for V2 through V6 in this
+      exact environment worked against that install, so the route is
+      confirmed working, not just documented.
+
+      Checked whether Ubuntu's own archives carry it anyway: `sudo apt-get
+      update` against the real `archive.ubuntu.com`/`security.ubuntu.com`
+      noble sources (main, universe, restricted, multiverse, plus
+      -updates/-security/-backports) followed by `apt-cache policy nvc` shows
+      the only candidate is `1.20.1-1` from `/var/lib/dpkg/status` — the
+      manually-installed `.deb` — with no entry from any of the fetched
+      archives, and `apt-cache madison nvc` returns nothing. Ubuntu's own
+      repositories do not package NVC at all; the `.deb` is upstream's, not
+      distro-packaged.
+
+      The r1.20.1 GitHub release's assets (`nvc-1.20.1.tar.gz`,
+      `nvc_1.20.1-1_amd64_ubuntu-22.04.deb`,
+      `nvc_1.20.1-1_amd64_ubuntu-24.04.deb`) cover exactly two targets:
+      Ubuntu 22.04 and 24.04, both amd64. There is no Debian `.deb` in that
+      release, and `packages.debian.org`'s own search confirms Debian has no
+      package named `nvc` in any suite — the only near-matches are unrelated
+      (`nvchecker`, NVIDIA libraries). For Debian, upstream's own README
+      documents an autotools build — `./autogen.sh` (from Git only), then
+      `../configure && make && sudo make install` from a separate build
+      directory, needing `build-essential automake autoconf flex check
+      llvm-dev pkg-config zlib1g-dev libdw-dev libffi-dev libzstd-dev` and an
+      LLVM between 8 and 21 — so `configure`/`make` is the honest instruction
+      there, not a fallback described defensively.
+
+      **Verdict: split by distro, both routes real.** Ubuntu 22.04/24.04
+      readers get a prebuilt `.deb` from NVC's own GitHub releases page (the
+      exact route this repository's devcontainer already uses and this queue
+      has exercised repeatedly); Debian readers build from source with
+      `configure`/`make`. Chapter 10's one sentence should name both routes
+      rather than imply a single `apt install nvc` works everywhere — it
+      doesn't, on either distro. *Shapes: ch. 10.*
 
 - [ ] **V18 — CI.** `nickg/setup-nvc` action reference and version. The workflow in
       `.github/workflows/ci.yml` guesses.
