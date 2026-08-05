@@ -1,0 +1,24 @@
+{
+  "name": "clash-tutorial",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "haskell.haskell",
+        "justusadam.language-haskell",
+        "puorc.awesome-vhdl",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "mdbook serve"
+    }
+  },
+  "postCreateCommand": "stack --resolver lts-24.38 setup && stack --version && nvc --version && mdbook --version"
+}
