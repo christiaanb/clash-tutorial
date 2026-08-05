@@ -309,10 +309,38 @@ that someone looked.
       no `--format` flag and opens the `.fst` it gets directly in Surfer.
       *Blocks: ch. 11. Unblocked.*
 
-- [ ] **V6 — Surfer locality.** Confirm the browser build processes the file
-      locally and nothing is uploaded. One sentence in the chapter depends on it,
-      and that sentence removes an objection we would otherwise never hear about.
-      *Blocks: ch. 11.*
+- [x] **V6 — Surfer locality.** *Checked 2026-08-05, from Surfer's own source on
+      GitLab (`surfer-project/surfer`, `main` branch) — source-level
+      confirmation, the same method V5 used for the Surfer half of the
+      waveform-format question, because no packet-capture tooling was
+      available in this environment to confirm it by a live network trace.*
+
+      `libsurfer/src/file_dialog.rs` shows the browser build's "Open file"
+      picker going through the `rfd` crate's `AsyncFileDialog`, which in the
+      `wasm32` target (no VS Code integration) resolves to the browser's
+      `<input type="file">` element and `File` API —
+      `create_file_dialog(filter, title).pick_file().await`, then
+      `file.read().await`. Nothing on that path constructs an HTTP request;
+      the bytes come from the browser's own file object, in-process.
+
+      `libsurfer/src/wave_source.rs` shows the same for drag-and-drop:
+      `load_from_dropped` takes the `bytes` egui already read from the
+      dropped file and calls `load_from_bytes(WaveSource::DragAndDrop(...),
+      bytes.to_vec(), ...)` directly — no request leaves the page.
+
+      The one place this file calls out to the network is `reqwest::get(&url)`,
+      used only by the separate `load_url` command — the one V5 flagged as the
+      documented replacement for the `load_file` *command* in the WASM build,
+      because that command takes a path string rather than a file handle. That
+      path *fetches* a URL the user supplies; it has nothing to do with opening
+      a local file and does not run unless the reader deliberately invokes it.
+      Chapter 11 doesn't use it.
+
+      **Verdict: confirmed from source.** Opening a local `.fst` in the browser
+      build — by file picker or drag-and-drop — never leaves the page; only the
+      unrelated, opt-in `load_url` command talks to the network. Chapter 11's
+      locality sentence stands as written.
+      *Blocks: ch. 11. Unblocked.*
 
 ---
 
