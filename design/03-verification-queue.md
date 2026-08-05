@@ -84,10 +84,59 @@ that someone looked.
       invoke the D9 fallback.
       *Blocks: ch. 12. Unblocked.*
 
-- [ ] **V2 — Test bench generation route.** Does `-main-is testBench` on the
-      command line work, avoiding the `TestBench` annotation and Template Haskell
-      entirely? If not, the annotation is unavoidable and chapter 10 gains a
-      ritual step. *Blocks: ch. 10.*
+- [x] **V2 — Test bench generation route.** *Checked 2026-08-05, same toolchain
+      as V1: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, NVC
+      1.20.1, on the fixed project template.*
+
+      `-main-is testBench` works, with no `TestBench` annotation anywhere.
+      Given
+
+      ```haskell
+      testBench :: Signal System Bool
+      testBench = done
+        where
+          testInput      = stimuliGenerator clk rst (1 :> 2 :> 3 :> Nil :: Vec 3 (Signed 8))
+          expectedOutput = outputVerifier' clk rst (2 :> 4 :> 6 :> Nil :: Vec 3 (Signed 8))
+          done           = expectedOutput (topEntity <$> testInput <*> testInput)
+          clk            = tbSystemClockGen (not <$> done)
+          rst            = systemResetGen
+      ```
+
+      `stack run clash -- Example.Project -main-is testBench --vhdl` normalises
+      and elaborates `testBench` directly, in under a second, producing
+      `vhdl/Example.Project.testBench/{testBench.vhdl,
+      Example_Project_testBench_types.vhdl,
+      testBench_slv2string_<hash>.vhdl}`. No `{-# ANNOTATE #-}` pragma is
+      needed at any point, and neither is Template Haskell: plain `Vec`
+      literals (`1 :> 2 :> 3 :> Nil`) work directly with `stimuliGenerator` and
+      `outputVerifier'`, so `$(listToVecTH …)` isn't needed either.
+
+      Simulating with NVC confirms the test bench actually checks something,
+      not just that it elaborates. `nvc -a Example_Project_testBench_types.vhdl
+      testBench_slv2string_<hash>.vhdl testBench.vhdl -e testBench -r` exits 0
+      against the correct expected-output vector, and on a deliberately wrong
+      one (`6` changed to `7`) exits 1 with:
+
+      ```
+      ** Error: 130ns+1: outputVerifier, expected: 00000111, actual: 00000110
+         Process :testbench:r_assert:_p2 at testBench.vhdl:95
+      ```
+
+      One ordering note that overlaps with V3: the three files must be
+      analysed in dependency order — `*_types.vhdl`, then `*_slv2string_*`,
+      then `testBench.vhdl`. A plain alphabetical glob sorts `testBench.vhdl`
+      before the `slv2string` file it depends on, and NVC fails with "no
+      visible declaration". Chapter 10's `nvc -a` command must list the files
+      explicitly, not glob them.
+
+      A harmless artifact to pre-flag in chapter 10: NVC prints `Warning:
+      0ms+0: NUMERIC_STD.">": metavalue detected, returning FALSE` at time
+      zero, before reset settles. It does not change the exit code.
+
+      **Verdict: the `TestBench` annotation is unneeded. `-main-is testBench`
+      is chapter 10's one route, and it costs the reader no new pragma or
+      extension.**
+      *Blocks: ch. 10. Unblocked.*
 
 - [ ] **V3 — NVC file ordering.** Capture the exact list of files Clash 1.10.0
       emits for `topEntity`, in dependency order, and the exact `nvc` invocation.
