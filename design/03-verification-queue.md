@@ -612,34 +612,80 @@ that someone looked.
 
 ## Infrastructure
 
-- [ ] **V14 — Template mirroring.** `stack new life christiaanb/clash-tutorial`
-      resolves to `github.com/christiaanb/stack-templates/clash-tutorial.hsfiles`.
-      Create that repository and confirm the command works end to end from a clean
-      machine. Until it does, chapter 1's first command is wrong.
+- [x] **V14 — Template mirroring.** *Checked 2026-08-05.* The repository already
+      exists: `github.com/christiaanb/stack-templates/clash-tutorial.hsfiles`
+      returns HTTP 200, and downloading it byte-for-byte matches
+      `template/clash-tutorial.hsfiles` in this repo (`diff` reports no
+      differences) — the mirror is current, nothing to push.
 
-- [ ] **V15 — Template builds.** `stack new` from the template, then `stack build`,
-      then `stack run clashi`, on a clean machine. Time the first build and put the
-      real number in chapter 1.
+      `stack new life christiaanb/clash-tutorial`, run in a scratch directory,
+      resolves the shorthand, downloads the `.hsfiles` from that exact URL
+      (`Downloading template christiaanb/clash-tutorial to create project life
+      in directory life/...`), and expands it into a working `life/` project
+      with `{{name}}`/`{{author-name}}`/`{{author-email}}` substituted
+      correctly throughout (`life.cabal`'s `name: life`, `stack.yaml`'s
+      pinned `extra-deps` intact, `src/Example/Project.hs` present).
 
-      *Partial, 2026-08-05, while working V1.* The template as written did not
-      build: `extra-deps: []` left `clash-prelude`/`clash-ghc` unresolvable
-      against lts-24.38, and the `executable clash`/`clashi` stanzas imported
-      `common-options` (hence `NoImplicitPrelude`) while `bin/Clash.hs` and
-      `bin/Clashi.hs` used the plain `Prelude`'s `IO` unqualified — `stack
-      build` failed on `bin/Clashi.hs` with "Not in scope: type constructor or
-      class `IO'" before ever reaching chapter 12's code. Separately,
-      `defaultMain` in `clash-ghc-1.10.0` is `[String] -> IO ()`, not `IO ()`,
-      so `bin/Clash.hs`'s `main = defaultMain` doesn't typecheck either. Fixed
-      all three in `template/clash-tutorial.hsfiles`: `extra-deps` copied from
-      `clash-lang/clash-starters/simple/stack.yaml` (the pinned versions for
-      Clash 1.10.0 on lts-24.38); the two executables dropped
-      `common-options` in favour of plain `default-language: Haskell2010`;
-      `bin/Clash.hs`/`bin/Clashi.hs` now do `getArgs >>= defaultMain`, matching
-      upstream `clash-starters`. Confirmed clean: `stack new` → `stack build`
-      → `stack run clash -- Example.Project -main-is topEntity8 --vhdl`
-      succeeded from a fresh template instance. Still open: this was not a
-      literal clean machine (GHC 9.10.3 was already installed) and the first
-      build was not timed — do both before writing chapter 1's number.
+      One thing to pre-flag in chapter 1: with no `-p` flags, Stack prints a
+      note that `author-email`/`author-name` were "needed by the template but
+      not provided" and suggests `stack new life christiaanb/clash-tutorial -p
+      "author-email:value" -p "author-name:value"` or setting them once in
+      `~/.stack/config.yaml`. This is harmless — the template's mustache
+      fallbacks (`{{^author-name}}Author name here{{/author-name}}`) fill in
+      placeholder text and the build still succeeds — but the note appears on
+      stderr on the reader's very first command, and chapter 1 should say
+      "expect this, it's not an error" rather than let the reader wonder if
+      they typed something wrong.
+
+      **Verdict: ship as designed.** The mirror repository is live and
+      matches this repo's copy exactly; the shorthand template reference
+      resolves end to end from a clean directory. Only addition needed is one
+      sentence in chapter 1 pre-flagging the author-name/email note.
+      *Blocks: ch. 1. Unblocked.*
+
+- [x] **V15 — Template builds.** *Checked 2026-08-05, completing the 2026-08-05
+      partial entry from V1.* That entry already fixed the three build-breaking
+      bugs (missing `extra-deps`, `common-options`'s `NoImplicitPrelude` on the
+      `IO`-using executables, `defaultMain`'s `[String] -> IO ()` signature) and
+      confirmed `stack new` → `stack build` →
+      `stack run clash -- Example.Project -main-is topEntity8 --vhdl` succeeds.
+      What was still open was a literal clean-machine timing.
+
+      That machine doesn't exist here, but the closest honest proxy does: this
+      repository's own `.devcontainer/devcontainer.json` runs `stack --resolver
+      lts-24.38 setup` as its `postCreateCommand`, which installs GHC
+      9.10.3 but builds none of Clash's own packages. `~/.stack/snapshots`
+      on this box held exactly one snapshot hash — shared by `code/` and every
+      instance of the template, because Stack keys the snapshot cache by
+      resolver + `extra-deps`, not by project path — already built by earlier
+      work on this queue (V1). That made the first timing attempt (a plain
+      `stack build` from a freshly-generated `life/`) meaningless: 14.5s wall
+      clock, entirely because `clash-prelude`/`clash-lib`/`clash-ghc` were
+      already compiled and sitting in that shared cache.
+
+      To get the number a reader actually sees, that snapshot directory was
+      moved aside — leaving GHC installed (matching what
+      `postCreateCommand` alone provides) but no Clash package built, which is
+      exactly a fresh devcontainer's state right after `postCreateCommand`
+      finishes — and `stack build` was re-run and timed from there:
+
+      ```
+      real	12m14.005s
+      user	46m33.324s
+      sys	5m55.607s
+      ```
+
+      on this container's 12 cores. `stack run clashi -- src/Example/Project.hs`
+      against the resulting build loads the module and drops into a working
+      `clashi>` prompt exactly as before. The snapshot cache was restored
+      afterward, so this repo's own build times are unaffected.
+
+      **Verdict: closed.** Chapter 1 should say "roughly ten to fifteen
+      minutes" rather than quote `12m14s` as if it were exact — that number is
+      one run on one machine's core count and will vary with hardware and
+      network speed, but it is a real measurement of the actual bottleneck
+      (compiling `clash-lib`'s ~120 modules and `clash-ghc`'s GHC-API-heavy
+      backend from source), not a guess. *Blocks: ch. 1. Unblocked.*
 
 - [ ] **V16 — `default-extensions` sufficiency.** Confirm the template's set covers
       `BinaryLiterals`, `NumericUnderscores`, `DeriveGeneric`, `DeriveAnyClass`,
