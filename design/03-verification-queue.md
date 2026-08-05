@@ -138,10 +138,83 @@ that someone looked.
       extension.**
       *Blocks: ch. 10. Unblocked.*
 
-- [ ] **V3 — NVC file ordering.** Capture the exact list of files Clash 1.10.0
-      emits for `topEntity`, in dependency order, and the exact `nvc` invocation.
-      Decide whether the list is short enough to print in the chapter.
-      *Blocks: ch. 10.*
+- [x] **V3 — NVC file ordering.** *Checked 2026-08-05, same toolchain as V1/V2:
+      Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, NVC 1.20.1, on
+      the fixed project template. Checked against the actual chapter 9/10
+      circuit — `Board = Vec 8 (Vec 8 Bool)`, the chapter 8 `Command`/`St`, and
+      `topEntity = life` — not the template's toy `plus`, since the file count
+      is exactly the thing a bigger circuit could change.*
+
+      Plain `topEntity` (`stack run clash -- Example.Project --vhdl`, no test
+      bench) emits three files: `Example_Project_topEntity_types.vhdl`,
+      `topEntity.sdc`, `topEntity.vhdl`. `.sdc` is a clock-constraints file, not
+      VHDL, and NVC never sees it. Only two files need analysing, in that
+      order — types before `topEntity.vhdl`, which `use`s the types package.
+      For this pair, `nvc -a *.vhdl -e topEntity` happens to work even with a
+      plain alphabetical glob, because the types file's name starts with
+      uppercase `E` and sorts before lowercase `topEntity.vhdl` — this is
+      coincidence, not a rule, and should not be written into the chapter as
+      one.
+
+      The chapter 10 test bench is the case that matters, and it needs
+      `import Clash.Explicit.Testbench` — `Clash.Explicit.Prelude` alone does
+      not bring `stimuliGenerator`, `outputVerifier'` or `tbSystemClockGen`
+      into scope, on the real circuit or the toy one; V2's transcript didn't
+      show its imports and this is worth stating explicitly in chapter 10.
+      Generating `-main-is testBench --vhdl` for a test bench built around the
+      real `topEntity` (`Load glider` then two `Step`s, expected boards taken
+      from `sampleN` in the REPL and pasted rather than reasoned out, per this
+      file's own note on method) reproduces V2's three-file shape exactly, at
+      full circuit size:
+      `Example_Project_testBench_types.vhdl`,
+      `testBench_slv2string_B426B45701B03559.vhdl`, `testBench.vhdl`. No
+      separate `topEntity.vhdl` appears — the test bench's call to `topEntity`
+      is flattened into the same single netlist, so the file count stays at
+      three regardless of how large the circuit inside `topEntity` is.
+
+      Alphabetical glob fails here exactly as V2 found on the toy example:
+      `nvc -a *.vhdl -e testBench -r` sorts `testBench.vhdl` before
+      `testBench_slv2string_…`, and NVC stops with `no visible declaration for
+      TESTBENCH_SLV2STRING_B426B45701B03559`. The explicit-order form works
+      against the correct expected vector (exit 0) and fails cleanly against a
+      deliberately wrong one (exit 1, `outputVerifier, expected: …, actual: …`
+      at `testBench.vhdl:1090`) — both confirmed by listing the files by name:
+
+      ```
+      nvc -a Example_Project_testBench_types.vhdl \
+             testBench_slv2string_B426B45701B03559.vhdl \
+             testBench.vhdl \
+          -e testBench -r
+      ```
+
+      The hash in the slv2string filename is deterministic for a given
+      source — regenerating `--vhdl` twice from the same `Example/Project.hs`
+      produced the identical hash both times, and it did not change when only
+      the *values* in the expected-output vector were edited (only the types
+      involved determine it). It is still not something to print literally in
+      the chapter, because the reader's own file will hash differently the
+      moment their source differs from what's pasted. The workable recipe is
+      to name the two stable files and glob the third in its correct middle
+      position: `testBench_slv2string_*.vhdl` between the types file and
+      `testBench.vhdl`. A shell glob in one argument slot still lists the files
+      in the order the arguments appear, so this keeps dependency order without
+      asking the reader to find or copy a hash. Confirmed this exact
+      three-argument form (two literal names, one glob) analyses and runs
+      correctly.
+
+      One thing V2's toy example undersold: the real circuit's harmless
+      metavalue warning is not one line. `nextCell`'s `Unsigned 4` comparisons
+      before reset settles produced 513 `NUMERIC_STD."=": metavalue detected`
+      warnings across two simulated instants, all before the exit code is
+      decided and all harmless. Chapter 10 should say "many warnings, all
+      harmless, ignore them" rather than quote a single line as if that's all
+      there is.
+
+      **Verdict: three files, maximum, and short enough to print — two literal
+      names plus one glob for the hash-suffixed helper, in that fixed order.**
+      Ship the ordering pre-flag as the outline already plans, with the
+      literal-names-plus-glob form as the actual command, not a bare file list.
+      *Blocks: ch. 10. Unblocked.*
 
 - [ ] **V4 — VHDL standard.** Does Clash's output analyse under NVC's default
       (VHDL-2008), or does it need `--std=1993`? Pin one and write it into the
