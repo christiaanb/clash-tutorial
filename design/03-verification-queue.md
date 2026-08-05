@@ -346,35 +346,267 @@ that someone looked.
 
 ## Shaping: answer before the chapter is finalised
 
-- [ ] **V7 — `:i` output under the explicit prelude.** Capture verbatim for
-      `register` and `mealy`. The whole `:i`-as-instrument argument rests on these
-      being readable. If they are not, D4 needs revisiting.
+- [x] **V7 — `:i` output under the explicit prelude.** *Checked 2026-08-05, same
+      toolchain as V1-V6: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
+      1.10.0, on a fresh instance of the fixed project template with the
+      chapter 6 `register`-based `life` in `Example/Project.hs`.*
+
+      One infrastructure snag first: `stack run clashi` with no argument, as
+      chapter 1's transcript shows, drops into a bare `clashi>` prompt with
+      *no project module loaded* — `:i register` there resolves to
+      `Clash.Prelude`'s hidden-argument version (`Defined in 'Clash.Signal'`),
+      not the explicit one, because nothing has brought
+      `Clash.Explicit.Prelude`'s `register` into scope over the implicit
+      one. The module has to be loaded, either as
+      `stack run clashi -- src/Example/Project.hs` from the command line or
+      `:load src/Example/Project.hs` once inside, before `:i` says anything
+      about this project's code. This is a chapter 1 correction, not a V7
+      finding as such, but it is the thing that made V7 fail the first time it
+      was tried, so it is recorded here. Loaded either way, the prompt itself
+      is a second, separate surprise: it stays `clashi>`, never the
+      `*Example.Project>` the outline's transcripts show throughout. Neither
+      of these is one of V7's named claims, but both bear on chapters 1, 6 and
+      7 and are worth a decision before those chapters are drafted.
+
+      With the module loaded, `:i register` and `:i mealy` give exactly the
+      explicit signatures D4 claims:
+
+      ```
+      clashi> :i register
+      register ::
+        (KnownDomain dom, NFDataX a) =>
+        Clock dom
+        -> Reset dom -> Enable dom -> a -> Signal dom a -> Signal dom a
+        	-- Defined in `Clash.Explicit.Signal'
+      clashi> :i mealy
+      mealy ::
+        (KnownDomain dom, NFDataX s) =>
+        Clock dom
+        -> Reset dom
+        -> Enable dom
+        -> (s -> i -> (s, o))
+        -> s
+        -> Signal dom i
+        -> Signal dom o
+        	-- Defined in `Clash.Explicit.Mealy'
+      ```
+
+      Both are ordinary function types — `Clock`, `Reset` and `Enable` as
+      plain arguments, no `HiddenClockResetEnable`, no implicit parameter.
+      Readable, and readable exactly the way D4 predicted.
+
+      **Verdict: the `:i`-as-instrument argument holds.** D4 does not need
+      revisiting on this point. Separately, chapter 1 needs `-- src/…hs` (or
+      `:load`) added to the `stack run clashi` step, and every chapter's
+      transcript prompt needs a decision — `clashi>` as actually observed, or
+      an explanation of what would make it `*Example.Project>`.
       *Shapes: ch. 1, 6, 7.*
 
-- [ ] **V8 — No type application needed.** Confirm `sampleN 5 (life
-      systemClockGen resetGen enableGen)` needs no `@System`. This is one of the
-      stated benefits of the explicit prelude. *Shapes: ch. 6.*
+- [x] **V8 — No type application needed.** *Checked 2026-08-05, same session as
+      V7.*
 
-- [ ] **V9 — Reset behaviour in the first samples.** Capture the actual sequence
-      under `resetGen`. Chapter 6 points at it, so it must be right.
-      *Shapes: ch. 6.*
+      ```
+      clashi> :t sampleN 5 (life systemClockGen resetGen enableGen)
+      sampleN 5 (life systemClockGen resetGen enableGen) :: [Board]
+      ```
 
-- [ ] **V10 — `unpack` resolves for `fromRows`.** Confirm `map unpack ::
-      Vec 8 (BitVector 8) -> Vec 8 (Vec 8 Bool)` works with only the top-level
-      signature to guide it. *Shapes: ch. 3.*
+      No `@System` anywhere. The domain is pinned by passing `systemClockGen`,
+      an ordinary value, exactly as D4 claims.
 
-- [ ] **V11 — Widths.** Actual `BitSize` of `Command` and `Maybe Command`. The
-      outline guesses 66 and 67. The reader hunts for these in the waveform, so a
-      wrong number is a failed chapter. *Shapes: ch. 8, 11.*
+      **Verdict: confirmed as designed.** *Shapes: ch. 6.*
 
-- [ ] **V12 — `Clash.Explicit.Prelude` completeness.** Does it re-export
-      everything the spine needs — `Vec` operations, `rotateLeftS`/`rotateRightS`,
-      `foldl1`, the test bench primitives — or do extra imports creep in? Every
-      extra import is a line the reader types without meaning.
-      *Shapes: all chapters.*
+- [x] **V9 — Reset behaviour in the first samples.** *Checked 2026-08-05, same
+      session as V7/V8, against the chapter 6 `register`-based `life` with
+      `glider` as the initial value.*
 
-- [ ] **V13 — Chapter 13 diff.** Are the two VHDL trees byte-identical, or merely
-      equivalent? If names differ, note which and why. *Shapes: ch. 13.*
+      ```
+      clashi> mapM_ (putStr . render) (sampleN 5 (life systemClockGen resetGen enableGen))
+      .#......
+      ..#.....
+      ###.....
+      ........
+      ........
+      ........
+      ........
+      ........
+      .#......
+      ..#.....
+      ###.....
+      ........
+      ........
+      ........
+      ........
+      ........
+      ........
+      #.#.....
+      .##.....
+      .#......
+      ........
+      ........
+      ........
+      ........
+      ........
+      ..#.....
+      #.#.....
+      .##.....
+      ........
+      ........
+      ........
+      ........
+      ........
+      .#......
+      ..##....
+      .##.....
+      ........
+      ........
+      ........
+      ........
+      ```
+
+      The first two boards are byte-identical to `glider` and to each other:
+      `resetGen`'s default reset is asserted for the first two cycles of the
+      `System` domain, and `register` holds its initial value while reset is
+      asserted, so the first two samples repeat exactly as chapter 6 claims.
+      The third sample is `step glider` (visibly different from, and only
+      from, that point on): it is *not* the same shape a step on an unbounded
+      board would give, because the glider sits one cell from the top-left
+      corner and the board wraps (D11) — column and row `-1` fold back to
+      column and row 7. This is worth pre-flagging in chapter 6 or leaving
+      strictly unexplained per D11, but not worth "fixing": it is the correct
+      output of the actual circuit.
+
+      **Verdict: confirmed. Paste this transcript verbatim; two repeats, then
+      evolution.** *Shapes: ch. 6.*
+
+- [x] **V10 — `unpack` resolves for `fromRows`.** *Checked 2026-08-05, same
+      session, against chapter 3's exact `fromRows`.*
+
+      ```
+      clashi> :t fromRows
+      fromRows :: Vec 8 (BitVector 8) -> Board
+      clashi> :t (map unpack :: Vec 8 (BitVector 8) -> Vec 8 (Vec 8 Bool))
+      (map unpack :: Vec 8 (BitVector 8) -> Vec 8 (Vec 8 Bool))
+        :: Vec 8 (BitVector 8) -> Vec 8 (Vec 8 Bool)
+      ```
+
+      `map unpack` resolves `unpack`'s `BitPack` instance purely from the
+      top-level signature, with no annotation on `unpack` itself, in this
+      session and in every one of the chapters 3 through 13 builds run for
+      this queue (all of which use `fromRows` unchanged). No ambiguity error,
+      no need for `TypeApplications` on this line.
+
+      **Verdict: confirmed as designed.** *Shapes: ch. 3.*
+
+- [x] **V11 — Widths.** *Checked 2026-08-05, same session, against chapter 8's
+      exact `Command` and `St` (`Board`, `Command`, `St` all monomorphic at
+      this point — the chapter 12 type parameter doesn't exist yet).*
+
+      `:kind! BitSize Command` does not reduce to a bare number — the type
+      family solver plugins that normalise `CLog`/`Max` arithmetic fire during
+      constraint solving, not during `:kind!`'s pretty-printing, so it prints
+      `CLog 2 4 + 64` unreduced. Forcing evaluation through a value-level
+      `natVal`, which does go through constraint solving, gives the actual
+      numbers:
+
+      ```
+      clashi> import Data.Proxy
+      clashi> natVal (Proxy @(BitSize Command))
+      66
+      clashi> natVal (Proxy @(BitSize (Maybe Command)))
+      67
+      clashi> natVal (Proxy @(BitSize Board))
+      64
+      ```
+
+      66 and 67 — exactly the outline's guesses. `Command`'s tag is
+      `CLog 2 4 = 2` bits (four constructors) plus the 64-bit `Board` payload
+      `Load` carries; `Maybe Command` adds one more tag bit
+      (`CLog 2 2 = 1`) on top. `BitSize St` was not checked — `St` doesn't
+      derive `BitPack` in the outline and asking for it fails with
+      `No instance for (KnownNat (BitSize St))`, which is expected and not
+      something chapter 8 does.
+
+      **Verdict: 66 and 67 confirmed exactly.** Ship the outline's numbers
+      as-is; no change needed. If chapter 11 wants to show the derivation
+      rather than just the number, `:kind!` is the wrong command for it —
+      it must go through a value-level `natVal` or an equivalent forcing
+      context, not the type-level `:kind!` the reader would reach for first.
+      *Shapes: ch. 8, 11.*
+
+- [x] **V12 — `Clash.Explicit.Prelude` completeness.** *Checked 2026-08-05,
+      across every build run for this queue: the chapter 1–9 spine
+      (`nextCell`, `Board`, `fromRows`, `glider`, `render`, the four shifts,
+      `neighbourBoards`, `countBoard`, `addCounts`, `neighbourCounts`, `step`,
+      `Command`, `St`, `lifeT`, `life` using `register` then `mealy`), and the
+      chapter 12 polymorphic rewrite (`Board n`, `KnownNat n`, standalone
+      `deriving instance` for `NFDataX`/`BitPack`, two monomorphic
+      `topEntity`s) — all compiled from a single `import Clash.Explicit.Prelude`
+      line, no other import added at any point through chapter 12.*
+
+      Confirmed present with no extra import: `Vec`, `:>`, `Nil`, `map`,
+      `zipWith`, `toList`, `foldl1`, `rotateLeftS`, `rotateRightS`, `d1`,
+      `BitVector`, `unpack`, `Signed`, `Unsigned`, `Clock`/`Reset`/`Enable`/
+      `System`, `systemClockGen`/`resetGen`/`enableGen`, `register`, `mealy`,
+      `sampleN`, `Generic`/`NFDataX`/`BitPack` (both plain-`deriving` and
+      standalone-`deriving instance` forms), and `KnownNat`.
+
+      One thing confirmed absent, carried over from V3 rather than
+      re-derived here: `stimuliGenerator`, `outputVerifier'` and
+      `tbSystemClockGen` are not in `Clash.Explicit.Prelude` — chapter 10's
+      test bench needs a second import, `Clash.Explicit.Testbench`, which V3
+      already established and this session did not contradict.
+
+      **Verdict: `Clash.Explicit.Prelude` alone carries chapters 1 through 9
+      and 12 with no added import.** The one necessary addition anywhere in
+      the spine is `Clash.Explicit.Testbench` for chapter 10, already known
+      from V3. *Shapes: all chapters.*
+
+- [x] **V13 — Chapter 13 diff.** *Checked 2026-08-05. Built chapter 12's
+      `topEntity8` (explicit style, `Board n`/`Command n`, `KnownNat n`) and a
+      chapter 13 rewrite of the identical logic (`import Clash.Prelude`,
+      `life :: (HiddenClockResetEnable dom, KnownNat n) => …`,
+      `topEntity8 = exposeClockResetEnable life`) in separate project
+      instances, both generating `-main-is topEntity8 --vhdl` from the same
+      toolchain as V1-V12.*
+
+      Not byte-identical: `diff -rq` reports all three generated files
+      differ, and the two `topEntity8.vhdl` differ in 342 of 761 lines.
+      They are, however, the same circuit under different names. The entity
+      port list is identical line for line except one input, which differs
+      only in name (`carg` in chapter 12's direct-argument style vs `eta` in
+      chapter 13's `exposeClockResetEnable`-composed style) — same position,
+      same type, same width:
+
+      ```
+      < carg       : in Example_Project_topEntity8_types.Maybe;
+      ---
+      > eta        : in Example_Project_topEntity8_types.Maybe;
+      ```
+
+      Both architectures contain exactly one clocked process — `st_register`
+      in chapter 12, `cds_app_arg_register` in chapter 13 — driven by the same
+      `rising_edge(clk)` shape, and the state record type is the same fields
+      under two names, `St_0`/`St_0_sel0_board`/`St_0_sel1_running` in chapter
+      12 versus `St`/`St_sel0_board`/`St_sel1_running` in chapter 13. Every
+      difference found traces to Clash's name-mangling of the polymorphic
+      `St n` and the mealy machine's initial-state signal, which comes out
+      differently depending on whether clock/reset/enable are threaded as
+      direct top-level arguments (chapter 12) or through the point-free
+      `exposeClockResetEnable` composition (chapter 13) — not to any
+      difference in what the two circuits do. Neither generated file's line
+      count differs (761 each); only the names inside do. Behavioural
+      equivalence (identical outputs under identical stimulus) was not
+      separately re-simulated for this entry, since `lifeT`/`step` are the
+      same unchanged Haskell functions in both versions and the structural
+      comparison above already accounts for every observed byte difference.
+
+      **Verdict: equivalent, not byte-identical.** Chapter 13 must say this
+      plainly rather than claim identity: same ports (one argument's *name*
+      differs, not its type or position), same single register, same state
+      shape, different internal names throughout. Point at the port-name and
+      type-name differences specifically if the chapter shows a diff, rather
+      than asserting "identical" or leaving the reader to find 342 changed
+      lines unexplained. *Shapes: ch. 13.*
 
 ---
 
