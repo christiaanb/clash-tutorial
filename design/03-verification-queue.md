@@ -216,9 +216,42 @@ that someone looked.
       literal-names-plus-glob form as the actual command, not a bare file list.
       *Blocks: ch. 10. Unblocked.*
 
-- [ ] **V4 — VHDL standard.** Does Clash's output analyse under NVC's default
-      (VHDL-2008), or does it need `--std=1993`? Pin one and write it into the
-      command. *Blocks: ch. 10.*
+- [x] **V4 — VHDL standard.** *Checked 2026-08-05, same toolchain as V1-V3:
+      Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, NVC 1.20.1,
+      on the fixed project template.*
+
+      Clash's own output says what it targets — every generated `.vhdl` file
+      opens with the comment `-- Automatically generated VHDL-93`, confirmed
+      on both the `plus` toy entity and a clocked `register`-based counter.
+
+      NVC's default (no `--std` flag at all) is VHDL-2008, not 1993, and
+      NVC does not print this anywhere — it had to be determined by a
+      differentiating test. A minimal file using the VHDL-2008-only matching
+      condition operator (`if (a ?= b) then …`) analyses cleanly with no
+      `--std` flag and with `--std=2008` explicit, and fails identically
+      under `--std=1993` with `no visible subprogram declaration for "?="`.
+      That confirms `nvc -a` with nothing added is running in 2008 mode.
+
+      This means there is a standard mismatch between what Clash emits and
+      what NVC defaults to, but it is a harmless one: VHDL-2008 is a superset
+      of VHDL-93 for everything Clash's netlists actually use, so 2008 mode
+      accepts 93-targeted code without complaint. Confirmed directly on all
+      three shapes already exercised by V1-V3 — the `plus` toy `topEntity`,
+      the `register`-based counter `topEntity`, and the full chapter 10 test
+      bench (`Example_Project_testBench_types.vhdl`,
+      `testBench_slv2string_B426B45701B03559.vhdl`, `testBench.vhdl`) —
+      `nvc -a … -e … -r` with no `--std` flag and the same command with
+      `--std=1993` added produce the same exit code and the same warnings in
+      every case, including exit 0 against the correct expected vector. Only
+      the internal `numeric_std` library path named in NVC's harmless
+      metavalue warning differs (`lib/ieee.08/numeric_std-body.vhdl` vs
+      `lib/ieee/numeric_std-body.vhdl`) — not something the chapter shows.
+
+      **Verdict: omit `--std` entirely.** Pinning `--std=1993` would only
+      match what Clash's comment claims to target, but adds a flag that
+      changes nothing observed and that the reader would have no way to
+      derive themselves. Chapter 10's `nvc -a` command takes no `--std` flag.
+      *Blocks: ch. 10. Unblocked.*
 
 - [ ] **V5 — Waveform format.** Does Surfer's browser build accept NVC's FST
       output, or should NVC be asked for VCD? Capture the exact NVC flag.
