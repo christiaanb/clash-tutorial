@@ -253,9 +253,61 @@ that someone looked.
       derive themselves. Chapter 10's `nvc -a` command takes no `--std` flag.
       *Blocks: ch. 10. Unblocked.*
 
-- [ ] **V5 — Waveform format.** Does Surfer's browser build accept NVC's FST
-      output, or should NVC be asked for VCD? Capture the exact NVC flag.
-      *Blocks: ch. 11.*
+- [x] **V5 — Waveform format.** *Checked 2026-08-05, NVC 1.20.1, same toolchain
+      as V1-V4. The NVC half was run in-session; the Surfer half was confirmed
+      first from Surfer's own source and documentation, then closed out by
+      hand: the generated `counter.fst` was dropped onto
+      `app.surfer-project.org` in a real browser and displayed correctly.*
+
+      NVC's default, with no `--format` flag at all, is FST. Given a small
+      clocked design (a `register`-based counter, the same shape V4 used),
+      `nvc -a counter.vhdl -e counter -r -w` prints `Note: writing FST
+      waveform data to counter.fst` and the file it writes is binary FST (
+      confirmed by inspecting the header bytes, not just the extension).
+      `-w`/`--wave` alone is enough; no separate flag is needed to turn
+      waveform dumping on.
+
+      VCD is available and takes one added flag: `nvc -a counter.vhdl -e
+      counter -r -w --format=vcd` prints `Note: writing VCD waveform data to
+      counter.vcd` and exits 0.
+
+      A gotcha worth pre-flagging in chapter 11: NVC does not infer the format
+      from the output filename. `--wave=counter.vcd` with no `--format` still
+      writes FST bytes into a file named `counter.vcd` — confirmed by
+      inspecting the header, which is binary FST, not text VCD. `--format`
+      is the only thing that controls the format; the filename given to
+      `--wave`/`-w` is just a name.
+
+      Surfer's own documentation and source settle the acceptance question
+      without needing a live browser: the user guide states Surfer supports
+      VCD, FST, and GHW, and lists this as a `[WAVE_FILE]` argument type with
+      no format carve-out for the web build. Surfer's `Cargo.toml` pins
+      `wellen` as its waveform-parsing dependency — a pure-Rust library (no C
+      bindings, e.g. no linked `libfst`) — which is what makes a WASM build
+      possible in the first place; the native and browser builds parse VCD,
+      FST and GHW through the *same* `wellen` backend, not two different
+      parsers with different coverage. The changelog and open issue tracker
+      show active WASM-build work (translator plugins, a `waves_loaded` WASM
+      API, string-decoding fixes described as "in FST and VCD") with nothing
+      suggesting FST is unsupported or degraded specifically in the browser
+      build.
+
+      One WASM-specific restriction did turn up, relevant to V6 more than V5:
+      the `load_file <FILE_NAME>` *command* (the space-bar command palette)
+      is documented as not working in the browser/VS Code build "due to file
+      access restrictions" — `load_url` is the documented alternative there.
+      This is about the scripting command reading an arbitrary local path,
+      not about the browser's own Open-file/drag-and-drop control, which
+      goes through the browser's file picker rather than a filesystem path.
+
+      Confirmed by hand: the `counter.fst` generated above, uploaded to
+      `app.surfer-project.org` with no conversion step, displayed correctly.
+
+      **Verdict: ship FST.** It is NVC's default (no flag needed) and
+      Surfer's browser build reads it directly with no conversion step for
+      the reader to type or explain. Chapter 11 asks NVC for a waveform with
+      no `--format` flag and opens the `.fst` it gets directly in Surfer.
+      *Blocks: ch. 11. Unblocked.*
 
 - [ ] **V6 — Surfer locality.** Confirm the browser build processes the file
       locally and nothing is uploaded. One sentence in the chapter depends on it,
