@@ -1,5 +1,3 @@
-# VERIFY (V18): every action reference below is a best guess and must be checked
-# against the current marketplace listings before this workflow is trusted.
 name: CI
 
 on:

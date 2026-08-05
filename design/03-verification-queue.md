@@ -744,8 +744,43 @@ that someone looked.
       rather than imply a single `apt install nvc` works everywhere — it
       doesn't, on either distro. *Shapes: ch. 10.*
 
-- [ ] **V18 — CI.** `nickg/setup-nvc` action reference and version. The workflow in
-      `.github/workflows/ci.yml` guesses.
+- [x] **V18 — CI.** *Checked 2026-08-05, from the action's own source
+      (`github.com/nickg/setup-nvc`, `master` branch: `action.yml`, `README.md`
+      and the bundled `dist/index.js`) and the GitHub API for both
+      `nickg/setup-nvc` and `nickg/nvc`, no workflow run needed — the action
+      reference, its input format, and the release it resolves to are all
+      checkable without executing CI.*
+
+      `nickg/setup-nvc@v1` is a real, tagged action: `GET
+      /repos/nickg/setup-nvc/tags` returns exactly one tag, `v1`, at commit
+      `48f966d`, with a matching published release. `action.yml` at that
+      commit declares one relevant input, `version` (`required: false,
+      default: latest`), described as "latest, or a specific version" — no
+      other spelling or required input exists.
+
+      The bundled `dist/index.js` shows exactly how a specific version string
+      is handled: `validateVersion` matches it against `/^r?(\d+\.\d+\.\d+)$/`
+      and strips a leading `r` if present, then `getNamedRelease` calls
+      `getReleaseByTag({owner:"nickg", repo:"nvc", tag: \`r${version}\`})`.
+      So `version: '1.20.1'`, exactly as the workflow already has it, is
+      accepted by the regex and resolved to `nickg/nvc`'s release tag
+      `r1.20.1` — confirmed to exist via `GET
+      /repos/nickg/nvc/releases/tags/r1.20.1`, which lists
+      `nvc_1.20.1-1_amd64_ubuntu-24.04.deb` among its assets. `ubuntu-latest`
+      still resolves to Ubuntu 24.04 as of this check (Ubuntu 26.04 reached
+      public preview in June 2026 but is not yet the `-latest` default), so
+      the `simulate` job's runner matches an asset that release actually
+      ships.
+
+      **Verdict: the existing `nickg/setup-nvc@v1` step, with `version:
+      '1.20.1'`, needs no change.** It was a correct guess. Removed the
+      now-resolved `VERIFY (V18)` comment above the `name: CI` line in
+      `.github/workflows/ci.yml`; the `V3`-tagged placeholder in the
+      `simulate` job's "Analyse, elaborate and run" step is a separate,
+      still-open gap (the explicit ordered `nvc -a` command from V3 needs to
+      replace the `exit 1` placeholder) and is intentionally left for the
+      chapter 10 work, not this entry.
+      *Blocks: CI. Unblocked.*
 
 ---
 
