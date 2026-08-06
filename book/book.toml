@@ -1,0 +1,11 @@
+[book]
+title = "A Clash tutorial"
+authors = ["Christiaan Baaij"]
+description = "A lesson in Clash for engineers who already design hardware."
+src = "src"
+language = "en"
+
+[output.html]
+# Every code block in the book is pulled from code/, which sits outside src/.
+# mdBook resolves {{#include}} paths relative to the including file, so the
+# chapters reach up out of the book directory to get at it.

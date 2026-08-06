@@ -143,6 +143,9 @@ main :: IO ()
 main = getArgs >>= defaultMain . ("--interactive":)
 
 {-# START_FILE tests/doctests.hs #-}
+-- `import Prelude` is needed because common-options turns on NoImplicitPrelude,
+-- which leaves `IO` out of scope here.
+import Prelude
 import Test.DocTest (mainFromCabal)
 import System.Environment (getArgs)
 

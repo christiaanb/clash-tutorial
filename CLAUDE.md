@@ -68,6 +68,9 @@ at the only thing it had to do.
 
 ## Conventions fixed for all chapters
 
+- **One sentence per line in `book/`'s Markdown.** The line break goes at the end
+  of the sentence and nowhere else, however long the sentence is. No hard wrap, no
+  reflowing a paragraph to tidy it. See D14. `design/` stays wrapped as it is.
 - `Clash.Explicit.Prelude` until chapter 13, which switches to `Clash.Prelude` as
   the exercise.
 - Every top-level definition has an explicit, monomorphic type signature.

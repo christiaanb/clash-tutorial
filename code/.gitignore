@@ -1,0 +1,8 @@
+.stack-work/
+dist-newstyle/
+vhdl/
+verilog/
+systemverilog/
+*.fst
+*.vcd
+work/
