@@ -1,0 +1,2 @@
+# mdBook's rendered output. The source is book/src; this is the build product.
+book/book/

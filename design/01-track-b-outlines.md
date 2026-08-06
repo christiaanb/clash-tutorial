@@ -6,6 +6,11 @@ Conventions are fixed in `CLAUDE.md` and rationale is in `00-decisions.md`. Ever
 transcript below is **indicative**. None ships without being pasted from a
 terminal.
 
+The indicative transcripts below write the prompt as `*Example.Project>`. That is
+wrong: the observed prompt is `clashi>`, in every case. See D12. Chapter 1's
+outline has been corrected; chapters 2 onward have not, and their prompts should
+be read as `clashi>` when they are drafted.
+
 ---
 
 ## Chapter 1: The instrument
@@ -14,23 +19,28 @@ terminal.
 REPL, and interrogate code that already exists.
 
 ```
+stack --version
 stack new life christiaanb/clash-tutorial
 cd life
 stack build
-stack run clashi
+stack run clashi -- src/Example/Project.hs
 ```
+
+The path argument to `clashi` is not optional: without it the prompt comes up
+with nothing loaded and `:i plus` is an error (V7).
 
 **Code state.** Untouched template. `Example.Project` contains `plus` and a
 `topEntity`. The reader edits nothing in this chapter.
 
-**Transcript.**
+**Transcript.** Captured 2026-08-06; see V7's addendum.
 
 ```
-*Example.Project> :i plus
+clashi> :i plus
 plus :: Signed 8 -> Signed 8 -> Signed 8
-*Example.Project> :t plus 3
+  	-- Defined at src/Example/Project.hs:6:1
+clashi> :t plus 3
 plus 3 :: Signed 8 -> Signed 8
-*Example.Project> plus 3 5
+clashi> plus 3 5
 8
 ```
 
@@ -46,11 +56,19 @@ plus 3 :: Signed 8 -> Signed 8
 
 **Pre-flag.**
 
-- The first `stack build` downloads a GHC and can run past fifteen minutes. Say so
-  with a number *before* the reader runs it. This is the most likely abandonment
-  point in the whole tutorial.
+- The first `stack build` downloads a GHC and compiles Clash from source: roughly
+  ten to fifteen minutes, measured (V15). Say so with a number *before* the reader
+  runs it. This is the most likely abandonment point in the whole tutorial.
 - Corporate proxies and antivirus interfere with Stack on Windows. One sentence
   pointing at Stack's documentation. No troubleshooting inline.
+- `stack new` prints a note about `author-email` and `author-name` on stderr, on
+  the reader's very first command (V14). Say it is a note, not an error, and do
+  not reprint the block: it offers the reader two ways to supply them, which is an
+  alternative we do not want on the page.
+- `clashi` prints a `[GHC-74335] [-Winconsistent-flags]` warning about
+  optimization flags before its banner, every time, with or without a module
+  argument (V7 addendum). Harmless, unavoidable, and the first thing the reader
+  ever sees from Clash, so it is pre-flagged rather than left to worry about.
 
 **Also here.** State what is being built and where it ends, in three sentences.
 The reader should be able to picture chapter 13 from chapter 1.

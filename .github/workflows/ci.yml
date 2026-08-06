@@ -80,21 +80,118 @@ jobs:
 
   # Chapter 1's very first command depends on the template being reachable as
   # christiaanb/clash-tutorial, which means it must exist in a repository named
-  # stack-templates. This job keeps the mirror honest.
+  # stack-templates. This job proves the template still produces a project that
+  # builds; publish-template below is what gets it to the reader.
   template:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      # Read-only: the smoke-test project uses the same resolver and extra-deps
+      # as code/, so code/'s snapshot is exactly what it needs. Without this the
+      # gate in front of publish-template is a fifteen minute Clash build.
+      - name: Restore Stack cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.stack
+          key: stack-${{ runner.os }}-${{ hashFiles('code/stack.yaml', 'code/*.cabal') }}
+
+      # `stack test` as well as `stack build`, because V19 was a test suite that
+      # had never compiled: `stack build` does not build test suites, so nothing
+      # caught it.
       - name: Create a project from the local template
         run: |
           stack new ci-smoke-test ./template/clash-tutorial.hsfiles
           cd ci-smoke-test
           stack build
+          stack test
 
-      # VERIFY (V14): mirroring to christiaanb/stack-templates is not yet
-      # implemented. Until it is, chapter 1's first command is wrong.
-      - name: Check mirror is current
+  # template/clash-tutorial.hsfiles is the source of truth. Stack resolves the
+  # shorthand `christiaanb/clash-tutorial` that chapter 1 tells the reader to type
+  # to a repository literally named stack-templates, so the file has to exist
+  # there too (D7). This job puts it there, so that editing the template in this
+  # repository is an ordinary change rather than one the reader never receives
+  # (D15).
+  #
+  # The mirror is a rendered copy, not a fork: a single-commit repository holding
+  # only the .hsfiles, force pushed. That is safe only because the mirror holds
+  # nothing else. It holds one file today; if it ever holds a second, this job
+  # overwrites it.
+  #
+  # Needs the secret STACK_TEMPLATES_DEPLOY_KEY: the private half of a deploy key
+  # with write access on christiaanb/stack-templates.
+  publish-template:
+    runs-on: ubuntu-latest
+    needs: template
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      # Compared by git blob hash through the API rather than by fetching the raw
+      # file, because raw.githubusercontent.com is CDN cached for minutes and a
+      # stale answer here would skip a push that was needed.
+      - name: Has the template changed
+        id: changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "VERIFY: diff template/clash-tutorial.hsfiles against the copy"
-          echo "in christiaanb/stack-templates and fail if they differ."
+          local_sha=$(git hash-object template/clash-tutorial.hsfiles)
+          mirror_sha=$(gh api \
+            repos/christiaanb/stack-templates/contents/clash-tutorial.hsfiles?ref=main \
+            --jq .sha 2>/dev/null || echo none)
+          echo "local $local_sha, mirror $mirror_sha"
+          if [ "$local_sha" = "$mirror_sha" ]; then
+            echo "The mirror is already current. Nothing to push."
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install the deploy key
+        if: steps.changed.outputs.push == 'true'
+        env:
+          DEPLOY_KEY: ${{ secrets.STACK_TEMPLATES_DEPLOY_KEY }}
+        run: |
+          if [ -z "${DEPLOY_KEY}" ]; then
+            echo "::error::The template changed but the secret STACK_TEMPLATES_DEPLOY_KEY is not set, so the mirror cannot be updated. Chapter 1's first command downloads from the mirror, so this is a reader-facing failure, not a CI detail. Add a deploy key with write access on christiaanb/stack-templates."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "${DEPLOY_KEY}" > ~/.ssh/mirror_key
+          chmod 600 ~/.ssh/mirror_key
+          ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> ~/.ssh/known_hosts
+
+      - name: Force push the template to christiaanb/stack-templates
+        if: steps.changed.outputs.push == 'true'
+        env:
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/mirror_key -o IdentitiesOnly=yes
+        run: |
+          rm -rf mirror
+          mkdir mirror
+          cp template/clash-tutorial.hsfiles mirror/
+          cd mirror
+          git init -b main
+          git config user.name "clash-tutorial CI"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Automated push from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+          git remote add origin git@github.com:christiaanb/stack-templates.git
+          git push --force origin main
+          # Proves the push landed rather than trusting its exit code, and does it
+          # against the git protocol rather than the CDN.
+          test "$(git rev-parse HEAD)" = "$(git ls-remote origin refs/heads/main | cut -f1)"
+
+      # The end-to-end check, and the only one that speaks for the reader: run
+      # chapter 1's actual first command and compare the project it produces
+      # against one made from this repository's copy. Comparing the two projects
+      # rather than the two .hsfiles is deliberate: Stack stores its cached
+      # download as a GitHub API response, so the cached file never matches the
+      # repository's copy byte for byte even when the content is identical.
+      - name: Check the reader gets what we pushed
+        if: steps.changed.outputs.push == 'true'
+        run: |
+          rm -rf verify ~/.stack/templates
+          mkdir -p verify/from-mirror verify/from-repo
+          (cd verify/from-mirror && stack new life christiaanb/clash-tutorial)
+          (cd verify/from-repo && stack new life "${GITHUB_WORKSPACE}/template/clash-tutorial.hsfiles")
+          diff -r verify/from-mirror/life verify/from-repo/life

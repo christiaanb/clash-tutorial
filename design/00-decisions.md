@@ -135,9 +135,11 @@ the first thing the reader ever types.
 
 Matches `clash-starters`, so file paths in existing how-to guides and blog posts
 transfer to the reader's project unchanged. The cost is that the reader writes a
-Game of Life in a module called `Example.Project` and sees `*Example.Project>` as
-their prompt for thirteen chapters. Mildly absurd, entirely survivable, and a
-five-minute change if you disagree.
+Game of Life in a module called `Example.Project`. Mildly absurd, entirely
+survivable, and a five-minute change if you disagree.
+
+The original entry claimed the reader also sees `*Example.Project>` as their prompt
+for thirteen chapters. They do not: the prompt is `clashi>`. See D12.
 
 ---
 
@@ -186,6 +188,72 @@ Development kits debounce at board level. The word does not appear.
 
 The board wraps. This is a choice; the tutorial makes it without mentioning that
 there was one.
+
+---
+
+## D12. The prompt in every transcript is `clashi>`
+
+Observed, not chosen: `clashi` sets its own prompt and keeps it whatever module is
+loaded. The outlines were written expecting GHCi's module-qualified
+`*Example.Project>`, which never appears (V7).
+
+We take the prompt as it comes. Getting the module-qualified form would mean
+having the reader type `:set prompt "%s> "`, which is a line of ritual that buys
+nothing, or shipping a `.ghci` file in the template, which hides a setting inside
+the thing chapter 1 promises does not hide anything.
+
+The cost is that the prompt no longer tells the reader which module is loaded, and
+loading is a step they can forget. Chapter 1 covers it by making the module path an
+argument to the one `clashi` invocation, so being loaded is not a separate action
+that can be skipped.
+
+---
+
+## D13. Chapter 1 loads the module on the command line
+
+`stack run clashi` on its own comes up with nothing loaded, and `:i plus` there is
+an error (V7). Worse than the error: `:i register` in that state answers about
+`Clash.Prelude`'s hidden-argument version, which is the opposite of what D4 built
+the whole tutorial around.
+
+So the one invocation is `stack run clashi -- src/Example/Project.hs`, from the
+project directory, and it never varies. `:load` inside the prompt does the same
+thing and is not offered.
+
+---
+
+## D14. One sentence per line in the book's Markdown
+
+In `book/`, a sentence occupies exactly one line of source.
+The line break comes at the end of the sentence and nowhere else, however long or short the sentence is.
+No hard wrap at eighty columns, and no reflowing a paragraph to make it look tidy in a plain editor.
+
+The reason is the diff.
+Editing one sentence in a hard-wrapped paragraph rewrites every line after it, so a review cannot see what changed, and two people editing different sentences in the same paragraph conflict.
+One sentence per line makes a changed sentence exactly one changed line.
+
+The cost is real: the source is ragged, some lines run long, and a reader of the raw Markdown loses the visual paragraph.
+Rendered output is identical either way, since Markdown joins consecutive lines, so the cost falls entirely on whoever opens the source.
+
+This applies to `book/` only.
+The files in `design/` stay wrapped as they are; they are not the tutorial, they are not reviewed sentence by sentence, and rewrapping them now would bury the history of the decisions they record.
+
+---
+
+## D15. The template mirror is pushed by CI, not by hand
+
+`template/clash-tutorial.hsfiles` is the source of truth, and D7's mirroring requirement is met by a CI job that force pushes it to `christiaanb/stack-templates` on every push to `main` that changes it.
+Editing the template in this repository is therefore allowed and normal.
+
+Before this existed, the two copies were kept in step by hand, which meant any fix to the template was a fix the reader would not receive until someone remembered to push it.
+V19 is exactly that failure: a bug found in the template, correct fix known, left unapplied because applying it would have made the book describe a template the reader does not get.
+
+The mirror is a rendered copy, not a fork: the job builds a single-commit repository containing only the `.hsfiles` and force pushes it, so the mirror's history is disposable by design.
+That is safe only because the mirror holds nothing else.
+It holds one file today; if it ever holds a second, this job overwrites it, and the job must be changed before that happens.
+
+The job needs a deploy key with write access to the mirror, held in this repository as the secret `STACK_TEMPLATES_DEPLOY_KEY`.
+It fails loudly when the secret is missing rather than skipping the push, because a silently skipped push is the state D15 exists to prevent.
 
 ---
 
