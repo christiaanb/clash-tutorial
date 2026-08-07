@@ -127,16 +127,30 @@ jobs:
   # builds; publish-template below is what gets it to the reader.
   template:
     runs-on: ubuntu-latest
+    # Only so that code/ has written the cache this job reads. Jobs without a
+    # needs: start together, and a cache entry is not written until its job's post
+    # step runs, so without this the very first run on a new snapshot races code/
+    # and misses.
+    needs: code
     steps:
       - uses: actions/checkout@v4
 
       # Read-only: the smoke-test project uses the same resolver and extra-deps
       # as code/, so code/'s snapshot is exactly what it needs. Without this the
       # gate in front of publish-template is a fifteen minute Clash build.
+      #
+      # The path list must be character for character the one the code job saves
+      # under, including code/.stack-work, which this job has no use for. A cache
+      # entry is addressed by key *and* by a version hash taken over the paths and
+      # the compression method, so asking for a subset of the paths misses on a
+      # key that plainly exists — the failure this comment exists to prevent
+      # someone re-introducing by tidying the unused path away.
       - name: Restore Stack cache
         uses: actions/cache/restore@v4
         with:
-          path: ~/.stack
+          path: |
+            ~/.stack
+            code/.stack-work
           key: stack-${{ runner.os }}-${{ hashFiles('code/stack.yaml', 'code/*.cabal') }}
 
       # `stack test` as well as `stack build`, because V19 was a test suite that
