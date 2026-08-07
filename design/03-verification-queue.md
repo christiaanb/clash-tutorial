@@ -464,6 +464,32 @@ that someone looked.
       from a clean directory resolves the shorthand and expands correctly.
       *Shapes: ch. 1, 6, 7. Chapter 1 drafted against this.*
 
+      **Addendum, 2026-08-07 — the `[GHC-74335]` warning is gone.** The
+      template's and `code/`'s `bin/Clashi.hs` now prepend
+      `-fno-unoptimized-core-for-interpreter` alongside `--interactive`, which
+      is precisely what the warning asks for, so it no longer prints. Rebuilt a
+      fresh `life/` from `template/clash-tutorial.hsfiles` and re-ran the
+      chapter 1 session; `clashi` now opens straight on its banner:
+
+      ```
+      $ stack run clashi -- src/Example/Project.hs
+      Clashi, version 1.10.0 (using clash-lib, version 1.10.0):
+      https://clash-lang.org/  :? for help
+      [1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+      Ok, one module loaded.
+      clashi> :i plus
+      plus :: Signed 8 -> Signed 8 -> Signed 8
+        	-- Defined at src/Example/Project.hs:6:1
+      clashi> :t plus 3
+      plus 3 :: Signed 8 -> Signed 8
+      clashi> plus 3 5
+      8
+      ```
+
+      Everything else in this entry — the `-- Defined at` line with its two
+      spaces and a tab, the three answers — is unchanged. Chapter 1's transcript
+      and the sentences pre-flagging the warning were updated to match.
+
 - [x] **V8 — No type application needed.** *Checked 2026-08-05, same session as
       V7.*
 
@@ -704,6 +730,28 @@ that someone looked.
       resolves end to end from a clean directory. Only addition needed is one
       sentence in chapter 1 pre-flagging the author-name/email note.
       *Blocks: ch. 1. Unblocked.*
+
+      **Addendum, 2026-08-07 — the note is gone, and the sentence with it.** The
+      `.hsfiles` no longer uses `{{author-name}}`/`{{author-email}}` at all; the
+      cabal file hard-codes `author: Tutorial student` and `maintainer:
+      student@clash-tutorial.me`. With no unsupplied mustache variables left,
+      Stack has nothing to complain about, and `stack new` from a clean
+      directory prints two lines and stops:
+
+      ```
+      $ stack new life /path/to/template/clash-tutorial.hsfiles
+      Loading local template /path/to/template/clash-tutorial to create project life in
+      directory life/...
+      ```
+
+      `stack build` in the resulting project still ends on `Registering library
+      for life-0.1.0.0...`. Nothing in the tutorial reads the author fields, so
+      hard-coding them costs nothing and removes a paragraph of "ignore this"
+      from the reader's very first command. Chapter 1's pre-flag was deleted.
+      Note that the mirror at `christiaanb/stack-templates` needs the new
+      `.hsfiles` pushed before the book's `stack new life
+      christiaanb/clash-tutorial` matches what a reader sees; CI's
+      `publish-template` job (D15) does that on merge.
 
       **Addendum, 2026-08-06.** This entry checked that the mirror *was* current,
       by hand. Keeping it current is now CI's job: see D15 and the

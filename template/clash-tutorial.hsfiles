@@ -3,8 +3,8 @@ cabal-version:       2.4
 name:                {{name}}
 version:             0.1.0.0
 license:             BSD-2-Clause
-author:              {{author-name}}{{^author-name}}Author name here{{/author-name}}
-maintainer:          {{author-email}}{{^author-email}}example@example.com{{/author-email}}
+author:              Tutorial student
+maintainer:          student@clash-tutorial.me
 
 common common-options
   default-extensions:
@@ -140,7 +140,7 @@ import System.Environment (getArgs)
 import Clash.Main (defaultMain)
 
 main :: IO ()
-main = getArgs >>= defaultMain . ("--interactive":)
+main = getArgs >>= defaultMain . (\l -> "--interactive":"-fno-unoptimized-core-for-interpreter":l)
 
 {-# START_FILE tests/doctests.hs #-}
 -- `import Prelude` is needed because common-options turns on NoImplicitPrelude,

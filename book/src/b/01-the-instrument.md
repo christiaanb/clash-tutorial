@@ -38,10 +38,6 @@ $ stack new life christiaanb/clash-tutorial
 Downloading template christiaanb/clash-tutorial to create project life in directory life/...
 ```
 
-Stack then prints a note saying that `author-email` and `author-name` were needed by the template and not provided, and suggests how to supply them.
-Ignore it.
-The template fills in placeholder text, nothing in this tutorial reads those fields, and it is a note rather than an error, even though it arrives on the same channel as one.
-
 Change into the project:
 
 ```
@@ -82,15 +78,10 @@ The file's one import is `Clash.Explicit.Prelude`.
 Explicit is the operative word: through chapter 12 nothing in this design is supplied behind your back, and clocks, resets and enables are arguments you pass by hand.
 Chapter 13 switches to the shorter style and shows what the short form was short for.
 
-Now open Clash's interactive prompt, `clashi`, with that module loaded.
-It prints a warning about optimization flags before its banner.
-The warning is harmless, it has nothing to do with your code, and it will be there every time:
+Now open Clash's interactive prompt, `clashi`, with that module loaded:
 
 ```
 $ stack run clashi -- src/Example/Project.hs
-when making flags consistent: warning: [GHC-74335] [-Winconsistent-flags]
-    Ignoring optimization flags since they are experimental for the byte-code interpreter. Pass -fno-unoptimized-core-for-interpreter to enable this feature.
-
 Clashi, version 1.10.0 (using clash-lib, version 1.10.0):
 https://clash-lang.org/  :? for help
 [1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
