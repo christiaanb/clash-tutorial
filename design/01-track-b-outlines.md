@@ -61,14 +61,14 @@ clashi> plus 3 5
   runs it. This is the most likely abandonment point in the whole tutorial.
 - Corporate proxies and antivirus interfere with Stack on Windows. One sentence
   pointing at Stack's documentation. No troubleshooting inline.
-- `stack new` prints a note about `author-email` and `author-name` on stderr, on
-  the reader's very first command (V14). Say it is a note, not an error, and do
-  not reprint the block: it offers the reader two ways to supply them, which is an
-  alternative we do not want on the page.
-- `clashi` prints a `[GHC-74335] [-Winconsistent-flags]` warning about
-  optimization flags before its banner, every time, with or without a module
-  argument (V7 addendum). Harmless, unavoidable, and the first thing the reader
-  ever sees from Clash, so it is pre-flagged rather than left to worry about.
+Two things that used to need pre-flagging here no longer happen, and must not be
+written back in. The template hard-codes an author and a maintainer instead of
+taking them from mustache variables, so `stack new` no longer prints the
+`author-email`/`author-name` note (V14 addendum). The template's `bin/Clashi.hs`
+passes `-fno-unoptimized-core-for-interpreter`, so `clashi` no longer prints the
+`[GHC-74335] [-Winconsistent-flags]` warning before its banner (V7 addendum).
+Both were noise the reader had to be told to ignore; suppressing them at the
+source is better than explaining them.
 
 **Also here.** State what is being built and where it ends, in three sentences.
 The reader should be able to picture chapter 13 from chapter 1.
