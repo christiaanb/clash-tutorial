@@ -43,6 +43,13 @@ to work, a copy must exist at
 resolves `username/template-name` only against a repository named
 `stack-templates`. This mirror does not exist yet.
 
+## Publishing
+
+Every push to `main` rebuilds the book and force pushes the rendered output to the
+`gh-pages` branch, which GitHub Pages serves at
+`https://christiaanb.github.io/clash-tutorial/`. Nothing is authored on that
+branch. Pages has to be pointed at it once, by hand, under Settings -> Pages.
+
 ## Building
 
     mdbook build book

@@ -6,6 +6,12 @@ src = "src"
 language = "en"
 
 [output.html]
+# Pages serves a project site under the repository name rather than at the domain
+# root. Every page but 404.html links relatively and does not care; 404.html is
+# served for paths at any depth, so its links have to be absolute, and this is
+# what mdBook builds them from.
+site-url = "/clash-tutorial/"
+
 # Every code block in the book is pulled from code/, which sits outside src/.
 # mdBook resolves {{#include}} paths relative to the including file, so the
 # chapters reach up out of the book directory to get at it.
