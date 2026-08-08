@@ -66,6 +66,7 @@ library
   import:          common-options
   hs-source-dirs:  src
   exposed-modules: Chapters.Ch01
+                   Chapters.Ch02
 
 executable clash
   main-is:          bin/Clash.hs

@@ -72,7 +72,8 @@ The template gave us a module at `src/Example/Project.hs` holding two definition
 {{#include ../../../code/src/Chapters/Ch01.hs:definitions}}
 ```
 
-We work on the first one in this chapter and leave the second alone until chapter 9, where it turns out to be the entity declaration.
+We work on the first one in this chapter.
+The second one goes away in chapter 2, along with the first, and is written again in chapter 9, where it turns out to be the entity declaration.
 
 The file's one import is `Clash.Explicit.Prelude`.
 Explicit is the operative word: through chapter 12 nothing in this design is supplied behind your back, and clocks, resets and enables are arguments you pass by hand.

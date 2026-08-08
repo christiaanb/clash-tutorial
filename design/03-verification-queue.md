@@ -696,6 +696,34 @@ that someone looked.
       than asserting "identical" or leaving the reader to find 342 changed
       lines unexplained. *Shapes: ch. 13.*
 
+- [x] **V21 — chapter 2's session.** *Captured 2026-08-08, in the devcontainer:
+      Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, against a
+      project freshly generated from `template/clash-tutorial.hsfiles` and built
+      with `stack build`. The session ran through a pty (`script`), with the file
+      on disk replaced while `clashi` was still holding the old module, so the
+      `:r` below is a real reload of a real edit rather than a restart dressed up
+      as one.*
+
+      The transcript now in chapter 2 is that session, in order and unedited. Two
+      details worth recording separately from it:
+
+      - `:r` answers `Ok, one module reloaded.`, not `Ok, one module loaded.`,
+        which is what the same prompt says on startup. The chapter quotes the
+        reload wording.
+      - `:i nextCell`'s `-- Defined at src/Example/Project.hs:6:1` has the same
+        two-spaces-then-tab indentation V7 recorded for `plus`, and it names line
+        6 for the same reason: with `plus` and `topEntity` deleted (D17) and
+        `nextCell` written in their place, the defining equation lands on line 6
+        exactly as `plus`'s did.
+
+      One claim in the chapter's prose that is not in the transcript was checked
+      separately in the same project: `nextCell True 12` evaluates to `False`.
+      The chapter uses it to say that the type checks the width and not the
+      range, and it is stated rather than shown, because showing it would mean
+      putting a count on screen that the finished design cannot produce.
+
+      *Shapes: ch. 2. Chapter 2 drafted against this.*
+
 ---
 
 ## Infrastructure

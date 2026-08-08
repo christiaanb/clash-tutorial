@@ -277,6 +277,26 @@ A fork's pull request still builds the book, and CI says in the summary why no U
 
 ---
 
+## D17. `topEntity` is deleted in chapter 2 and written again in chapter 9
+
+The template's module holds `plus` and `topEntity = plus`. Chapter 2 replaces
+`plus` with `nextCell`, which leaves `topEntity` referring to a name that no longer
+exists, so chapter 2 has to do something about it. It deletes it.
+
+The alternative was to keep it pointing at whatever the chapter's newest definition
+happens to be: `topEntity = nextCell` in chapter 2, and so on. That costs the reader
+an edit in every chapter, and each of those edits asserts something false — that the
+cell rule, or the board, or `step`, is the top of a design. Chapter 9's beat is
+"nothing new has been introduced, a name has been given", and it lands better on a
+name the reader has not been carrying around unexplained for seven chapters.
+
+The cost is one sentence of forward reference in chapter 2 (`topEntity` names the top
+of the design; we write it again in chapter 9) and a corrected sentence in chapter 1,
+which used to say the reader leaves `topEntity` alone until chapter 9. They do not:
+they delete it in the next chapter.
+
+---
+
 ## Open, deliberately
 
 **Chapter 14, the optional board chapter.** An 8×8 display is not standard on
