@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-4728ec48.js";
+            window.path_to_searchindex_js = "searchindex-44ac6451.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -527,6 +527,196 @@ Chapter 4 counts the live neighbours of all sixty-four cells at once, without wr
 Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="neighbours-by-moving-the-whole-board"><a class="header" href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a></h1>
+<p>Chapter 2 wrote a rule that takes a count of live neighbours, and chapter 3 built the board those neighbours live on.
+This chapter computes the count: for every one of the sixty-four cells, how many of its eight neighbours are alive.</p>
+<p>The obvious way to do that is to visit each cell and look around it.
+That is five hundred and twelve neighbours to fetch, each one an index expression that can be written down wrong, and twenty-eight of the cells sit on an edge, where three of those indices point off the board, or five if the cell is in a corner.
+We write none of them.
+Nothing in the code in this chapter picks a cell out of the board by its position.
+Instead we move the whole board, once in each of the eight directions, and add the copies up.</p>
+<h2 id="a-type-for-the-answer"><a class="header" href="#a-type-for-the-answer">A type for the answer</a></h2>
+<p>The answer is a number for every cell, in the same shape as the board.
+Add this under <code>render</code>, at the bottom of the file:</p>
+<pre><code class="language-haskell">type Counts = Vec 8 (Vec 8 (Unsigned 4))
+</code></pre>
+<p><code>Unsigned 4</code> is the type chapter 2 gave <code>nextCell</code> for its count, four bits wide because the count reaches eight.
+<code>Counts</code> arranges sixty-four of them exactly as <code>Board</code> arranges its sixty-four <code>Bool</code>s, and chapter 5 will lay one on top of the other.</p>
+<h2 id="moving-the-whole-board"><a class="header" href="#moving-the-whole-board">Moving the whole board</a></h2>
+<p>Moving the elements of a <code>Vec</code> along by one is <code>rotateLeftS</code>, and moving them back is <code>rotateRightS</code>.
+Ask the prompt what <code>rotateLeftS</code> wants, before writing anything that uses it:</p>
+<pre><code>clashi&gt; :i rotateLeftS
+rotateLeftS :: KnownNat n =&gt; Vec n a -&gt; SNat d -&gt; Vec n a
+  	-- Defined in `Clash.Sized.Vector'
+</code></pre>
+<p>A vector in, a vector of the same length out, and between them the amount to move by, which is an <code>SNat d</code> rather than a number.
+A length lives in the type, as chapter 3 established, and so does a distance to move by: <code>SNat</code> is how a number that has to be known at compile time is written, and the one we want is written <code>d1</code>.
+Writing <code>1</code> there instead is the one mistake this chapter invites, and the compiler answers it by saying that <code>SNat</code> is not a <code>Num</code>, which is true and no help at all.
+It is <code>d1</code>.</p>
+<p>Now the four moves.
+Add them under <code>Counts</code>:</p>
+<pre><code class="language-haskell">shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board
+shiftN b = rotateLeftS b d1
+shiftS b = rotateRightS b d1
+shiftW b = map (\r -&gt; rotateLeftS r d1) b
+shiftE b = map (\r -&gt; rotateRightS r d1) b
+</code></pre>
+<p><code>shiftN</code> moves the board’s eight rows along by one, so every row ends up where the row above it was, and the board has moved north.
+<code>shiftS</code> moves it back the other way.
+<code>shiftW</code> and <code>shiftE</code> do that to the eight cells within each row rather than to the eight rows, and they do it with <code>map</code>, because moving every row west by one is what moving the board west by one means.
+<code>\r -&gt; rotateLeftS r d1</code> is a function written where it is needed instead of being given a name of its own, and the backslash is there to look like a lambda.</p>
+<p>Four definitions under one signature is four functions, all of type <code>Board -&gt; Board</code>.
+Reload and ask:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i shiftN
+shiftN :: Board -&gt; Board 	-- Defined at src/Example/Project.hs:37:1
+</code></pre>
+<p>Here is the seed again, and here it is moved:</p>
+<pre><code>clashi&gt; putStr (render glider)
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+clashi&gt; putStr (render (shiftN glider))
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+</code></pre>
+<p>Every row has come up by one, and the row that was at the top is now at the bottom.
+West does the same thing sideways:</p>
+<pre><code>clashi&gt; putStr (render (shiftW glider))
+#.......
+.#......
+##.....#
+........
+........
+........
+........
+........
+</code></pre>
+<p>The third row was <code>###.....</code> and is now <code>##.....#</code>: the cell that went off the left edge came back on the right.
+The board wraps, on all four edges, and every cell has eight neighbours whether it is in the middle or in a corner.</p>
+<h2 id="eight-boards"><a class="header" href="#eight-boards">Eight boards</a></h2>
+<p>Move the board north and every position holds what the position below it held.
+Move it in all eight directions and each position has, across the eight copies, exactly the eight cells that surround it.</p>
+<pre><code class="language-haskell">neighbourBoards :: Board -&gt; Vec 8 Board
+neighbourBoards b =
+     shiftN b
+  :&gt; shiftS b
+  :&gt; shiftW b
+  :&gt; shiftE b
+  :&gt; shiftN (shiftW b)
+  :&gt; shiftN (shiftE b)
+  :&gt; shiftS (shiftW b)
+  :&gt; shiftS (shiftE b)
+  :&gt; Nil
+</code></pre>
+<p>The four diagonals are the moves already written, applied one after the other: <code>shiftN (shiftW b)</code> is the board moved north and then west.
+Nothing new is needed for them, and nothing new is needed for the corners either.</p>
+<h2 id="adding-the-copies-up"><a class="header" href="#adding-the-copies-up">Adding the copies up</a></h2>
+<p>Eight boards of <code>Bool</code> have to become numbers before they can be added, so we turn each one into a <code>Counts</code> of zeroes and ones:</p>
+<pre><code class="language-haskell">countBoard :: Board -&gt; Counts
+countBoard b = map (map toCount) b
+  where
+    toCount x = if x then 1 else 0
+</code></pre>
+<p><code>map (map toCount)</code> is two levels: the inner <code>map</code> turns a row of eight <code>Bool</code>s into a row of eight numbers, and the outer one does that to all eight rows.</p>
+<p>Adding two <code>Counts</code> together is the same two levels, with <code>zipWith</code>, which takes two vectors and combines them element by element:</p>
+<pre><code class="language-haskell">addCounts :: Counts -&gt; Counts -&gt; Counts
+addCounts = zipWith (zipWith (+))
+</code></pre>
+<p>The inner <code>zipWith (+)</code> adds a row of eight to a row of eight.
+The outer one hands the rows to it in pairs.
+There is one <code>+</code> in that line and no loop counter anywhere, and <code>addCounts</code> takes no arguments at all: it is <code>zipWith (zipWith (+))</code>, and that is the whole definition.</p>
+<p>And then the count itself:</p>
+<pre><code class="language-haskell">neighbourCounts :: Board -&gt; Counts
+neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
+</code></pre>
+<p>Read it from the inside out: the eight moved boards, each turned into numbers, all added together.
+<code>foldl1</code> is what “all added together” is called: given a vector and a way to combine two of its elements, it combines them until one is left.</p>
+<p>Reload, and ask what the pieces are:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :t neighbourBoards glider
+neighbourBoards glider :: Vec 8 Board
+clashi&gt; :i neighbourCounts
+neighbourCounts :: Board -&gt; Counts
+  	-- Defined at src/Example/Project.hs:63:1
+</code></pre>
+<p>Eight boards from one, and a board of counts from a board of cells.
+<code>head</code> took the first row of a board in chapter 3, so applying it twice takes the first cell of the first row, which is the cell in the top left corner:</p>
+<pre><code>clashi&gt; head (head (neighbourCounts glider))
+1
+</code></pre>
+<p>Look back at the picture.
+The cell in the top left corner is dead, the cell to its right is alive, and its other seven neighbours, five of which are on the far side of an edge, are all dead.
+One.</p>
+<h2 id="all-sixty-four-at-once"><a class="header" href="#all-sixty-four-at-once">All sixty-four at once</a></h2>
+<p>Checking sixty-four counts one at a time is not checking them.
+<code>render</code> turned a board into something we could look at; this does the same for the counts, and it is the second and last thing in this tutorial that is not a circuit.</p>
+<p>It needs one function that Clash does not supply, so add a second import directly under the first:</p>
+<pre><code class="language-haskell">import Data.Char (intToDigit)
+</code></pre>
+<p>and put this at the bottom of the file:</p>
+<pre><code class="language-haskell">renderCounts :: Counts -&gt; String
+renderCounts cs = unlines (toList (map row cs))
+  where
+    row r = toList (map digit r)
+    digit n = intToDigit (numConvert n)
+</code></pre>
+<p>It has the same shape as <code>render</code>, one character per cell, except that the character is the digit for the count rather than <code>#</code> or <code>.</code>.
+<a href="https://clash-lang.org/blog/2026-05-19-numconvert/"><code>numConvert</code></a> changes a number from one numeric type to another, here from the four-bit count to the plain <code>Int</code> that <code>intToDigit</code> wants, and it will only do it when it can show at compile time that nothing is lost.
+<code>intToDigit</code> itself is ordinary Haskell from the standard library, available here for the same reason <code>String</code> was: this part is a program that prints things, not a description of hardware.</p>
+<p>Reload, and look at all sixty-four:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i renderCounts
+renderCounts :: Counts -&gt; String
+  	-- Defined at src/Example/Project.hs:67:1
+clashi&gt; putStr (renderCounts (neighbourCounts glider))
+11210000
+35320001
+13220001
+23210001
+00000000
+00000000
+00000000
+11100000
+</code></pre>
+<p>That is the result of the chapter, and it is worth reading against chapter 3’s picture for a moment.
+The <code>5</code> in the second row is the cell at the centre of the glider: it is dead, and all five of the glider’s live cells touch it.
+The <code>1</code>s at the right hand end of the second, third and fourth rows, and the three of them along the bottom row, are the wrap: those cells are on an edge, their neighbours are on the other one, and nothing in the code treats them differently.</p>
+<h2 id="notice-that-3"><a class="header" href="#notice-that-3">Notice that</a></h2>
+<p><strong><code>map</code> over a <code>Vec 8</code> is a <code>for … generate</code> with eight instances.</strong>
+It is not a loop that runs eight times.
+The sixty-four copies of <code>toCount</code> in <code>countBoard</code> exist at the same moment, in different places, and so do the sixty-four adders that one <code>zipWith (zipWith (+))</code> describes.
+You have written this loop many times and each time it was a construct in the language; here it is a function, taking the thing to instantiate as an argument, and that is why the same three letters do the job in <code>fromRows</code>, in <code>countBoard</code> and in <code>shiftW</code>.
+Chapter 9 generates the VHDL for this design, and these <code>map</code>s are in it as <code>for … generate</code>.</p>
+<p><strong>Every cell’s count is computed at once, and that costs what parallelism costs.</strong>
+Eight copies of the board reduced by seven additions over sixty-four cells is four hundred and forty-eight four-bit additions, described by a single <code>+</code> and laid out in space rather than repeated over time.
+Nothing here is amortised over time, because there is no time here: still no clock, still no process, still nothing that runs.</p>
+<p><strong>The edges are not a special case.</strong>
+There is no boundary condition in this chapter, no clamped index and no <code>if</code> asking whether a cell is on the border.
+The board wraps because moving a <code>Vec</code> along by one is a rotation, and a rotation has nowhere to put the element that falls off except back at the other end.</p>
+<p><strong>A <code>Board</code> and a <code>Counts</code> are the same shape, and the compiler knows it.</strong>
+<code>addCounts</code> combines two <code>Counts</code> element by element, and it can only be given two of them: eight rows of eight, checked, on both sides.
+Chapter 5 pairs a <code>Board</code> with a <code>Counts</code> the same way, and the fact that both are eight by eight is not a comment or a convention but the thing that makes it compile.</p>
+<h2 id="where-this-goes-3"><a class="header" href="#where-this-goes-3">Where this goes</a></h2>
+<p>There is a rule for one cell, from chapter 2, and now a count for every cell.
+Chapter 5 puts them together in one line and gets a generation of Life, which is still, and this is the surprising part, a single combinational block.
+Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="a-generation"><a class="header" href="#a-generation">A generation</a></h1>
 <div style="break-before: page; page-break-before: always;"></div>
