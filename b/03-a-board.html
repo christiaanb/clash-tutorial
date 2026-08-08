@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-2b95b549.js";
+            window.path_to_searchindex_js = "../searchindex-4728ec48.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-3cb9540d.js"></script>
@@ -175,6 +175,134 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="a-board-and-a-picture"><a class="header" href="#a-board-and-a-picture">A board, and a picture</a></h1>
+<p>Chapter 2 wrote the rule for one cell.
+This chapter builds the thing that rule will run on: eight rows of eight cells, sixty-four in all, with a starting pattern written in the source as a picture of itself.
+Nothing here computes anything.
+We declare a type, seed it, and arrange to look at it, because for the rest of the tutorial “did that work” means “does the board look right”, and that question needs a board and a way of looking.</p>
+<h2 id="a-type-for-the-board"><a class="header" href="#a-type-for-the-board">A type for the board</a></h2>
+<p>Leave <code>nextCell</code> where it is and add this underneath it:</p>
+<pre><code class="language-haskell">type Board = Vec 8 (Vec 8 Bool)
+</code></pre>
+<p><code>Vec 8 Bool</code> is a row: eight cells, each alive or dead.
+<code>Vec 8 (Vec 8 Bool)</code> is eight of those rows, and that is the board.
+<code>type</code> introduces a synonym rather than a new type, so <code>Board</code> and the thing on the right of the <code>=</code> are interchangeable everywhere, and writing one of them is exactly writing the other.</p>
+<p>The eight is inside the type, which is the part worth slowing down for, and we come back to it at the end of the chapter.</p>
+<h2 id="a-seed-you-can-read"><a class="header" href="#a-seed-you-can-read">A seed you can read</a></h2>
+<p>Sixty-four booleans written out one after another is not something anyone can check by eye.
+Eight rows of eight bits is a picture.
+So we write the seed as eight binary literals and turn them into a board:</p>
+<pre><code class="language-haskell">fromRows :: Vec 8 (BitVector 8) -&gt; Board
+fromRows = map unpack
+</code></pre>
+<p>A <code>BitVector 8</code> is eight bits, which is one row of the board written as one number.
+<code>unpack</code> reinterprets those bits as whatever the surrounding types require, here the eight <code>Bool</code>s of a row, and <code>map</code> applies it to all eight rows at once.
+<code>map</code> is doing very little work here and a great deal of it in chapter 4.</p>
+<p>Now the seed itself:</p>
+<pre><code class="language-haskell">glider :: Board
+glider = fromRows
+  (  0b0100_0000
+  :&gt; 0b0010_0000
+  :&gt; 0b1110_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; Nil )
+</code></pre>
+<p>That shape is a glider, which is the smallest pattern in Life that moves.
+It does not move yet, and it will not until chapter 5.</p>
+<h2 id="three-questions-and-a-row"><a class="header" href="#three-questions-and-a-row">Three questions and a row</a></h2>
+<p>Edit, <code>:r</code>, evaluate.
+The prompt is the one still open from chapter 2:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+</code></pre>
+<p>Ask what <code>Board</code> is:</p>
+<pre><code>clashi&gt; :i Board
+type Board :: Type
+type Board = Vec 8 (Vec 8 Bool)
+  	-- Defined at src/Example/Project.hs:11:1
+</code></pre>
+<p>The first line says that <code>Board</code> is a type, and the second is the synonym we wrote, reported back unchanged.</p>
+<p>Ask what <code>fromRows</code> is:</p>
+<pre><code>clashi&gt; :i fromRows
+fromRows :: Vec 8 (BitVector 8) -&gt; Board
+  	-- Defined at src/Example/Project.hs:14:1
+</code></pre>
+<p>Eight rows of eight bits in, a board out.</p>
+<p>Ask what <code>glider</code> is:</p>
+<pre><code>clashi&gt; :i glider
+glider :: Board 	-- Defined at src/Example/Project.hs:17:1
+</code></pre>
+<p>Then ask for its first row.
+<code>head</code> takes the first element of a <code>Vec</code>, and the first element of a board is a row:</p>
+<pre><code>clashi&gt; head glider
+False :&gt; True :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; Nil
+</code></pre>
+<p>That is <code>0b0100_0000</code>, one bit at a time, in the order it was written.</p>
+<h2 id="a-picture"><a class="header" href="#a-picture">A picture</a></h2>
+<p>One row costs seventy-four characters to print and the board has eight of them, so a whole board at the prompt is a wall of <code>False</code> with a glider hidden in it somewhere.
+From chapter 4 onwards we look at boards constantly, so we give ourselves something to look at them with.</p>
+<p>Add this at the bottom of the file:</p>
+<pre><code class="language-haskell">render :: Board -&gt; String
+render b = unlines (toList (map row b))
+  where
+    row r = toList (map cell r)
+    cell x = if x then '#' else '.'
+</code></pre>
+<p>There is nothing in <code>render</code> to learn and nothing in it that will be turned into hardware.
+It takes a board and produces text, one character per cell, <code>#</code> for a live cell and <code>.</code> for a dead one.</p>
+<p>Reload, and ask what it is:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i render
+render :: Board -&gt; String
+  	-- Defined at src/Example/Project.hs:29:1
+</code></pre>
+<p><code>render glider</code> is an expression rather than a name, so we ask it with <code>:t</code>:</p>
+<pre><code>clashi&gt; :t render glider
+render glider :: String
+</code></pre>
+<p>And <code>putStr</code> puts a string on the screen:</p>
+<pre><code>clashi&gt; putStr (render glider)
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+</code></pre>
+<p>There is the board, and there is the seed we wrote, in the same shape we wrote it.</p>
+<h2 id="notice-that"><a class="header" href="#notice-that">Notice that</a></h2>
+<p><strong>The seed is a picture in the source and sixty-four bits in the hardware.</strong>
+<code>0b0100_0000</code> and <code>False :&gt; True :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; Nil</code> are the same eight bits, and <code>unpack</code> is what stands between them.
+Reinterpreting a word as a collection of fields is something you already do several times a day.
+The only new part is that here it is one function applied to a whole row rather than a slice expression you have to get right.</p>
+<p><strong>Which reinterpretation <code>unpack</code> performs is settled by the type around it.</strong>
+Nothing at the point where <code>unpack</code> is written says that the answer should be eight <code>Bool</code>s.
+<code>fromRows</code>’s signature says that the result is a <code>Board</code>, <code>Board</code> is eight rows of eight <code>Bool</code>s, and that is enough for the compiler to know which unpacking is meant.
+This is worth knowing now, because it is the first of many places where a signature you wrote once decides something a long way away from where you wrote it.</p>
+<p><strong>A length is in the type, and it is checked.</strong>
+<code>Vec 8</code> is not a list that happens to hold eight things at the moment.
+The eight is fixed when the program is compiled, a function that wants a <code>Vec 8</code> cannot be handed a <code>Vec 7</code>, and the compiler is the one enforcing it rather than a comment, an assertion or a simulation that happens to notice.
+Nothing in this design ever asks a row how long it is, because the answer was settled before the program ran.</p>
+<p><strong><code>unpack</code> is handed to <code>map</code> with none of its arguments supplied.</strong>
+Chapter 1 left <code>plus 3</code> sitting there and chapter 2 left <code>nextCell True</code>, both of them functions with some of their arguments given and the rest still wanted.
+<code>map unpack</code> is the same idea taken to zero arguments: <code>unpack</code> is not called in <code>fromRows</code>, it is passed to <code>map</code>, and <code>map</code> is what calls it, eight times.
+Chapter 4 does almost nothing else.</p>
+<p><strong><code>render</code> produces a <code>String</code>, and a <code>String</code> is not a circuit.</strong>
+It is the first thing in this tutorial that is not, and chapter 4 adds the only other one.
+It exists to make the prompt useful to us, it never reaches the VHDL generator, and it costs nothing in hardware because there is no hardware for it.
+Everything else we write is a description of something that ends up as gates.</p>
+<h2 id="where-this-goes"><a class="header" href="#where-this-goes">Where this goes</a></h2>
+<p>The board can be seen, and nothing has yet looked at it.
+Chapter 4 counts the live neighbours of all sixty-four cells at once, without writing a single index expression, by moving the whole board eight times.
+Leave <code>clashi</code> running.</p>
 
                     </main>
 
