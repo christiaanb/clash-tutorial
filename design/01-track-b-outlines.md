@@ -79,7 +79,8 @@ The reader should be able to picture chapter 13 from chapter 1.
 
 ## Chapter 2: A cell
 
-**What we do.** Replace `plus` with the rule for a single cell.
+**What we do.** Replace `plus` with the rule for a single cell, and delete
+`topEntity` along with it (D17).
 
 ```haskell
 nextCell :: Bool -> Unsigned 4 -> Bool
@@ -89,17 +90,31 @@ nextCell alive n = case (alive, n) of
   _          -> False
 ```
 
-**Transcript.**
+**Transcript.** Captured 2026-08-08; see V21. Six evaluations rather than three, one
+per row of the `case` and three for the fall-through, so that the "first match wins"
+beat below has something on screen to point at.
 
 ```
-*Example.Project> :i nextCell
+clashi> :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi> :i nextCell
 nextCell :: Bool -> Unsigned 4 -> Bool
-*Example.Project> nextCell True 2
+  	-- Defined at src/Example/Project.hs:6:1
+clashi> nextCell True 2
 True
-*Example.Project> nextCell False 2
+clashi> nextCell True 3
+True
+clashi> nextCell False 3
+True
+clashi> nextCell False 2
 False
-*Example.Project> nextCell False 3
-True
+clashi> nextCell True 1
+False
+clashi> nextCell True 4
+False
+clashi> :t nextCell True
+nextCell True :: Unsigned 4 -> Bool
 ```
 
 **Notice that.**
