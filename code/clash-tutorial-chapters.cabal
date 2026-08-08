@@ -46,6 +46,7 @@ library
                    Chapters.Ch02
                    Chapters.Ch03
                    Chapters.Ch04
+                   Chapters.Ch05
 
 executable clash
   main-is:          bin/Clash.hs

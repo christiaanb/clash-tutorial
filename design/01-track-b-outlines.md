@@ -279,24 +279,36 @@ step :: Board -> Board
 step b = zipWith (zipWith nextCell) b (neighbourCounts b)
 ```
 
-**Transcript.**
+**Transcript.** Captured 2026-08-08; see V25. One edit and one reload, then the
+seed and four generations, each application written out rather than accumulated in
+a binding:
 
 ```
-*Example.Project> putStr (render (step glider))
-*Example.Project> putStr (render (step (step glider)))
-*Example.Project> putStr (render (step (step (step (step glider)))))
+clashi> putStr (render (step glider))
+clashi> putStr (render (step (step glider)))
+clashi> putStr (render (step (step (step glider))))
+clashi> putStr (render (step (step (step (step glider)))))
 ```
 
 Four applications return the glider translated one cell diagonally. That is the
-chapter's result and it is worth arriving at explicitly.
+chapter's result and it is worth arriving at explicitly. The third generation is
+shown as well as the second and the fourth: it costs three lines and it makes the
+displacement something the reader watches happen rather than a claim about the
+last picture.
 
 **Notice that.**
 
-- `:t step` is `Board -> Board`. There is no clock anywhere in this design and
+- `:i step` is `Board -> Board`. There is no clock anywhere in this design and
   there has not been one for five chapters. A full generation of a 64-cell
-  automaton is combinational logic. In VHDL the reader would already have written
-  a process and would already be thinking about edges.
+  automaton is combinational logic, and it elaborates as one: 64 `in boolean`, 64
+  `out boolean`, no clock and no process (V25). In VHDL the reader would already
+  have written a process and would already be thinking about edges.
 - `step (step b)` is two instances of the same block in series, not two cycles.
+  Say what that costs — four applications is four copies of the logic — and say
+  that at the prompt it costs nothing, because the prompt is evaluating a
+  function.
+- `zipWith` is what makes `Board` and `Counts` line up, in both length and order.
+  Chapter 4's closing "notice that" promises this, so it is paid off here.
 
 ---
 

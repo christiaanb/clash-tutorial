@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All twenty-four
+Findings from checking every claim against a real toolchain. **All twenty-five
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-08.
 
-Chapters 1 to 4 are drafted against these entries and their transcripts now live
+Chapters 1 to 5 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -262,6 +262,37 @@ with the date and the observed result, not just a tick.
       Confirm against chapter 9's real output and change the sentence if it does
       not hold.
 
+- [x] **V25 — chapter 5's session.** Captured 2026-08-08, one real reload, the
+      file swapped on disk while `clashi` held the old module. Durable findings:
+
+      - **`:i step` uses the same-line `-- Defined at` form** —
+        `step :: Board -> Board 	-- Defined at src/Example/Project.hs:73:1` —
+        which is the short-signature form already seen for `glider` and `shiftN`.
+        Line 73 is where `step`'s definition lands for a reader who has followed
+        chapters 2 to 4 in order, appended under `renderCounts`.
+      - **`-- Defined at` reports the definition, not the signature.** Chapter 4
+        quotes `shiftN` at 37 and `neighbourCounts` at 63 because at that point in
+        the chapter `import Data.Char (intToDigit)` has not been added yet; it
+        quotes `renderCounts` at 67 because by then it has. Both are right, and
+        the rule that makes them right is that the number moves with the reader.
+      - **Four generations of `glider` are the seed displaced by one cell
+        diagonally**, `(+1,+1)`, and the intermediate three are
+        `#.# / .## / .#` at rows 1 to 3, then `..# / #.# / .##`, then
+        `.# / ..## / .##`. Checked against a 32×32 unbounded simulation: identical
+        for all four (this is what corrects V9).
+      - **A generation elaborates as combinational logic.**
+        `stack run clash -- Chapters.Ch05 -main-is step --vhdl` gives a 688-line
+        `step.vhdl` plus a 185-line types package: 64 `in boolean`, 64
+        `out boolean`, **zero** occurrences of `clk`, `rising_edge` or `process`,
+        seven `-- map begin` blocks and exactly one `+`. This is what the
+        chapter's "no clock, and there has not been one for five chapters" beat
+        rests on.
+      - **The argument order is checked, and stating it is safe.** Swapping
+        `step`'s two arguments gives `[GHC-83865] Couldn't match type 'Unsigned 4'
+        with 'Bool'`, twice, with `Expected`/`Actual` naming `Board` and `Counts`.
+        Stated in the chapter, never put on screen: no step may fail. *Ch. 5.
+        Drafted.*
+
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and
       `:i shiftN` put it on the **same** line after a space and a tab; `plus`,
@@ -322,11 +353,17 @@ with the date and the observed result, not just a tick.
 
       The first two boards are byte-identical to `glider` and to each other:
       `resetGen` asserts reset for the first two cycles of `System` and `register`
-      holds its initial value meanwhile. The third sample is `step glider`, and it
-      is *not* the shape an unbounded board would give — the glider sits one cell
-      from the corner and the board wraps (D11), so column and row `-1` fold back
-      to 7. Pre-flag it or leave it strictly unexplained per D11, but do not "fix"
-      it: it is the correct output of the actual circuit. *Ch. 6.*
+      holds its initial value meanwhile.
+
+      **Corrected 2026-08-08 by V25.** This entry used to say that the third
+      sample, `step glider`, is *not* the shape an unbounded board would give.
+      It is. All four generations of the wrapped board are byte-identical to the
+      same four generations simulated on a 32×32 board with the glider placed
+      away from every edge. The wrap does reach: chapter 4's counts show `1`s in
+      column 7 and row 7 that an unbounded board would not have. No cell there
+      ever reaches three, so no cell is ever born there, and the boards agree.
+      Say nothing about it in either chapter (D11), and do not "fix" the samples:
+      they are the correct output of the actual circuit. *Ch. 6.*
 
 ---
 
