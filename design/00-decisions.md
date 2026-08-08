@@ -118,8 +118,12 @@ shows the control (clock, reset, command bus). The command bus is where the read
 The reader uses Stack. One invocation, no Cabal alternative offered.
 
 A dedicated template lives in `template/clash-tutorial.hsfiles` so that we control
-`default-extensions` — specifically `NumericUnderscores`, which the seed literals
-depend on for legibility.
+what the reader's project turns on — originally `default-extensions`, and
+specifically `NumericUnderscores`, which the seed literals depend on for
+legibility. That particular extension now arrives with the language edition
+instead (D19), which does not weaken the argument: the template is still the only
+thing that fixes the edition, the type-level solver plugins, the pinned
+`extra-deps` and the flags `bin/Clashi.hs` passes.
 
 **Mirroring requirement.** Stack resolves `username/template-name` to a repository
 literally named `stack-templates` under that username. So `stack new life
@@ -294,6 +298,77 @@ The cost is one sentence of forward reference in chapter 2 (`topEntity` names th
 of the design; we write it again in chapter 9) and a corrected sentence in chapter 1,
 which used to say the reader leaves `topEntity` alone until chapter 9. They do not:
 they delete it in the next chapter.
+
+---
+
+## D18. `fromIntegral` does not appear; numbers change type with `numConvert`
+
+A reader who meets `fromIntegral` in a tutorial will use it in a circuit, and it
+is the wrong instrument there: it converts through `Integer`, which Clash gives
+64 bits in the generated HDL, so anything wider is silently truncated, and it
+will turn a `Signed 8` of -1 into an `Unsigned 8` of 255 without a word. Neither
+failure is visible at the call site, and both are exactly the kind of thing this
+reader would expect a type system to be for. The argument in full is in
+<https://clash-lang.org/blog/2026-05-19-numconvert/>.
+
+`numConvert` is the replacement, and it is in Clash 1.10.0, which is what the
+tutorial pins. It converts only when it can show at compile time that nothing is
+lost, and `maybeNumConvert` is there for when it cannot. The tutorial names
+`numConvert` once, in chapter 4's `renderCounts`, and links the post rather than
+making the argument itself.
+
+It costs nothing at the point of use, which was not true when this entry was
+first written. `numConvert`'s inferred constraints are not type variables, so a
+`where` binding using it needs `FlexibleContexts`, and under the template's
+former `Haskell2010` that meant writing `digit :: Unsigned 4 -> Char` to keep the
+binding monomorphic. D19 moved the template to `GHC2024`, which supplies
+`FlexibleContexts`, and the signature was deleted.
+
+`fromIntegral` is not mentioned anywhere, including to warn against it: naming it
+would teach it. A grep for it in `code/` and `book/` should stay empty.
+
+---
+
+## D19. The template's language edition is `GHC2024`
+
+`common-options` said `default-language: Haskell2010` and then listed
+thirty-two extensions, inherited from `clash-starters`. Twenty-one of those
+thirty-two are in the `GHC2024` language edition, which GHC 9.10.3 supports, so
+most of the list restated the default and buried the entries that decide
+something. Naming the edition and deleting what it implies leaves eight:
+`DefaultSignatures`, `DeriveAnyClass`, `QuasiQuotes`, `TemplateHaskell`,
+`TypeFamilies`, `MagicHash`, `NoImplicitPrelude` and `NoStarIsType`. The last two
+must be there precisely because `GHC2024` turns their positive forms on; Cabal
+applies `default-extensions` after the edition, so the override wins.
+
+Three more went that `GHC2024` does not imply. `TemplateHaskellQuotes` is implied
+by `TemplateHaskell`. `NoStrictData` restated the default, since the edition does
+not enable `StrictData`. `NoMonomorphismRestriction` is the one with a cost:
+dropping it means the monomorphism restriction is on, which is a divergence from
+the set `clash-starters` ships. It is inert for this tutorial, because every
+top-level definition carries an explicit signature by convention and the
+restriction applies only to bindings written without arguments, and no local
+binding in chapters 1 to 4 is one. It is nevertheless the first entry to put back
+if a later chapter meets an inference error it should not have.
+
+The two `clash` and `clashi` executables keep `Haskell2010`. They do not import
+`common-options`, and each is `import Prelude` and a two-line `main`.
+
+**What the edition changes, and why now.** `GHC2024` brings on `FlexibleContexts`
+and `MonoLocalBinds`, which is to say it changes type inference and not just
+syntax. `FlexibleContexts` is a straight gain and paid for itself immediately:
+chapter 4's `renderCounts` had carried `digit :: Unsigned 4 -> Char` for no other
+reason, and that line is now gone (D18, V23). `MonoLocalBinds` is the risk, since
+it can reject a local binding that used to generalise. Nothing in chapters 1 to 4
+relied on that, and chapters 5 to 13 will be written under it — which is the
+argument for making this change now rather than after thirteen chapters and their
+transcripts exist.
+
+Checked rather than assumed: `Cabal-syntax-3.12.1.0` accepts
+`default-language: GHC2024` under `cabal-version: 2.4` with no spec bump, the
+reader's project builds and tests from the edited template, and chapter 4's
+captured session is byte-identical under the new edition, line numbers included
+(V24).
 
 ---
 

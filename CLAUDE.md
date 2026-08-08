@@ -76,6 +76,8 @@ at the only thing it had to do.
 - Every top-level definition has an explicit, monomorphic type signature.
 - Polymorphism appears only in chapter 12, where it is the subject.
 - `fmap` spelled out. `<$>` is mentioned once, in prose, and never typed.
+- Numbers change type with `numConvert`. `fromIntegral` never appears, not even
+  in a warning against it. See D18.
 - `:i` for names, `:t` for expressions. Never `:t` on a bare identifier.
 - One way to do each thing: one REPL invocation, one VHDL command, one NVC
   invocation.

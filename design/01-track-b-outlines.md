@@ -196,8 +196,10 @@ clashi> putStr (render glider)
 - `render` produces a `String`, which is the first and last thing in this tutorial
   that is not a circuit. Say so plainly and move on.
 
-**Depends on.** `BinaryLiterals` and `NumericUnderscores` in the template's
-`default-extensions`. Both are now guaranteed, which is why the template exists.
+**Depends on.** `BinaryLiterals` and `NumericUnderscores`. Both are guaranteed by
+the `GHC2024` language edition the template sets (D19); before that they were two
+of the thirty-two entries in its `default-extensions`. Either way the template is
+what fixes them, which is why it exists.
 
 ---
 
@@ -237,10 +239,19 @@ neighbourCounts :: Board -> Counts
 neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
 ```
 
-**Transcript.** Render the counts as digits with a second supplied helper and
-check one cell by hand against chapter 3's picture. Chapter 3's prose commits to
-this being the *only* other helper that is not a circuit, so there is one of
-them and no more.
+**Transcript.** Captured 2026-08-08; see V23. Three edits and three reloads: the
+four shifts go in first and are shown moving the glider with chapter 3's
+`render`, so the chapter has a picture in it before any arithmetic; then the
+eight boards and the sum, checked at one cell with `head (head …)`; then
+`renderCounts`, and all sixty-four counts at once.
+
+`renderCounts` is the second supplied helper, and chapter 3's prose commits to it
+being the *only* other one that is not a circuit, so there is one of them and no
+more. It needs `import Data.Char (intToDigit)`, which is the chapter's one
+departure from the single-import file the reader has had since chapter 1 — the
+list functions that would avoid it are shadowed by their `Vec` versions (V23,
+correcting V12). The count reaches `intToDigit` through `numConvert`, which is
+the tutorial's only way of changing a number's type (D18).
 
 **Notice that.**
 
@@ -252,8 +263,10 @@ them and no more.
 - The board wraps at the edges. Silently. Do not mention that there was a choice.
 
 **Pre-flag.** `rotateLeftS` takes its rotation as `d1`, an `SNat`, not the number
-`1`. This will bite and the error is not friendly. Show `d1` in use before the
-reader has to produce it.
+`1`. This will bite and the error is not friendly: `No instance for
+'Num (SNat d0)' arising from the literal '1'`. The device is `:i rotateLeftS`,
+which prints in one line and puts `SNat d` in front of the reader before they
+have to write it.
 
 ---
 
@@ -435,6 +448,11 @@ topEntity = life
 **Pre-flag.** Tell the reader to look for three specific things and to ignore the
 rest. A reader who tries to read all of it will conclude the output is
 unreadable.
+
+**Inherited promise.** Chapter 4 closes by saying that its `map`s appear in this
+chapter's VHDL as `for … generate`. That holds for chapter 4's code elaborated on
+its own (V23), so one of the three things to look for is that, and the sentence in
+chapter 4 has to be checked against this chapter's actual output before it ships.
 
 ---
 
