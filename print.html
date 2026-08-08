@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-1827096c.js";
+            window.path_to_searchindex_js = "searchindex-56e4f9ed.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -819,6 +819,134 @@ Chapter 6 puts a register in the way: <code>step</code>’s output becomes the b
 Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="it-runs-by-itself"><a class="header" href="#it-runs-by-itself">It runs by itself</a></h1>
+<p>Chapter 5 asked for four generations by writing <code>step</code> four times, and as hardware that is four copies of the whole generation, one behind the other.
+A design that produces a generation every cycle needs one copy of it and something that holds a board from one cycle to the next.
+This chapter adds that something: one register, whose output is the board and whose input is the next generation of that same board.</p>
+<h2 id="what-a-register-wants"><a class="header" href="#what-a-register-wants">What a register wants</a></h2>
+<p><code>register</code> is a function like any other, so ask it what it takes before writing anything that uses it:</p>
+<pre><code>clashi&gt; :i register
+register ::
+  (KnownDomain dom, NFDataX a) =&gt;
+  Clock dom
+  -&gt; Reset dom -&gt; Enable dom -&gt; a -&gt; Signal dom a -&gt; Signal dom a
+  	-- Defined in `Clash.Explicit.Signal'
+</code></pre>
+<p>After the <code>=&gt;</code>, left to right: a clock, a reset, an enable, a value of type <code>a</code>, and a <code>Signal dom a</code>, giving back a <code>Signal dom a</code>.
+The value of type <code>a</code> is the one the register holds while the reset is asserted, and the <code>Signal dom a</code> after it is what the register takes on every clock edge where the reset is not.
+A <code>Signal dom a</code> is a value that has one <code>a</code> in it for every cycle of the clock domain <code>dom</code>, and the domain this tutorial uses is called <code>System</code>.
+The two constraints before the <code>=&gt;</code> are requirements the compiler settles on its own here, and there is nothing to type for them.</p>
+<p>There is no process to open, no sensitivity list to get right and no edge to test.
+The clock is an argument, and the register exists because <code>register</code> was applied to it.</p>
+<h2 id="closing-the-loop"><a class="header" href="#closing-the-loop">Closing the loop</a></h2>
+<p>Add this at the bottom of the file:</p>
+<pre><code class="language-haskell">life ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System Board
+life clk rst en = boards
+  where
+    boards = register clk rst en glider (fmap step boards)
+</code></pre>
+<p><code>life</code> takes the three things <code>register</code> wants first, in the order it wants them, and returns the board as it stands in each cycle.
+The signature is spread over three lines because it is too long for one, and the line breaks mean nothing.</p>
+<p><code>boards</code> is the register’s output, and <code>fmap step boards</code> is its input: the same boards, one generation on.
+<code>step</code> is <code>Board -&gt; Board</code>, from chapter 5, and <code>boards</code> is a <code>Signal System Board</code>, so the two do not fit together directly.
+<code>fmap</code> is what puts a function to work on what a signal carries: <code>fmap step boards</code> is the signal that has <code>step b</code> in it wherever <code>boards</code> has <code>b</code>.
+You will meet <code>fmap</code> written <code>&lt;$&gt;</code> in other people’s code, which is the same function under a shorter name; we spell it out everywhere in this tutorial.</p>
+<p><code>glider</code> is the value the register is given for the reset, so the board starts as the seed from chapter 3 rather than as sixty-four cells of nothing.</p>
+<p>Reload, and ask what has been added:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i life
+life ::
+  Clock System
+  -&gt; Reset System -&gt; Enable System -&gt; Signal System Board
+  	-- Defined at src/Example/Project.hs:78:1
+</code></pre>
+<p>Three arguments and a signal of boards, with <code>System</code> in place of the <code>dom</code> that <code>register</code> left open.</p>
+<h2 id="five-cycles"><a class="header" href="#five-cycles">Five cycles</a></h2>
+<p>The clock, the reset and the enable have to come from somewhere, and in simulation they come from <code>systemClockGen</code>, <code>resetGen</code> and <code>enableGen</code>.
+Those three are typed in that order every time a design is run at the prompt, from here to chapter 12, and they never vary:</p>
+<pre><code>clashi&gt; :t life systemClockGen resetGen enableGen
+life systemClockGen resetGen enableGen :: Signal System Board
+</code></pre>
+<p>A <code>Signal</code> is every cycle there will ever be, so writing one at the prompt asks for a value that has no end: it typechecks, and it prints until you stop it.
+We never do that.
+<code>sampleN</code> takes a fixed number of cycles from the front, and it comes in the same breath as the signal, always:</p>
+<pre><code>clashi&gt; :t sampleN 5 (life systemClockGen resetGen enableGen)
+sampleN 5 (life systemClockGen resetGen enableGen) :: [Board]
+</code></pre>
+<p>A list of five boards, which is what this design has on its output in its first five clock cycles.
+<code>render</code> turns one board into a picture and <code>putStr</code> prints it, and <code>mapM_</code> does that to each board of the list in turn:</p>
+<pre><code>clashi&gt; mapM_ (\b -&gt; putStr (render b)) (sampleN 5 (life systemClockGen resetGen enableGen))
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+..#.....
+#.#.....
+.##.....
+........
+........
+........
+........
+........
+.#......
+..##....
+.##.....
+........
+........
+........
+........
+</code></pre>
+<p>Forty rows, which is five boards of eight.
+The first two are the same, and both are the seed: <code>resetGen</code> asserts the reset for the first two cycles of <code>System</code>, and while it is asserted the register holds the value it was given.
+The third, fourth and fifth are the first three generations, which are the first three pictures of chapter 5, produced this time by one instance of <code>step</code> on three successive edges rather than by three copies of it typed at the prompt.</p>
+<p>That is the result of this chapter.
+Nothing in that line asked for a generation, and five of them came out.</p>
+<h2 id="notice-that-5"><a class="header" href="#notice-that-5">Notice that</a></h2>
+<p><strong>There is one copy of <code>step</code> in this design, and time does the repeating.</strong>
+Chapter 5’s <code>step (step (step (step glider)))</code> is four generations of logic in series, settling in one pass, and it costs four times the area and four times the delay.
+Here a generation comes out of one instance of <code>step</code>, used again on every edge, so four of them cost four cycles instead of four copies of the logic.
+That trade is the reason registers exist, and this chapter made it by adding one line.</p>
+<p><strong><code>boards</code> is defined in terms of itself, and that is the feedback path.</strong>
+The right hand side of <code>boards</code> mentions <code>boards</code>, and that is not a definition eating itself: it is the wire running from the register’s output, through the logic, back to the register’s input.
+You have drawn this loop many times.
+The register is what puts a clock cycle into it, and a <code>where</code> clause is what makes it one line of source.</p>
+<p><strong>Nothing about the register is inferred.</strong>
+There is exactly one register in this design because <code>register</code> was written once, and the clock reaching it is the clock that was passed in.
+Nowhere does a tool read the shape of a process and decide that a register is what you must have meant: it was asked for by name.
+The cost is on the page, and it is that three arguments are carried through every clocked function from here on, which becomes tiresome by chapter 12.
+Chapter 13 is where we stop paying it.</p>
+<p><strong><code>Signal</code> is not VHDL’s <code>signal</code>, and the type says which side of the register you are on.</strong>
+A VHDL <code>signal</code> is a named wire that a process assigns to; a <code>Signal System Board</code> is one board for every cycle, all of them, as a single value.
+<code>step</code> is <code>Board -&gt; Board</code> and knows nothing about time, <code>boards</code> is a <code>Signal System Board</code> and is nothing but time, and <code>fmap</code> is the only thing in this chapter that crosses between them.
+That is why <code>sampleN</code> was needed to look at the result: a board can be printed, and a signal of boards has to be cut to a length first.</p>
+<h2 id="where-this-goes-5"><a class="header" href="#where-this-goes-5">Where this goes</a></h2>
+<p>The design runs, and it runs the only thing it can: it always starts from <code>glider</code>, because that is the value welded into the register.
+Chapter 7 gives it an input, so that a board can be loaded from outside while it runs, and the input carries its own valid bit in a way that cannot be read wrong.
+Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="an-input-that-cannot-be-misread"><a class="header" href="#an-input-that-cannot-be-misread">An input that cannot be misread</a></h1>
 <div style="break-before: page; page-break-before: always;"></div>
