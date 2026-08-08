@@ -1,7 +1,7 @@
 # Verification queue
 
 The list of claims that had to be checked against a real toolchain before the
-corresponding chapter could be drafted. **All twenty items are closed.** What
+corresponding chapter could be drafted. **All twenty-two items are closed.** What
 remains here is the *findings* — what was observed, and what each chapter must
 therefore do. Do not re-derive these; do not contradict them without re-running
 the check and rewriting the entry.
@@ -353,6 +353,49 @@ records that someone looked.
       putting a count on screen that the finished design cannot produce.
 
       *Shapes: ch. 2. Chapter 2 drafted against this.*
+
+- [x] **V22 — chapter 3's session.** *Captured 2026-08-08, in the devcontainer:
+      Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, against a
+      project freshly generated from `template/clash-tutorial.hsfiles` and built
+      with `stack build`. Run through a pty (`script`), with the file on disk
+      replaced twice while `clashi` held the old module, so both `:r`s in the
+      chapter are reloads of real edits.*
+
+      The transcript now in chapter 3 is that session, in order and unedited.
+      What it showed that the outline did not predict:
+
+      - **`:i` on a type synonym prints a kind line first.** `:i Board` answers
+        three lines: `type Board :: Type`, then the synonym as written, then
+        `-- Defined at`. The chapter quotes all three and spends one sentence on
+        the first so the reader does not stall on it.
+      - **`:i glider` puts `-- Defined at` on the *same* line**, after a space and
+        a tab, where `plus`, `nextCell`, `fromRows` and `render` all put it on the
+        next line indented by two spaces and a tab. It is not a terminal-width
+        artefact: byte-identical at `stty cols` 40, 80 and 200. Reproduce both
+        forms as observed and do not normalise them.
+      - `head glider` prints
+        `False :> True :> False :> False :> False :> False :> False :> False :> Nil`,
+        74 characters. The chapter quotes that number to justify `render`.
+      - Printing the whole `glider` is one unbroken 646-character line. The
+        chapter deliberately does not show it — `head glider` makes the same
+        point in one readable line — but the number is what "a wall of `False`"
+        is standing on.
+      - `putStr (render glider)`'s output ends in a newline, because `unlines`
+        terminates every row, so the following `clashi>` starts at column 0.
+
+      Two further facts. `String`, `unlines`, `toList` and `head` are all in
+      scope from `Clash.Explicit.Prelude` alone under `NoImplicitPrelude`, which
+      extends V12's list; `code/` builds `-Wall` clean with `Chapters.Ch03`
+      added. And V10 held again in the real chapter file: `map unpack` needs no
+      annotation, no `TypeApplications` and no help beyond `fromRows`'s
+      signature.
+
+      One correction to a shipped chapter, in the same commit: chapter 2's
+      closing forward reference said functions start being passed with none of
+      their arguments supplied in chapter 4. `fromRows = map unpack` does it in
+      chapter 3, so the sentence now says chapter 3.
+
+      *Shapes: ch. 3. Chapter 3 drafted against this.*
 
 ---
 

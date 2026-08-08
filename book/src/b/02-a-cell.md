@@ -107,7 +107,7 @@ Nothing in this chapter promises the count stays below nine, and nothing needs t
 **`nextCell True` is a legal thing to have.**
 Chapter 1 left `plus 3` sitting there and promised it would come back.
 This is the same thing: supply the first of two arguments and what remains is something that still wants an `Unsigned 4` and will give you a `Bool`.
-In chapter 4 we start handing functions around with none of their arguments supplied, and that is when this stops being a curiosity.
+In chapter 3 we start handing functions around with none of their arguments supplied, and that is when this stops being a curiosity.
 
 ## Where this goes
 
