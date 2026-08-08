@@ -964,6 +964,57 @@ that someone looked.
 
       *Blocks: nothing. Closed.*
 
+- [ ] **V20 — pull request previews.** *Partly checked 2026-08-08, in the
+      devcontainer, and against scratch repositories seeded from the real
+      `gh-pages` branch. The remainder needs a real workflow run.*
+
+      Checked, and not to be re-derived:
+
+      - `MDBOOK_OUTPUT__HTML__SITE_URL=/clash-tutorial/pr/1/ mdbook build book`
+        (mdBook 0.5.4) writes `<base href="/clash-tutorial/pr/1/">` into
+        `book/book/404.html`, and a plain `mdbook build book` restores
+        `/clash-tutorial/`. The env override reaches `output.html.site-url`
+        exactly as the `preview-book` job assumes, so `book.toml` stays the one
+        place that value is written.
+      - `.github/gh-pages-publish.sh` against a bare scratch repository: it
+        starts the branch when there is none; publishing the root deletes a page
+        dropped from the book while leaving `pr/7` and `pr/9` untouched;
+        removing `pr/7` leaves `pr/9` and the root alone; republishing unchanged
+        output is a clean no-op rather than an empty commit; a destination
+        outside the branch (`/etc`, `../escape`) and a missing source directory
+        are refused. With a `pre-receive` hook rejecting the first push, the
+        retry loop recovers; rejecting every push, it gives up non-zero after
+        three attempts.
+      - The same script over `file://`, which is the only way to exercise the
+        shallow path — `git clone --depth` is silently ignored for a local
+        clone, so the scratch runs above were not testing what CI does. Against
+        a branch with several commits, the clone is genuinely shallow
+        (`.git/shallow` present, one commit visible) and the push from it lands
+        as an ordinary commit on top, leaving the earlier history intact.
+      - **The switch away from `peaceiris/actions-gh-pages` is content
+        neutral.** `gh-pages` is at `7b96469` (`deploy:
+        0db4bebb1de8b8caa8e04b8bbad3a083f8e367b3`), 52 files, and Pages serves
+        it. Pushed into a bare scratch repository and published over with
+        `mdbook build book` from that same commit, the script reports "gh-pages
+        already holds this. Nothing to push." — the tree it builds is identical,
+        file for file, to the one the action left. It also means mdBook 0.5.4
+        locally and whatever `latest` resolved to in that run produce the same
+        hashed asset names.
+      - `actionlint` 1.7.7 and `shellcheck` 0.10.0 are clean on both workflow
+        files and the script.
+
+      Still open, and only answerable from a real run:
+
+      - End to end: open a throwaway pull request touching `book/src`, follow
+        the link in the run summary, confirm the chapter renders and that
+        `https://christiaanb.github.io/clash-tutorial/` is unchanged; then close
+        it and confirm `pr/<number>/` is gone and the root still serves.
+      - Whether `peaceiris/actions-mdbook@v2`'s `latest` is still an mdBook
+        whose `404.html` uses `<base href>`. The check above was against 0.5.4
+        locally; CI installs whatever `latest` resolves to on the day.
+
+      *Blocks: nothing in the book. Blocks trusting a preview URL.*
+
 ---
 
 ## Notes on method

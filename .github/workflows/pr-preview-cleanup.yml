@@ -1,0 +1,37 @@
+# Takes down the preview that ci.yml's preview-book put up, once the pull request
+# it belonged to is closed. Merged or abandoned makes no difference: a preview is
+# a thing to read while deciding, and after the decision the book at the root is
+# the only copy that should exist.
+#
+# A separate workflow rather than another job in ci.yml, because reaching this
+# from there means adding `closed` to that file's pull_request types, which would
+# start a fifteen minute Clash build every time a pull request is closed.
+name: PR preview cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  remove-preview:
+    runs-on: ubuntu-latest
+    # A fork's pull request never published one. See the comment on preview-book.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
+    # Shared with publish-book and preview-book in ci.yml: closing a pull request
+    # while another is publishing is ordinary, and the two must not push at once.
+    concurrency:
+      group: gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      # An empty first argument is "publish nothing here", which is how the script
+      # spells removal. It exits cleanly if the directory is already gone, so a
+      # pull request closed twice, or one that never got as far as publishing,
+      # is not a failure.
+      - name: Remove the preview
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/gh-pages-publish.sh '' "pr/${{ github.event.pull_request.number }}"

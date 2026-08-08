@@ -45,10 +45,19 @@ resolves `username/template-name` only against a repository named
 
 ## Publishing
 
-Every push to `main` rebuilds the book and force pushes the rendered output to the
+Every push to `main` rebuilds the book and pushes the rendered output to the
 `gh-pages` branch, which GitHub Pages serves at
 `https://christiaanb.github.io/clash-tutorial/`. Nothing is authored on that
 branch. Pages has to be pointed at it once, by hand, under Settings -> Pages.
+
+Every pull request publishes its own rendered book alongside it, at
+`https://christiaanb.github.io/clash-tutorial/pr/<number>/`. The link is in the
+summary of the run, under the pull request's checks. It is taken down when the
+pull request closes. A pull request from a fork builds the book but publishes
+nothing, because its token cannot write to the branch; CI says so in the summary.
+
+`.github/gh-pages-publish.sh` is the only thing that writes to `gh-pages`, for
+all three of those.
 
 ## Building
 

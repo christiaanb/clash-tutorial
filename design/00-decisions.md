@@ -257,6 +257,26 @@ It fails loudly when the secret is missing rather than skipping the push, becaus
 
 ---
 
+## D16. Every pull request publishes a preview of the rendered book
+
+A pull request gets its book published to `pr/<number>/` on the same `gh-pages` branch that serves `main`, and the URL is written into the run's job summary.
+The preview is removed when the pull request closes.
+
+A chapter is prose, and prose is reviewed by reading it.
+Before this, the only rendered copy of a change was the one that appeared after the change had already merged, so a reviewer either built the book locally or read Markdown source and imagined the rest.
+Reviewing the source is exactly the way to miss a heading level, a broken `{{#include}}` that renders as literal text, or a transcript whose alignment collapses.
+
+The cost is `force_orphan`.
+The `gh-pages` branch used to be replaced by a single commit on every push to `main`, which is incompatible with the branch holding anything else, so it now keeps ordinary history and the publish deletes the root while leaving `pr/` alone.
+That rule is small and it is load bearing, so it lives in `.github/gh-pages-publish.sh`, in this repository, rather than in the flags of a third party action.
+The same script publishes `main`, publishes a preview and removes a preview; there is one thing that writes to that branch and one place to read what it deletes.
+
+A pull request from a fork gets no preview.
+Its token is read only, and the way to give it a write token is `pull_request_target`, which runs the workflow against unreviewed content — and `book.toml` can name a preprocessor command, so that is arbitrary code holding the token that publishes the site.
+A fork's pull request still builds the book, and CI says in the summary why no URL followed.
+
+---
+
 ## Open, deliberately
 
 **Chapter 14, the optional board chapter.** An 8×8 display is not standard on
