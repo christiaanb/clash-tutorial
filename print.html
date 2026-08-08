@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-56e4f9ed.js";
+            window.path_to_searchindex_js = "searchindex-52f182c1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -949,6 +949,208 @@ Chapter 7 gives it an input, so that a board can be loaded from outside while it
 Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="an-input-that-cannot-be-misread"><a class="header" href="#an-input-that-cannot-be-misread">An input that cannot be misread</a></h1>
+<p>Chapter 6’s design runs by itself, and it runs one thing: <code>glider</code>, because that board is the value the register was given and nothing else can ever get in.
+A design that can be told what to work on has an input, and an input that carries a board on some cycles and not on others has to say which of the two is happening.
+This chapter gives <code>life</code> that input, as one value that carries the board and the answer to that question together.</p>
+<h2 id="a-second-board-to-load"><a class="header" href="#a-second-board-to-load">A second board to load</a></h2>
+<p>There has to be something to load, so add a second seed directly under <code>glider</code>:</p>
+<pre><code class="language-haskell">blinker :: Board
+blinker = fromRows
+  (  0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0011_1000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; Nil )
+</code></pre>
+<p>Reload and look at it:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; putStr (render blinker)
+........
+........
+........
+..###...
+........
+........
+........
+........
+</code></pre>
+<p>Three live cells in a row, on the fourth row of the board.
+What a generation does to them is worth working out before watching it happen: the two ends have one live neighbour each and die, the middle has two and survives, and the dead cells directly above and below the middle have three each and are born.
+Three in a row becomes three in a column, and three in a column becomes three in a row again.</p>
+<h2 id="an-input-with-its-valid-bit-inside-it"><a class="header" href="#an-input-with-its-valid-bit-inside-it">An input with its valid bit inside it</a></h2>
+<p>The thing arriving from outside is a board on some cycles and nothing on the rest, and <code>Maybe</code> is that pair of possibilities as a single type:</p>
+<pre><code>clashi&gt; :t Just blinker
+Just blinker :: Maybe Board
+</code></pre>
+<p>A <code>Maybe Board</code> is either <code>Nothing</code>, which is no board, or <code>Just b</code>, which is the board <code>b</code>.
+That is a valid bit and a payload welded together: the tag is not a separate wire that the logic reading the payload has to remember to consult, and there is no way to reach <code>b</code> without having matched <code>Just</code> first.</p>
+<p>It costs what it always cost.
+A <code>Maybe Board</code> is sixty-five bits, one for the tag and sixty-four for the board, and on the cycles when the tag says <code>Nothing</code> those sixty-four wires still carry a value and the logic downstream still throws it away.
+Nothing is switched off, and nothing is saved; what the type removes is a class of mistake.
+Chapter 11 puts an input of this shape on a waveform and reads the tag and the payload off it.</p>
+<h2 id="a-function-of-a-state-and-an-input"><a class="header" href="#a-function-of-a-state-and-an-input">A function of a state and an input</a></h2>
+<p>Chapter 6 handed <code>register</code> the signal it takes next, and <code>fmap step boards</code> was what made it: the register’s output, a generation of logic, and back to its input, with nothing else in the loop.
+The board arriving from outside has to get into that loop, and <code>mealy</code> is <code>register</code> with the whole of the loop taken out and passed in as a function.
+Ask it what it wants before writing anything that uses it:</p>
+<pre><code>clashi&gt; :i mealy
+mealy ::
+  (KnownDomain dom, NFDataX s) =&gt;
+  Clock dom
+  -&gt; Reset dom
+  -&gt; Enable dom
+  -&gt; (s -&gt; i -&gt; (s, o))
+  -&gt; s
+  -&gt; Signal dom i
+  -&gt; Signal dom o
+  	-- Defined in `Clash.Explicit.Mealy'
+</code></pre>
+<p>After the <code>=&gt;</code> it is chapter 6’s <code>register</code> with a function inserted into it: a clock, a reset and an enable, then <code>(s -&gt; i -&gt; (s, o))</code>, then an <code>s</code>, and then a <code>Signal dom i</code> becomes a <code>Signal dom o</code>.
+The function is everything between the register’s output and its input: given the state <code>s</code> the register holds and the input <code>i</code> arriving this cycle, it says what the register takes next and what comes out now.
+The <code>s</code> after it is the state the register holds while the reset is asserted, which is where <code>glider</code> goes.</p>
+<p>Replace <code>life</code> with these two definitions:</p>
+<pre><code class="language-haskell">lifeT :: Board -&gt; Maybe Board -&gt; (Board, Board)
+lifeT current input = (next, current)
+  where
+    next = case input of
+      Just seed -&gt; seed
+      Nothing   -&gt; step current
+
+life ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System (Maybe Board) -&gt; Signal System Board
+life clk rst en = mealy clk rst en lifeT glider
+</code></pre>
+<p><code>lifeT</code> is that function written for this design.
+<code>current</code> is the board the register holds, <code>input</code> is the <code>Maybe Board</code> arriving this cycle, and the pair returned is the board the register takes next and the board on the output now.
+The output is allowed to depend on the input as well as on the state; this one does not, and returns <code>current</code> untouched, so what comes out is the board the register is holding.</p>
+<p>The <code>case</code> has one row for each of the input’s two shapes.
+<code>Just seed</code> tests the tag and names the payload <code>seed</code> in the same expression, and <code>seed</code> exists in that row and nowhere else in the file.
+<code>Nothing</code> has no payload to name, so that row does what chapter 6 did on every cycle: another generation of the board we already have.</p>
+<p><code>life</code> gives <code>mealy</code> the three things every clocked function in this tutorial takes, then <code>lifeT</code>, then <code>glider</code>, and stops there.
+What <code>mealy</code> still wants is the <code>Signal dom i</code>, so that is what <code>life</code> still wants, in the same way that chapter 1’s <code>plus 3</code> still wanted the other number.</p>
+<p>Reload, and ask about both:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i lifeT
+lifeT :: Board -&gt; Maybe Board -&gt; (Board, Board)
+  	-- Defined at src/Example/Project.hs:88:1
+clashi&gt; :i life
+life ::
+  Clock System
+  -&gt; Reset System
+  -&gt; Enable System
+  -&gt; Signal System (Maybe Board)
+  -&gt; Signal System Board
+  	-- Defined at src/Example/Project.hs:97:1
+</code></pre>
+<p>There is no clock in <code>lifeT</code> and no <code>Signal</code>: a board and a <code>Maybe Board</code> in, a pair of boards out, and that is combinational logic.
+<code>life</code> has one more argument than it had in chapter 6, the input, and nothing else about it has changed.</p>
+<h2 id="seven-cycles"><a class="header" href="#seven-cycles">Seven cycles</a></h2>
+<p>The clock, the reset and the enable come from where they have come from since chapter 6, and what they leave behind is the new argument:</p>
+<pre><code>clashi&gt; :t life systemClockGen resetGen enableGen
+life systemClockGen resetGen enableGen
+  :: Signal System (Maybe Board) -&gt; Signal System Board
+</code></pre>
+<p>A signal is one value for every cycle, so driving that input means saying what arrives on each of them.
+<code>fromList</code> takes a list and makes it a signal, one element per cycle, in order:</p>
+<pre><code>clashi&gt; :t fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
+fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
+  :: Signal dom (Maybe Board)
+</code></pre>
+<p>Seven elements, because we are about to look at seven cycles: nothing arrives on any of them except the fourth, which loads the blinker.
+<code>fromList</code> belongs to simulation, alongside <code>sampleN</code> and the three generators: it is how a signal is made to drive a design at the prompt.</p>
+<pre><code>clashi&gt; mapM_ (\b -&gt; putStr (render b)) (sampleN 7 (life systemClockGen resetGen enableGen (fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing])))
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+..#.....
+#.#.....
+.##.....
+........
+........
+........
+........
+........
+........
+........
+..###...
+........
+........
+........
+........
+........
+........
+...#....
+...#....
+...#....
+........
+........
+........
+........
+........
+........
+..###...
+........
+........
+........
+........
+</code></pre>
+<p>Fifty-six rows, which is seven boards of eight.
+The first two are the seed, because the reset is asserted for the first two cycles and the register holds what it was given.
+The third and fourth are the first two generations of the glider, and they are chapter 6’s third and fourth pictures unchanged, because on those cycles the input said <code>Nothing</code> and the <code>Nothing</code> row of <code>lifeT</code> is chapter 6’s design.
+The fifth is the blinker.
+The glider is gone, and it is gone because a board arrived on the input rather than because anything in the file changed.
+The sixth is three in a column and the seventh is three in a row, which is the blinker doing what the top of this chapter said it would.</p>
+<p><code>Just blinker</code> is the fourth element of the list and the blinker is the fifth picture, one cycle later.
+The input is read on the cycle it arrives and the board it produces appears on the next, because the register is between them.</p>
+<p>That is the result of this chapter: a design that runs on its own until it is told otherwise, and takes a whole board from outside on the cycle it is offered one.</p>
+<h2 id="notice-that-6"><a class="header" href="#notice-that-6">Notice that</a></h2>
+<p><strong>The payload cannot be read unless the tag says there is one.</strong>
+<code>seed</code> is a name that exists only inside the <code>Just seed</code> row, so writing the <code>Nothing</code> row in terms of it is not a mistake the compiler can miss: it is <code>Variable not in scope</code>, before anything runs.
+You have built this by hand many times, as a valid line beside a bus, and the discipline that the bus is only meaningful while the valid line is high has been yours to keep.
+Here it is not a discipline: it is the only way the value can be taken apart.</p>
+<p><strong>It is sixty-five bits either way.</strong>
+The tag is a bit, the board is sixty-four, and both of them are on the port whether a board is arriving or not.
+On a <code>Nothing</code> cycle the payload wires are driven with whatever the outside is putting on them and a multiplexer discards it, exactly as your hand-built version does.
+The type has not saved a wire or a gate, and that was never what it was for.</p>
+<p><strong><code>lifeT</code> is combinational, and <code>mealy</code> is the register around it.</strong>
+Its type has boards and a <code>Maybe Board</code> in it and no <code>Signal</code> anywhere, which is what <code>:i step</code> said in chapter 5 and means the same thing here: a block of logic, settling between one edge and the next.
+The state is one board, so this design still has exactly one register in it, the same width as chapter 6’s.
+What chapter 6 wrote as a binding that mentions itself is now a function that is handed its own previous answer, and <code>mealy</code> is what closes that loop and puts the clock cycle into it.</p>
+<h2 id="where-this-goes-6"><a class="header" href="#where-this-goes-6">Where this goes</a></h2>
+<p>The input can load a board, and that is the only thing it can say.
+A design that could also be stepped one generation, run, and paused would need an input with four things in it, three of which carry no board at all.
+Chapter 8 replaces <code>Maybe Board</code> with a command set of our own, where each command carries what it needs and nothing carries what it does not.
+Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="more-than-valid"><a class="header" href="#more-than-valid">More than valid</a></h1>
 <div style="break-before: page; page-break-before: always;"></div>
