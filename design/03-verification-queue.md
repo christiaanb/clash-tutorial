@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All twenty-six
+Findings from checking every claim against a real toolchain. **All twenty-seven
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-08.
 
-Chapters 1 to 6 are drafted against these entries and their transcripts now live
+Chapters 1 to 7 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -92,7 +92,7 @@ with the date and the observed result, not just a tick.
       `toList`, `head`, `foldl1`, `rotateLeftS`, `rotateRightS`, `d1`,
       `BitVector`, `unpack`, `Signed`, `Unsigned`,
       `Clock`/`Reset`/`Enable`/`System`, `systemClockGen`/`resetGen`/`enableGen`,
-      `register`, `mealy`, `sampleN`, `fmap`, `mapM_`, `putStr`,
+      `register`, `mealy`, `sampleN`, `fromList`, `fmap`, `mapM_`, `putStr`,
       `Generic`/`NFDataX`/`BitPack` (plain and standalone deriving), `KnownNat`,
       `String`, `unlines`.
 
@@ -323,6 +323,49 @@ with the date and the observed result, not just a tick.
         in the chapter, which stays at the prompt, but it is what makes the
         chapter's "exactly one register, because `register` was written once"
         beat safe to state. *Ch. 6. Drafted.*
+
+- [x] **V27 — chapter 7's session.** Captured 2026-08-08, two real reloads, the
+      file swapped on disk while `clashi` held the old module, and run twice
+      byte-identically. Durable findings:
+
+      - **The reset swallows the input on cycle 0.** `resetGen` holds the reset
+        for the first two cycles, and the first input a `mealy` machine acts on is
+        the one arriving in cycle 1, whose effect is visible in sample 2. So
+        `fromList [Just blinker, Nothing, …]` prints chapter 6's boards and the
+        blinker never appears — checked, not reasoned. Chapter 7 therefore loads
+        on the fourth element of a seven-element stimulus, which also lets the
+        glider run two generations first.
+      - **`fromList` is in scope from `Clash.Explicit.Prelude`** and needs no
+        annotation: `:t fromList [Nothing, Nothing, Nothing, Just blinker,
+        Nothing, Nothing, Nothing]` is `Signal dom (Maybe Board)`, with `dom` left
+        open. The list must be at least as long as the `sampleN`, and the chapter
+        matches the two at seven so the reader never reaches the end.
+      - **`:i mealy` prints in ten lines**, one argument per line, with
+        `-- Defined in `Clash.Explicit.Mealy'` in the next-line form. `:i lifeT`
+        takes the next-line form at `src/Example/Project.hs:88:1` and `:i life`
+        the one-argument-per-line form at `97:1`, for a reader who has followed
+        chapters 2 to 7 in order.
+      - **`Maybe Board` is 65 bits, and it is one port.**
+        `natVal (Proxy @(BitSize (Maybe Board)))` is `65` and
+        `natVal (Proxy @(BitSize Board))` is `64` (method as in V11). In the
+        generated VHDL the types package has
+        `subtype Maybe is std_logic_vector(64 downto 0)` and `life`'s input is the
+        single port `carg : in …Maybe`. The payload is decoded unconditionally —
+        `seed <= …fromSLV(carg(63 downto 0))` — and discarded by
+        `with (carg(64 downto 64)) select`, which is what makes the chapter's
+        "nothing is switched off" sentence true rather than plausible.
+      - **The enforcement is a scope error, not a type error.** Writing the
+        `Nothing` row in terms of `seed` gives `[GHC-88464] Variable not in scope:
+        seed :: Board`. Stated in the chapter, never put on screen: no step may
+        fail.
+      - **`lifeT` alone is combinational.**
+        `stack run clash -- Chapters.Ch07 -main-is lifeT --vhdl` gives a 923-line
+        `lifeT.vhdl` plus a 211-line types package with **zero** occurrences of
+        `clk`, `rising_edge` or `process`: 64 `in boolean` and one `in Maybe` for
+        the input, 128 `out boolean` for the returned pair. `life` itself is 716
+        lines with one process, `current_8_register`, and one `rising_edge(clk)`,
+        so the state is still exactly one register. Not shown in the chapter,
+        which stays at the prompt. *Ch. 7. Drafted.*
 
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and
