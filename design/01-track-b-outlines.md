@@ -8,7 +8,7 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 6 are right; chapters 7 onward
+corrected as its chapter ships, so chapters 1 to 7 are right; chapters 8 onward
 still say `*Example.Project>`, and it should be read as `clashi>` when they are
 drafted.
 
@@ -381,8 +381,23 @@ life ::
 life clk rst en = mealy clk rst en lifeT glider
 ```
 
-**Transcript.** Drive with `Just blinker` on the first cycle and `Nothing`
-thereafter, using `fromList`, and render the result.
+A second seed, `blinker`, goes in under `glider`: three cells in a row, an
+oscillator of period two, so that a load is unmistakable against the glider and
+the two generations after it prove the design is still running.
+
+**Transcript.** Captured 2026-08-08; see V27. Two edits and two reloads: `blinker`
+goes in first and is rendered, so the chapter has a picture before the input type
+arrives; then `lifeT` and the rewritten `life`. The stimulus is seven elements
+long for seven cycles, with the load on the fourth:
+
+```
+clashi> mapM_ (\b -> putStr (render b)) (sampleN 7 (life systemClockGen resetGen enableGen (fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing])))
+```
+
+Not `Just blinker` on the first cycle: reset is asserted for the first two, and
+the input on cycle 0 is never taken, so that stimulus prints chapter 6's boards
+and the blinker never appears (V27). Loading on the fourth cycle also lets the
+glider run first, which makes the load a change the reader watches happen.
 
 **Notice that.**
 
@@ -392,9 +407,10 @@ thereafter, using `fromList`, and render the result.
   `Just`, and the compiler enforces it.
 - It is 65 bits wide either way. The type system removes a class of mistake, not
   wires.
-- `lifeT` takes a state and an input and returns a new state and an output. That
-  is a Mealy machine written as a function, and it is still combinational; `mealy`
-  puts the register around it.
+- `lifeT` takes a state and an input and returns a new state and an output, and it
+  is combinational; `mealy` puts the register around it. Do not call it a Mealy
+  machine: `mealy`'s output may depend on the input, and this one returns the
+  state untouched. Say what it does instead.
 
 ---
 
