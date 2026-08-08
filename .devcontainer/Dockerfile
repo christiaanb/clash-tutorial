@@ -15,6 +15,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
+# Python 3 is not part of the base image, but is handy for ad-hoc scripting
+# while working in the container. Nothing in the book or `code/` depends on it.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
 # NVC 1.20.1 — pinned per design/00-decisions.md (D5) and .github/workflows/ci.yml.
 # The Ubuntu 24.04 .deb from upstream matches this image's release.
 RUN curl -fsSL -o /tmp/nvc.deb \
