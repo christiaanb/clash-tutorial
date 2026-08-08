@@ -10,39 +10,16 @@ synopsis:            Every chapter's end state, built in CI
 -- project is configured by that template; if this package's options drift from
 -- it, code that builds here can fail on the reader's machine.
 common common-options
+  -- Only what the GHC2024 language edition below does not already give us.
   default-extensions:
-    BangPatterns
-    BinaryLiterals
-    ConstraintKinds
-    DataKinds
     DefaultSignatures
     DeriveAnyClass
-    DeriveDataTypeable
-    DeriveFoldable
-    DeriveFunctor
-    DeriveGeneric
-    DeriveTraversable
-    DerivingStrategies
-    InstanceSigs
-    KindSignatures
-    LambdaCase
-    NumericUnderscores
-    PolyKinds
     QuasiQuotes
-    RankNTypes
-    ScopedTypeVariables
-    StandaloneDeriving
     TemplateHaskell
-    TemplateHaskellQuotes
-    TupleSections
-    TypeApplications
     TypeFamilies
-    TypeOperators
     MagicHash
     NoImplicitPrelude
-    NoMonomorphismRestriction
     NoStarIsType
-    NoStrictData
 
   ghc-options:
     -Wall -Wcompat
@@ -60,7 +37,7 @@ common common-options
     ghc-typelits-extra,
     ghc-typelits-knownnat,
 
-  default-language: Haskell2010
+  default-language: GHC2024
 
 library
   import:          common-options
@@ -68,6 +45,7 @@ library
   exposed-modules: Chapters.Ch01
                    Chapters.Ch02
                    Chapters.Ch03
+                   Chapters.Ch04
 
 executable clash
   main-is:          bin/Clash.hs

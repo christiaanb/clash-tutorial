@@ -298,8 +298,17 @@ records that someone looked.
       `unpack`, `Signed`, `Unsigned`, `Clock`/`Reset`/`Enable`/`System`,
       `systemClockGen`/`resetGen`/`enableGen`, `register`, `mealy`, `sampleN`,
       `Generic`/`NFDataX`/`BitPack` (plain and standalone deriving forms),
-      `KnownNat`. The one necessary addition anywhere in the spine is
-      `Clash.Explicit.Testbench` for chapter 10 (see V3). *Shapes: all chapters.*
+      `KnownNat`.
+
+      **Two imports are needed in the spine, not one** — the second was found
+      when chapter 4 was drafted, and this entry is corrected rather than
+      rewritten so that the reason is on the record. `Clash.Explicit.Testbench`
+      for chapter 10 (see V3), and `Data.Char (intToDigit)` for chapter 4's
+      `renderCounts` (see V23): under `NoImplicitPrelude` the list functions that
+      would otherwise do the job are shadowed by their `Vec` versions. Both
+      additions are in code that prints things rather than in the circuit, which
+      is the pattern to expect if a third one ever appears.
+      *Shapes: all chapters.*
 
 - [x] **V13 — Chapter 13 diff.** *Equivalent, not byte-identical — chapter 13
       must say so plainly.* Chapter 12's `topEntity8` and a chapter 13 rewrite of
@@ -397,6 +406,121 @@ records that someone looked.
 
       *Shapes: ch. 3. Chapter 3 drafted against this.*
 
+- [x] **V23 — chapter 4's session.** *Captured 2026-08-08, in the devcontainer:
+      Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash 1.10.0, against a
+      project freshly generated from `template/clash-tutorial.hsfiles` and built
+      with `stack build`. Run through a pty (`script`), with the file on disk
+      replaced three times while `clashi` held the old module, so all three `:r`s
+      in the chapter are reloads of real edits. The session was run twice and the
+      two captures are byte-identical.*
+
+      The sixty lines of transcript in chapter 4 are that session, in order and
+      unedited, checked line by line against the capture. What it showed:
+
+      - **`numConvert`, not `fromIntegral` (D18), and it costs a signature.**
+        `numConvert (3 :: Unsigned 4) :: Int` is `3` and
+        `intToDigit (numConvert (3 :: Unsigned 4))` is `'3'`, so the conversion
+        chapter 4 needs exists in 1.10.0 and resolves to `Int`. What does not
+        work is writing it in a `where` binding with no signature: under
+        `NoMonomorphismRestriction` the binding is generalised and its inferred
+        constraints mention `NumConvertCanonical a (Canonical a)`, which is
+        `[GHC-80003] Non type-variable argument in the constraint`, a
+        `FlexibleContexts` error. `digit :: Unsigned 4 -> Char` in the `where`
+        clause settles it, and the session was re-captured against the version
+        that ships: byte-identical to the first capture, since the change is
+        below every line the chapter quotes. **Superseded the same day by D19:
+        `GHC2024` supplies `FlexibleContexts`, the signature is gone, and the
+        error above is what the template's former `Haskell2010` produced, not
+        what a reader following the shipped configuration can see (V24).**
+      - **`renderCounts` needs an import, and that corrects V12.** Under
+        `Clash.Explicit.Prelude` with `NoImplicitPrelude`, `concatMap`, `(++)`
+        and `head` are the `Vec` versions, so the obvious list-based spelling
+        (`concatMap show (toList r)`) does not typecheck: `Couldn't match
+        expected type 'Vec n2 a0' with actual type '[a]'`. The chapter adds
+        `import Data.Char (intToDigit)` as a second import and says so in one
+        sentence. V12's "the one necessary addition anywhere in the spine is
+        `Clash.Explicit.Testbench`" is therefore wrong: there are two, and this
+        is the other.
+      - **`:i rotateLeftS` is short enough to print**, which is what lets the
+        chapter pre-flag `d1` by showing the signature rather than describing it:
+        `rotateLeftS :: KnownNat n => Vec n a -> SNat d -> Vec n a`, then
+        `-- Defined in` and the module in GHC's asymmetric quotes, indented by
+        two spaces and a **tab**.
+      - **The `d1` pitfall's error text**, checked separately by building the
+        project with `rotateLeftS b 1`: `[GHC-39999] No instance for
+        'Num (SNat d0)' arising from the literal '1'`. The chapter describes it
+        in half a sentence and never puts it on screen, because no step may fail.
+      - `:i shiftN` puts `-- Defined at` on the *same* line, after a space and a
+        tab, exactly as `:i glider` did in V22, while `:i neighbourCounts` and
+        `:i renderCounts` put it on the next line indented by two spaces and a
+        tab. Both forms reproduced as observed.
+      - **The line numbers in the chapter are the ones a reader following it in
+        order sees**: 37 for `shiftN` and 63 for `neighbourCounts`, both asked
+        before `import Data.Char` exists, and 67 for `renderCounts`, asked after
+        it, when every line below the imports has moved down by one.
+      - The count grid for `glider` is
+        `11210000 / 35320001 / 13220001 / 23210001 / 0 / 0 / 0 / 11100000`, and
+        three cells of it were checked by hand against chapter 3's picture: the
+        corner is 1, the `5` at row 1 column 1 is the dead cell every one of the
+        glider's five live cells touches, and the `1`s in column 7 and along row
+        7 are the wrap. The chapter points at all three.
+
+      One further fact, for the chapter's claim that `map` is a `for … generate`
+      rather than a loop, and for its forward reference to chapter 9.
+      `stack run clash -- Chapters.Ch04 -main-is neighbourCounts --vhdl`
+      elaborates the chapter's code on its own, with no `topEntity` and no
+      `Signal` anywhere: 656 lines, an entity with 64 `in boolean` ports and 64
+      `out unsigned(3 downto 0)` ports, no clock and no process. The netlist
+      contains the `map`s and `zipWith`s as nested `for … generate` blocks,
+      labelled by Clash with `-- map begin` and `-- zipWith begin` comments, and
+      exactly one `+` in the whole file. Chapter 4 shows none of this — VHDL is
+      chapter 9's — but the claim it makes about the hardware is this file.
+
+      That leaves one promise for someone else to keep: chapter 4's last
+      "notice that" tells the reader they will see these `map`s as `for …
+      generate` in chapter 9, and what was checked here is chapter 4's code
+      elaborated on its own, not chapter 9's `topEntity`. Confirm it against
+      chapter 9's real output when that chapter is drafted, and change the
+      sentence if it does not hold.
+
+      *Shapes: ch. 4, and one check owed by ch. 9. Chapter 4 drafted against
+      this.*
+
+- [x] **V24 — the template under `GHC2024`.** *Checked 2026-08-08, in the
+      devcontainer, against the edited `template/clash-tutorial.hsfiles` and
+      `code/clash-tutorial-chapters.cabal`. D19 is buildable as written.*
+
+      - **Cabal accepts the edition with no spec bump.** `default-language:
+        GHC2024` under `cabal-version: 2.4` configures and builds with the
+        `Cabal-3.12.1.0` Stack uses, in `code/` and in a project generated by
+        `stack new` from the template. The pre-check that predicted it: the
+        string `GHC2024` is in `libHSCabal-syntax-3.12.1.0`. No fallback was
+        needed.
+      - **`FlexibleContexts` is what frees chapter 4's `digit`, not the
+        monomorphism restriction.** Demonstrated by differential compile of the
+        unchanged `Ch04.hs`: `ghc -XGHC2024 …` compiles it, and the same command
+        with `-XNoFlexibleContexts` added fails at `src/Chapters/Ch04.hs:91:5`
+        with `[GHC-80003] Non type-variable argument` and `Suggested fix:
+        Perhaps you intended to use FlexibleContexts`. `digit n = …` binds an
+        argument, so it is a function binding and the monomorphism restriction
+        never applied to it — dropping `NoMonomorphismRestriction` neither
+        caused nor could have caused this.
+      - `code/` builds all four chapter modules `-Wall -Wcompat` clean and
+        `stack test` passes; `stack new` from the template then `stack build`
+        and `stack test` — CI's `template` job, run by hand — pass too.
+      - **Chapter 4's transcript survives unchanged.** The session was captured
+        again from scratch: a project regenerated from the edited template, the
+        three file swaps, all sixty lines byte-identical to what the chapter
+        ships, including `src/Example/Project.hs:37`, `:63` and `:67`. Deleting
+        two lines from `renderCounts`'s `where` clause moved nothing the chapter
+        quotes, which was predicted and then checked rather than assumed.
+      - `Chapters.Ch04 -main-is neighbourCounts --vhdl` still elaborates to the
+        same shape: 64 `in boolean` ports and seven `-- map begin` blocks.
+
+      Not checked, and it cannot be until the chapters exist: whether
+      `MonoLocalBinds` rejects anything in chapters 5 to 13. That is the risk
+      D19 accepts. *Shapes: all chapters. D19 verified against this.*
+
 ---
 
 ## Infrastructure
@@ -458,7 +582,16 @@ records that someone looked.
       `common-options`: `BinaryLiterals`, `NumericUnderscores`, `DeriveGeneric`,
       `DeriveAnyClass`, `TemplateHaskell` (alongside `TemplateHaskellQuotes`).
       V2 removed the need for Template Haskell in chapter 10, but the extension
-      is on regardless. *Shapes: all chapters.*
+      is on regardless.
+
+      **2026-08-08, after D19: the conclusion holds, the evidence moved.** Three
+      of those five — `BinaryLiterals`, `NumericUnderscores`, `DeriveGeneric` —
+      are no longer listed in `common-options` because the `GHC2024` language
+      edition turns them on; `DeriveAnyClass` and `TemplateHaskell` are still
+      listed, and `TemplateHaskellQuotes` was dropped as implied by
+      `TemplateHaskell`. Chapters 1 to 4 build with no per-file pragma under the
+      new configuration (V24). Chapters 5 to 13 are unwritten and inherit the
+      claim, not the check. *Shapes: all chapters.*
 
 - [x] **V17 — NVC on Debian and Ubuntu.** *Split by distro; both routes real.*
       Ubuntu 22.04/24.04 amd64 readers install upstream's prebuilt `.deb` from
