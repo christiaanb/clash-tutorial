@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All twenty-five
+Findings from checking every claim against a real toolchain. **All twenty-six
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-08.
 
-Chapters 1 to 5 are drafted against these entries and their transcripts now live
+Chapters 1 to 6 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -92,8 +92,9 @@ with the date and the observed result, not just a tick.
       `toList`, `head`, `foldl1`, `rotateLeftS`, `rotateRightS`, `d1`,
       `BitVector`, `unpack`, `Signed`, `Unsigned`,
       `Clock`/`Reset`/`Enable`/`System`, `systemClockGen`/`resetGen`/`enableGen`,
-      `register`, `mealy`, `sampleN`, `Generic`/`NFDataX`/`BitPack` (plain and
-      standalone deriving), `KnownNat`, `String`, `unlines`.
+      `register`, `mealy`, `sampleN`, `fmap`, `mapM_`, `putStr`,
+      `Generic`/`NFDataX`/`BitPack` (plain and standalone deriving), `KnownNat`,
+      `String`, `unlines`.
 
       The trap under `NoImplicitPrelude`: `concatMap`, `(++)` and `head` are the
       `Vec` versions, so list-based spellings fail with `Couldn't match expected
@@ -128,7 +129,8 @@ with the date and the observed result, not just a tick.
 - [x] **V8 — No type application needed.**
       `:t sampleN 5 (life systemClockGen resetGen enableGen)` gives `[Board]` with
       no `@System`: the domain is pinned by passing `systemClockGen`, an ordinary
-      value, exactly as D4 claims. *Ch. 6.*
+      value, exactly as D4 claims. Re-observed in V26's session and shipped in the
+      chapter. *Ch. 6. Drafted.*
 
 - [x] **V11 — Widths.** 66 and 67 confirmed exactly, against chapter 8's
       monomorphic `Command` and `St`:
@@ -293,6 +295,35 @@ with the date and the observed result, not just a tick.
         Stated in the chapter, never put on screen: no step may fail. *Ch. 5.
         Drafted.*
 
+- [x] **V26 — chapter 6's session.** Captured 2026-08-08, one real reload, the
+      file swapped on disk while `clashi` held the old module. Durable findings:
+
+      - **`:i register` prints in five lines**, the signature broken after
+        `Clock dom`, byte-identical to the one V7 captured two days and one
+        template change earlier. `-- Defined in` takes the next-line form.
+      - **`:i life` uses the same next-line form**, its signature broken after
+        `Clock System`, and reports `src/Example/Project.hs:78:1`: signature at
+        75, definition at 78, for a reader who has followed chapters 2 to 6 in
+        order with both imports present.
+      - **Printing a `Signal` is not a type error.**
+        `:t print (life systemClockGen resetGen enableGen)` is `IO ()`, and
+        evaluating the signal at the prompt produced 9 MB of `:>` in fifteen
+        seconds without finishing. The chapter's pre-flag therefore says that it
+        typechecks and never ends, not that it is rejected. Never put on screen:
+        no step may fail.
+      - **The five samples are V9's, unchanged**, and the first two are the seed.
+      - **`life` elaborates with a clock and exactly one register.**
+        `stack run clash -- Chapters.Ch06 -main-is life --vhdl` gives a 707-line
+        `life.vhdl` plus a 199-line types package: `clk`, `rst` and `en` ports,
+        64 `out boolean` and **no** `in boolean`, since the board now comes from
+        the register rather than from outside; one process `boards_8_register`
+        with one `rising_edge(clk)`; the glider written out in full as what the
+        reset branch assigns; `en` gating the clocked assignment; and the same
+        seven `-- map begin` blocks and single `+` chapter 5 counted. Not shown
+        in the chapter, which stays at the prompt, but it is what makes the
+        chapter's "exactly one register, because `register` was written once"
+        beat safe to state. *Ch. 6. Drafted.*
+
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and
       `:i shiftN` put it on the **same** line after a space and a tab; `plus`,
@@ -363,7 +394,14 @@ with the date and the observed result, not just a tick.
       column 7 and row 7 that an unbounded board would not have. No cell there
       ever reaches three, so no cell is ever born there, and the boards agree.
       Say nothing about it in either chapter (D11), and do not "fix" the samples:
-      they are the correct output of the actual circuit. *Ch. 6.*
+      they are the correct output of the actual circuit.
+
+      **Re-captured 2026-08-08 by V26**, with
+      `mapM_ (\b -> putStr (render b)) …` rather than the `putStr . render` above.
+      Both spellings were run in the same session and the forty lines are
+      byte-identical; the chapter ships the lambda, because function composition
+      is otherwise never introduced and the lambda is the one from chapter 4.
+      *Ch. 6. Drafted.*
 
 ---
 

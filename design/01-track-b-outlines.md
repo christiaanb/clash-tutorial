@@ -7,9 +7,10 @@ transcript below is **indicative**. None ships without being pasted from a
 terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
-wrong: the observed prompt is `clashi>`, in every case. See D12. Chapter 1's
-outline has been corrected; chapters 2 onward have not, and their prompts should
-be read as `clashi>` when they are drafted.
+wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
+corrected as its chapter ships, so chapters 1 to 6 are right; chapters 7 onward
+still say `*Example.Project>`, and it should be read as `clashi>` when they are
+drafted.
 
 ---
 
@@ -325,11 +326,17 @@ life clk rst en = boards
     boards = register clk rst en glider (fmap step boards)
 ```
 
-**Transcript.**
+**Transcript.** Captured 2026-08-08; see V26. One edit and one reload, then
+`:i register` before the edit rather than after it, and the five samples printed
+with a lambda rather than with function composition:
 
 ```
-*Example.Project> mapM_ (putStr . render) (sampleN 5 (life systemClockGen resetGen enableGen))
+clashi> mapM_ (\b -> putStr (render b)) (sampleN 5 (life systemClockGen resetGen enableGen))
 ```
+
+`putStr . render` says the same thing in fewer characters and was captured too,
+byte-identically, but `.` would be the chapter's only new operator and the lambda
+is the one chapter 4 already wrote.
 
 **Notice that.**
 
@@ -337,20 +344,22 @@ life clk rst en = boards
   has drawn it a thousand times. The language lets it be written as one line.
 - `:i register` shows clock, reset and enable as ordinary arguments. Nothing is
   implicit and nothing is inferred: the clock is there because it was passed.
-- `:t step` is `Board -> Board`; `:t boards` is `Signal System Board`. The type
-  says which side of the register you are on. `fmap` puts a combinational function
-  to work on a signal.
+- `step` is `Board -> Board`; `life systemClockGen resetGen enableGen` is
+  `Signal System Board`. The type says which side of the register you are on, and
+  `fmap` is what crosses between them. Both are asked with `:t` on an application,
+  never on a bare name.
+- One copy of `step`, used again every cycle, against chapter 5's four copies in
+  series. This is the beat this reader came for.
 - Reset is asserted at the start, so the first samples repeat. Point at it. Do not
   explain it away.
 
 **Pre-flag.**
 
-- Never print a `Signal` directly; it does not terminate. `sampleN` appears in the
+- Never print a `Signal` directly. It typechecks and does not terminate (V26), so
+  the sentence says that rather than promising an error. `sampleN` appears in the
   same breath as the first `Signal`, always.
 - `systemClockGen`, `resetGen`, `enableGen`: three values typed without meaning for
   now. Acceptable ritual, provided it never varies.
-
-**Verify.** The exact sample sequence under `resetGen`. Paste, do not reason.
 
 ---
 
