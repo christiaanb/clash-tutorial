@@ -165,10 +165,15 @@ render b = unlines (toList (map row b))
         cell x = if x then '#' else '.'
 ```
 
-**Transcript.**
+**Transcript.** Captured 2026-08-08; see V22. Two edits and two reloads rather than
+one: the board and the seed go in first and are interrogated with `:i`, and
+`render` is added afterwards, so the chapter has a result the reader can see
+before the picture arrives.
 
 ```
-*Example.Project> putStr (render glider)
+clashi> head glider
+False :> True :> False :> False :> False :> False :> False :> False :> Nil
+clashi> putStr (render glider)
 .#......
 ..#.....
 ###.....
@@ -183,6 +188,9 @@ render b = unlines (toList (map row b))
 
 - The seed is a picture in the source and a `BitVector` in the hardware. `unpack`
   is the same reinterpretation the reader does daily.
+- Which reinterpretation `unpack` performs is settled by `fromRows`'s signature
+  and nothing local to `unpack`. First place a signature written once decides
+  something a long way from where it was written.
 - `Vec 8` is not a list. The length is in the type, fixed at compile time, and a
   function taking a `Vec 8` cannot be handed a `Vec 7`.
 - `render` produces a `String`, which is the first and last thing in this tutorial
@@ -230,7 +238,9 @@ neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
 ```
 
 **Transcript.** Render the counts as digits with a second supplied helper and
-check one cell by hand against chapter 3's picture.
+check one cell by hand against chapter 3's picture. Chapter 3's prose commits to
+this being the *only* other helper that is not a circuit, so there is one of
+them and no more.
 
 **Notice that.**
 
