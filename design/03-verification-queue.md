@@ -964,9 +964,9 @@ that someone looked.
 
       *Blocks: nothing. Closed.*
 
-- [ ] **V20 — pull request previews.** *Partly checked 2026-08-08, in the
-      devcontainer, and against scratch repositories seeded from the real
-      `gh-pages` branch. The remainder needs a real workflow run.*
+- [x] **V20 — pull request previews.** *Checked 2026-08-08, in the devcontainer,
+      against scratch repositories seeded from the real `gh-pages` branch, and
+      finally end to end on pull request #3, which is the change itself.*
 
       Checked, and not to be re-derived:
 
@@ -1003,17 +1003,27 @@ that someone looked.
       - `actionlint` 1.7.7 and `shellcheck` 0.10.0 are clean on both workflow
         files and the script.
 
-      Still open, and only answerable from a real run:
+      Then checked for real, on pull request #3:
 
-      - End to end: open a throwaway pull request touching `book/src`, follow
-        the link in the run summary, confirm the chapter renders and that
-        `https://christiaanb.github.io/clash-tutorial/` is unchanged; then close
-        it and confirm `pr/<number>/` is gone and the root still serves.
-      - Whether `peaceiris/actions-mdbook@v2`'s `latest` is still an mdBook
-        whose `404.html` uses `<base href>`. The check above was against 0.5.4
-        locally; CI installs whatever `latest` resolves to on the day.
+      - The preview went up and served, and came down when the pull request was
+        merged: `gh-pages` carries `5a9497e` "Publish pr/3 from ...@c1cd4e7" and
+        then `0a1d4a9` "Remove pr/3 from ...@2a78d40", and the branch now holds
+        no `pr/` entry at all. `/clash-tutorial/pr/3/` returns 404, which is the
+        wanted answer: a preview outlives its pull request nowhere.
+      - The root was unaffected throughout, still the same 52 files.
+      - The merge to `main` produced **no publish commit**. That pull request
+        changed CI and `design/` and not the book, so the tree was identical and
+        the script took its no-op path rather than committing unchanged output —
+        the behaviour the scratch runs predicted, now seen in production.
 
-      *Blocks: nothing in the book. Blocks trusting a preview URL.*
+      One thing deliberately not pinned: `peaceiris/actions-mdbook@v2` installs
+      `latest`, so CI's mdBook is whatever that resolves to on the day, while the
+      `<base href>` check above was against 0.5.4 in the devcontainer. The two
+      agreed on this run, down to the hashed asset names. If a future mdBook
+      renders `404.html` differently, the preview's 404 page is where it will
+      show, and nothing else will break.
+
+      *Blocks: nothing. Closed.*
 
 ---
 
