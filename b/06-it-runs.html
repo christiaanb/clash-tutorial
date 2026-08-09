@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-34e33fc4.js";
+            window.path_to_searchindex_js = "../searchindex-f44a8b9d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-3cb9540d.js"></script>
@@ -185,7 +185,7 @@ register ::
   (KnownDomain dom, NFDataX a) =&gt;
   Clock dom
   -&gt; Reset dom -&gt; Enable dom -&gt; a -&gt; Signal dom a -&gt; Signal dom a
-  	-- Defined in `Clash.Explicit.Signal'
+  	-- Defined in ‘Clash.Explicit.Signal’
 </code></pre>
 <p>After the <code>=&gt;</code>, left to right: a clock, a reset, an enable, a value of type <code>a</code>, and a <code>Signal dom a</code>, giving back a <code>Signal dom a</code>.
 The value of type <code>a</code> is the one the register holds while the reset is asserted, and the <code>Signal dom a</code> after it is what the register takes on every clock edge where the reset is not.

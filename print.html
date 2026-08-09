@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-34e33fc4.js";
+            window.path_to_searchindex_js = "searchindex-f44a8b9d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -542,7 +542,7 @@ Add this under <code>render</code>, at the bottom of the file:</p>
 Ask the prompt what <code>rotateLeftS</code> wants, before writing anything that uses it:</p>
 <pre><code>clashi&gt; :i rotateLeftS
 rotateLeftS :: KnownNat n =&gt; Vec n a -&gt; SNat d -&gt; Vec n a
-  	-- Defined in `Clash.Sized.Vector'
+  	-- Defined in ‘Clash.Sized.Vector’
 </code></pre>
 <p>A vector in, a vector of the same length out, and between them the amount to move by, which is an <code>SNat d</code> rather than a number.
 A length lives in the type, as chapter 3 established, and so does a distance to move by: <code>SNat</code> is how a number that has to be known at compile time is written, and the one we want is written <code>d1</code>.
@@ -825,7 +825,7 @@ register ::
   (KnownDomain dom, NFDataX a) =&gt;
   Clock dom
   -&gt; Reset dom -&gt; Enable dom -&gt; a -&gt; Signal dom a -&gt; Signal dom a
-  	-- Defined in `Clash.Explicit.Signal'
+  	-- Defined in ‘Clash.Explicit.Signal’
 </code></pre>
 <p>After the <code>=&gt;</code>, left to right: a clock, a reset, an enable, a value of type <code>a</code>, and a <code>Signal dom a</code>, giving back a <code>Signal dom a</code>.
 The value of type <code>a</code> is the one the register holds while the reset is asserted, and the <code>Signal dom a</code> after it is what the register takes on every clock edge where the reset is not.
@@ -1004,7 +1004,7 @@ mealy ::
   -&gt; s
   -&gt; Signal dom i
   -&gt; Signal dom o
-  	-- Defined in `Clash.Explicit.Mealy'
+  	-- Defined in ‘Clash.Explicit.Mealy’
 </code></pre>
 <p>After the <code>=&gt;</code> it is chapter 6’s <code>register</code> with a function inserted into it: a clock, a reset and an enable, then <code>(s -&gt; i -&gt; (s, o))</code>, then an <code>s</code>, and then a <code>Signal dom i</code> becomes a <code>Signal dom o</code>.
 The function is everything between the register’s output and its input: given the state <code>s</code> the register holds and the input <code>i</code> arriving this cycle, it says what the register takes next and what comes out now.
