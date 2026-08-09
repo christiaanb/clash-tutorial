@@ -66,14 +66,14 @@ The wait was for Clash itself, and it happens once.
 
 ## The prompt
 
-The template gave us a module at `src/Example/Project.hs` holding two definitions:
+The template gave us a module at `src/Example/Project.hs` holding one definition:
 
 ```haskell
 {{#include ../../../code/src/Chapters/Ch01.hs:definitions}}
 ```
 
-We work on the first one in this chapter.
-The second one goes away in chapter 2, along with the first, and is written again in chapter 9, where it turns out to be the entity declaration.
+That is the whole file apart from its header, and it is what we work on in this chapter.
+It goes away in chapter 2, when there is something to replace it with.
 
 The file's one import is `Clash.Explicit.Prelude`.
 Explicit is the operative word: through chapter 12 nothing in this design is supplied behind your back, and clocks, resets and enables are arguments you pass by hand.

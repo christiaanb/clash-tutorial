@@ -1,13 +1,13 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All twenty-eight
+Findings from checking every claim against a real toolchain. **All twenty-nine
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
 
 Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
-`template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-08.
+`template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-09.
 
 Chapters 1 to 8 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
@@ -441,6 +441,29 @@ with the date and the observed result, not just a tick.
         select, which is V27's "nothing is switched off" holding for a four-way
         command rather than for `Maybe`. Not shown in the chapter, which stays at
         the prompt. *Ch. 8. Drafted.*
+
+- [x] **V29 — the template with no `topEntity` (D17).** Checked 2026-08-09
+      against a project generated from the edited `.hsfiles`. Durable findings:
+
+      - **The shipped module is `plus` and nothing else**, and the project still
+        builds and tests: `stack build` ends on
+        `Registering library for life-0.1.0.0...` and `stack test` passes, so
+        chapter 1's marker for the end of the long build is unchanged.
+      - **`-main-is plus` is what makes the template's documented command work.**
+        `stack run clash -- Example.Project --vhdl` on a fresh project now fails
+        with `No top-level function called 'topEntity' or 'testBench' found, nor
+        any function annotated with a 'Synthesize' or 'TestBench' annotation`, so
+        both places the template writes that command — the comment above the
+        `clash` stanza and the generated `README.md` — carry `-main-is plus`.
+        With it, `Clash: Compiling Example.Project.plus` and three files under
+        `vhdl/Example.Project.plus/`.
+      - **Chapters 1 and 2's sessions survive the deletion byte-identically**,
+        re-captured on a project from the edited template: the `clashi` banner
+        and `Ok, one module loaded.`, `:i plus` at
+        `src/Example/Project.hs:6:1`, `:t plus 3`, `plus 3 5`, then chapter 2's
+        `:r`, `:i nextCell` at `6:1` and its six evaluations. `plus` and
+        `nextCell` both sit above the deleted lines, which is why nothing moved
+        — confirmed rather than assumed. *Ch. 1, 2. Drafted.*
 
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and

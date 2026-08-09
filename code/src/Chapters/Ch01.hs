@@ -7,11 +7,6 @@ module Chapters.Ch01 where
 import Clash.Explicit.Prelude
 
 -- ANCHOR: definitions
--- ANCHOR: plus
 plus :: Signed 8 -> Signed 8 -> Signed 8
 plus a b = a + b
--- ANCHOR_END: plus
-
-topEntity :: Signed 8 -> Signed 8 -> Signed 8
-topEntity = plus
 -- ANCHOR_END: definitions

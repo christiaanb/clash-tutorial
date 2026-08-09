@@ -11,10 +11,9 @@ Counting a cell's neighbours is chapter 4's problem and doing all sixty-four cel
 ## The edit
 
 `plus` has done its job.
-Open `src/Example/Project.hs` and delete it, and delete `topEntity` with it: `topEntity` names the top of the design, and nothing in this chapter is the top of anything.
-We write it again in chapter 9, when there is a design for it to be the top of.
+Open `src/Example/Project.hs` and delete it.
 
-In their place, write the rule:
+In its place, write the rule:
 
 ```haskell
 {{#include ../../../code/src/Chapters/Ch02.hs:next-cell}}

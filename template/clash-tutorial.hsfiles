@@ -47,7 +47,7 @@ library
   hs-source-dirs:  src
   exposed-modules: Example.Project
 
--- Run with: stack run clash -- Example.Project --vhdl
+-- Run with: stack run clash -- Example.Project --vhdl -main-is plus
 --
 -- Not built against common-options: it needs the ordinary Prelude for IO,
 -- and NoImplicitPrelude there leaves `IO` out of scope.
@@ -101,9 +101,6 @@ import Clash.Explicit.Prelude
 plus :: Signed 8 -> Signed 8 -> Signed 8
 plus a b = a + b
 
-topEntity :: Signed 8 -> Signed 8 -> Signed 8
-topEntity = plus
-
 {-# START_FILE bin/Clash.hs #-}
 import Prelude
 import System.Environment (getArgs)
@@ -151,4 +148,4 @@ Open the interpreter:
 
 Generate VHDL:
 
-    stack run clash -- Example.Project --vhdl
+    stack run clash -- Example.Project --vhdl -main-is plus
