@@ -84,6 +84,17 @@ make the switch themselves and diff the generated VHDL.
 Explicit narrows the bad-error surface; it does not eliminate it. `KnownDomain`
 and `NFDataX` still appear.
 
+**Shipped 2026-08-09, and the claim held in the form it was made.** Chapter 13's
+diff is in V35: the two entity declarations are byte identical between the
+chapters, both `step` entities and the whole test bench directory are byte
+identical, and the four files that differ do so in generated identifiers. So
+"notation, not semantics" is something the reader watches rather than something
+this entry asserts. Two things it did not anticipate are in D25, and one number
+is worth recording here because it is the honest size of the win in this design:
+the reader's file goes from 219 lines to 218. The plumbing compounds with
+hierarchy and this design has one level of it, so chapter 13 shows the shape of
+the saving and says plainly that the size of it is one line.
+
 ---
 
 ## D5. Simulator: NVC, not GHDL
@@ -615,6 +626,54 @@ nothing about the simulator.
 `life8 = exposeClockResetEnable (life glider)`, and there are two of them. The
 annotation is still unchanged between the two chapters, which is what D4's claim
 rested on.
+
+---
+
+## D25. Chapter 13 is a diff, and the reader keeps chapter 12's tree to make it
+
+Three things chapter 13 settled, none of which was on paper before it (V35).
+
+**The chapter's result is a comparison, so its first instruction is `mv`.**
+`:vhdl` overwrites `vhdl/`, and what chapter 13 has to show is that the tree it
+writes is chapter 12's tree. So the chapter opens in the shell with
+`mv vhdl vhdl-12`, before a line of source is touched, and closes with
+`diff -r -q --exclude=clash-manifest.json vhdl-12 vhdl`.
+
+That `-q` is a decision rather than a convenience. A full diff of the two files
+that differ is 211 and 595 lines of mostly board literal, and the four names
+`-q` prints are the result: seven of the eleven generated files are byte
+identical, including both `step` entities and the whole test bench directory.
+The exclusion is a decision too, and the chapter says what it is in one
+sentence: `clash-manifest.json` records a hash of what Clash was given, and what
+Clash was given did change. Suppressing it without saying so would be hiding a
+difference in a chapter whose subject is which differences there are.
+
+The cost is that a reader who forgets the `mv` cannot recover it later in the
+chapter; regenerating chapter 12's tree means putting chapter 12's source back.
+That is the one step in the tutorial that is not recoverable from within its own
+chapter, and it is pre-flagged in its own paragraph rather than dropped into the
+middle of one.
+
+**One `:r` at the end of three edits.** Every chapter since chapter 2 has been
+edit, `:r`, evaluate, one edit per reload. Chapter 13 cannot be: changing the
+import alone leaves `mealy` taking a clock it no longer takes, so the file does
+not compile until `life` and both wrappers have changed too. The chapter says
+that before the first edit rather than letting the reader find it, and the habit
+is stretched exactly once, in the last chapter, on a reader who has done it
+eleven times.
+
+The alternative was to reorder the edits so that each intermediate state
+compiles, and there is no such order: the import is what changes `mealy`'s type,
+and every use of `mealy` breaks the moment it lands.
+
+**`exposeClockResetEnable` appears twice, and the two signatures do not move.**
+The outline predicted one occurrence, which was written before chapter 12 turned
+one entity into two. There is one per annotated binder, and that is the shape of
+the answer rather than an accident: an annotated binder describes real ports, a
+port is a wire, and a wire cannot be hidden. `life8` and `life16` keep chapter
+12's signatures byte for byte, which is what makes D4's claim checkable — the
+two generated entity declarations are byte identical between the chapters, so
+the port list demonstrably did not move while the body did.
 
 ---
 

@@ -132,6 +132,54 @@ jobs:
           grep -q 'cells : out std_logic_vector(255 downto 0)' \
             Chapters.Ch12.life16/life16.vhdl
 
+      # Chapter 13 is chapter 12 under Clash.Prelude, and its whole claim is that
+      # the circuit did not move. The chapter shows that as a diff against the
+      # chapter 12 tree it told the reader to keep, so the same diff is the thing
+      # to hold here: seven of the eleven generated files are byte identical, and
+      # the four that are not differ in identifiers Clash chose. The module name
+      # is baked into three of those identifiers in code/ and is not in the
+      # reader's project, so it is normalised away before comparing.
+      - name: Chapter 13's two entities
+        working-directory: code
+        run: stack run clash -- Chapters.Ch13 --vhdl
+
+      - name: Chapter 13, analysed, elaborated and run
+        working-directory: code/vhdl
+        run: |
+          nvc --ieee-warnings=off --work=life8 \
+            -a Chapters.Ch13.life8/life8_types.vhdl \
+               Chapters.Ch13.life8/Chapters_Ch13_life8_step.vhdl \
+               Chapters.Ch13.life8/life8.vhdl \
+               Chapters.Ch13.testBench/Chapters_Ch13_testBench_types.vhdl \
+               Chapters.Ch13.testBench/testBench_slv2string_*.vhdl \
+               Chapters.Ch13.testBench/testBench.vhdl \
+            -e testBench -r
+          nvc --work=life16 \
+            -a Chapters.Ch13.life16/life16_types.vhdl \
+               Chapters.Ch13.life16/Chapters_Ch13_life16_step.vhdl \
+               Chapters.Ch13.life16/life16.vhdl \
+            -e life16
+
+      - name: Chapter 13 generated chapter 12's circuit
+        working-directory: code/vhdl
+        run: |
+          for pair in \
+            "life8/Chapters_Ch%s_life8_step.vhdl" \
+            "life16/Chapters_Ch%s_life16_step.vhdl" \
+            "testBench/testBench.vhdl" \
+            "testBench/Chapters_Ch%s_testBench_types.vhdl"
+          do
+            twelve="Chapters.Ch12.$(printf "$pair" 12)"
+            thirteen="Chapters.Ch13.$(printf "$pair" 13)"
+            diff "$twelve" <(sed 's/Ch13/Ch12/g' "$thirteen")
+          done
+          diff <(sed -n '/^entity life8 is/,/^end;/p' Chapters.Ch12.life8/life8.vhdl) \
+               <(sed -n '/^entity life8 is/,/^end;/p' Chapters.Ch13.life8/life8.vhdl)
+          diff <(sed -n '/^entity life16 is/,/^end;/p' Chapters.Ch12.life16/life16.vhdl) \
+               <(sed -n '/^entity life16 is/,/^end;/p' Chapters.Ch13.life16/life16.vhdl)
+          test "$(wc -l < Chapters.Ch13.life8/life8.vhdl)" = 211
+          test "$(wc -l < Chapters.Ch13.life16/life16.vhdl)" = 595
+
   # The book must build, and every {{#include}} must resolve.
   book:
     runs-on: ubuntu-latest

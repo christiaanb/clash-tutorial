@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All thirty-four
+Findings from checking every claim against a real toolchain. **All thirty-five
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-09.
 
-Chapters 1 to 12 are drafted against these entries and their transcripts now live
+Chapters 1 to 13 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -124,7 +124,11 @@ with the date and the observed result, not just a tick.
 
       The trap under `NoImplicitPrelude`: `concatMap`, `(++)` and `head` are the
       `Vec` versions, so list-based spellings fail with `Couldn't match expected
-      type 'Vec n2 a0' with actual type '[a]'`. *All chapters.*
+      type 'Vec n2 a0' with actual type '[a]'`. *Ch. 1 to 12.*
+
+      Chapter 13 swaps the prelude for `Clash.Prelude` and the list above
+      survives it unchanged: every name in it is exported by both, and the two
+      added imports both stay (V35). *All chapters.*
 
 - [x] **V16 — `default-extensions` sufficiency.** No per-file pragma is required
       in chapters 1 to 13. After D19, `GHC2024` supplies `BinaryLiterals`,
@@ -137,8 +141,9 @@ with the date and the observed result, not just a tick.
       need `TemplateHaskell`, which is what lets `{-# ANN life (Synthesize …) #-}`
       compile; `{-# OPAQUE step #-}` needs nothing (V30). Chapter 10 needs the same
       extension for `{-# ANN testBench (TestBench 'life) #-}`, and the quoted
-      name in it needs nothing further (V31). Chapters 11 to 13 inherit the
-      claim, not the check. *All chapters.*
+      name in it needs nothing further (V31). Chapter 13 needs none of its own
+      either: switching to `Clash.Prelude` and using `exposeClockResetEnable`
+      compiles under the same set (V35). *All chapters.*
 
 - [x] **V24 — the template under `GHC2024`.** D19 is buildable as written.
       `default-language: GHC2024` configures under `cabal-version: 2.4` with
@@ -151,9 +156,10 @@ with the date and the observed result, not just a tick.
       by hand. Chapter 4's sixty transcript lines survived a from-scratch
       re-capture byte-identical.
 
-      **The risk D19 accepts, partly discharged:** `MonoLocalBinds` has rejected
-      nothing in chapters 5 to 10, which are built `-Wall -Wcompat` clean in
-      `code/`. Chapters 11 to 13 are still unchecked. *All chapters.*
+      **The risk D19 accepts, discharged:** `MonoLocalBinds` has rejected
+      nothing in chapters 5 to 13, every one of which builds `-Wall -Wcompat`
+      clean in `code/`. `NoMonomorphismRestriction` was never put back.
+      *All chapters.*
 
 - [x] **V10 — `unpack` resolves for `fromRows`.** `map unpack` takes its
       `BitPack` instance from `fromRows`'s top-level signature alone — no
@@ -263,7 +269,13 @@ with the date and the observed result, not just a tick.
       predictions worth testing rather than asserting: the port list should now be
       identical including names, since the annotation supplies them on both sides,
       and the step file should be byte-identical between the two chapters, leaving
-      only the wrapper's file to differ. *Ch. 13.*
+      only the wrapper's file to differ.
+
+      **Re-run 2026-08-09 as V35, and both predictions held.** The entity
+      declarations are byte identical, both step entities are byte identical and
+      so is the whole test bench directory; four files of eleven differ and every
+      difference in them is an identifier. The conclusion stands as written and
+      the chapter says "equivalent" rather than "identical". *Ch. 13. Drafted.*
 
 ---
 
@@ -883,6 +895,78 @@ with the date and the observed result, not just a tick.
         unchanged; and `step glider16` and `step (step glider16)` give chapter
         5's two shapes in the same rows and columns of a 16×16 board, checked
         against chapter 5's shipped transcript. *Ch. 12. Drafted.*
+
+- [x] **V35 — chapter 13's session, and the diff V13 owed.** Captured
+      2026-08-09 on a project generated from the edited template, holding
+      chapter 12's end state, one real reload and one `:vhdl`. Durable findings:
+
+      - **The edit is four hunks and the file gets one line shorter**, 219 to
+        218. The import line, `life`'s signature, `life`'s definition and the
+        two wrappers' right-hand sides; nothing else in the module moves.
+        `HiddenClockResetEnable System` goes on `life` and on nothing else,
+        because `life` is the only binder in the file that had a clock.
+      - **`Clash.Prelude` needs no third import and no per-file pragma.**
+        `Clash.Explicit.Testbench` stays and does not collide with anything
+        `Clash.Prelude` exports — `Clash.Prelude` re-exports no testbench module
+        — and `numConvert`, `resetGen`, `systemClockGen`, `enableGen`,
+        `fromList`, `foldl1` and the rest of V12's list are all in scope from it
+        too. `code/` builds `Chapters.Ch13` `-Wall -Wcompat` clean at the first
+        attempt, which is V16 and V24's remaining "chapters 11 to 13 inherit the
+        claim, not the check" discharged for 13.
+      - **`exposeClockResetEnable` appears twice, not once.** The outline
+        predicted one occurrence, from before chapter 12 made two entities.
+        There is one per annotated binder, `life8` and `life16`, and the two
+        signatures are chapter 12's byte for byte: an annotated binder describes
+        real ports, so it is exactly where the three have to be arguments again.
+      - **The REPL beats.** `:i mealy` prints in four lines ending
+        `-- Defined in ‘Clash.Prelude.Mealy’`, against the ten chapter 7 shows
+        for the explicit one. `:i life` is
+        `(KnownNat n, HiddenClockResetEnable System) =>` at
+        `src/Example/Project.hs:161:1` and `:i life8` is chapter 12's five-line
+        signature unchanged at `176:1`, both in the one-argument-per-line form.
+        `sampleN 12 testBench` is chapter 10's nine `False` and three `True`.
+      - **One `:vhdl`, three binders, fourteen files**, in D22's fixed order
+        `life16`, `life8`, `testBench`, with the two `Not specializing` lines in
+        the third. Chapter 12's output unchanged in shape.
+      - **Seven of the eleven generated files are byte identical to chapter
+        12's.** Both step entities (343 lines each), both `.sdc`, and all three
+        generated files in `Example.Project.testBench/`: `testBench.vhdl` at 629
+        lines, its types package at 213 and the 24-line `slv2string` file. The
+        four that differ are `life8.vhdl` (211 lines either way), `life16.vhdl`
+        (595), and the two 227-line types packages. `clash-manifest.json`
+        differs in all three directories, which is V30's unstable field and a
+        genuinely different input at once, so the chapter's `diff` excludes it.
+      - **The types packages differ in one identifier.** Eight lines each, all
+        of them `St_0`/`St_0_sel0_board`/`St_0_sel1_running` becoming
+        `St`/`St_sel0_board`/`St_sel1_running`; after that rename the two files
+        are identical. Both are Clash's name for our `St` and no mechanism for
+        which suffix it lands on was established, so the chapter does not claim
+        one.
+      - **The two entities differ in names and in the position of one
+        statement.** Lines 1 to 19, the entity declaration, are byte identical in
+        both files. In the architecture, `st` becomes `result`, `result` becomes
+        `result_0`, `result_0` becomes `result_1`, `st_register` becomes
+        `result_register`, the instance label `…_step_result_0` becomes
+        `…_step_result_1`, and the four signals named `\c$ds_case_alt…` lose
+        `ds_`. Apply those renames and the two files hold the same multiset of
+        lines; the only ordering difference is
+        `cells_0 <= result.St_sel0_board;`, which sits below the register
+        process in chapter 13's file and above it in chapter 12's. One
+        `rising_edge(clk)`, one `en` gate, one 65-line reset value and one
+        instantiation of the step entity, in both.
+      - **The chapter's method is `mv` then `diff`.** `mv vhdl vhdl-12` before
+        the edit, because `:vhdl` overwrites the tree, then
+        `diff -r -q --exclude=clash-manifest.json vhdl-12 vhdl`, which prints
+        exactly the four lines above. `-q` rather than a full diff because the
+        two `.vhdl` files are 211 and 595 lines of mostly board literal.
+      - **NVC is not re-run in the chapter, and is run in CI**, on the same
+        grounds as chapter 12: the command would be chapter 10's with the file
+        names changed. Against `code/`'s `Chapters.Ch13` the six-file command
+        exits 0 and `nvc --work=life16 -a … -e life16` elaborates. In `code/`
+        the module name is inside three of the generated identifiers, so the
+        byte-identity claims hold there after `sed 's/Ch13/Ch12/g'`; CI asserts
+        them in that form, together with the two entity declarations and the 211
+        and 595 line counts. *Ch. 13. Drafted.*
 
 - [x] **V33 — Surfer's browser build, against this file.** Confirmed in a real
       browser on 2026-08-09: `testBench.fst` opens at
