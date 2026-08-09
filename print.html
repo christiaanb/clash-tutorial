@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-3d1cfe2f.js";
+            window.path_to_searchindex_js = "searchindex-e4a3ae15.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -2133,6 +2133,357 @@ All of it has been an 8×8 board, and that 8 has been written into every type si
 One description with the board size as a parameter, and one <code>:vhdl</code> that generates two entities from it: an 8×8 and a 16×16, with <code>cells</code> sixty-four bits wide in one file and two hundred and fifty-six in the other.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="one-description-two-sizes"><a class="header" href="#one-description-two-sizes">One description, two sizes</a></h1>
+<p>Every board in this design is eight cells by eight, and the eight has been in the source since chapter 3.
+It is in <code>Board</code>, in <code>Counts</code>, in the board a <code>Load</code> carries, in the state register and in the width of every port chapter 9 named.
+This chapter takes it out of the description and puts two of them back at the top, so that one <code>:vhdl</code> writes an 8×8 entity and a 16×16 one from the same code.</p>
+<p>You have done this in VHDL with a generic, and the shape of the answer is the same.
+What is new is that the size is checked: a <code>Vec n</code> and a <code>Vec 8</code> are different types, and neither one can quietly turn up where the other belongs.</p>
+<h2 id="a-number-the-type-takes"><a class="header" href="#a-number-the-type-takes">A number the type takes</a></h2>
+<p>Start at the top of the file, where <code>Board</code> is:</p>
+<pre><code class="language-haskell">type Board n = Vec n (Vec n Bool)
+
+fromRows :: KnownNat n =&gt; Vec n (BitVector n) -&gt; Board n
+fromRows = map unpack
+</code></pre>
+<p><code>Board</code> used to be a type; <code>Board n</code> is a type with a number in it, and <code>Board 8</code> is what the last nine chapters were writing.
+<code>fromRows</code> builds one from <code>n</code> rows of <code>n</code> bits, and it has picked up the first <code>KnownNat n</code> of the chapter, which is the constraint the rest of this section is about.</p>
+<p>Every signature in the file names <code>Board</code> or <code>Counts</code>, so every signature in the file changes, in one of two ways.</p>
+<p>The four seeds are 8×8 boards and now say so: <code>glider :: Board 8</code>, and <code>blinker</code>, <code>glider1</code> and <code>glider2</code> the same.
+The two functions that print take a board, or a table of counts, of any size at all: <code>render :: Board n -&gt; String</code> and <code>renderCounts :: Counts n -&gt; String</code>.</p>
+<p>Everything that computes over a board takes the size and a constraint with it:</p>
+<pre><code class="language-haskell">type Counts n = Vec n (Vec n (Unsigned 4))
+
+shiftN, shiftS, shiftW, shiftE :: KnownNat n =&gt; Board n -&gt; Board n
+shiftN b = rotateLeftS b d1
+shiftS b = rotateRightS b d1
+shiftW b = map (\r -&gt; rotateLeftS r d1) b
+shiftE b = map (\r -&gt; rotateRightS r d1) b
+
+neighbourBoards :: KnownNat n =&gt; Board n -&gt; Vec 8 (Board n)
+neighbourBoards b =
+     shiftN b
+  :&gt; shiftS b
+  :&gt; shiftW b
+  :&gt; shiftE b
+  :&gt; shiftN (shiftW b)
+  :&gt; shiftN (shiftE b)
+  :&gt; shiftS (shiftW b)
+  :&gt; shiftS (shiftE b)
+  :&gt; Nil
+
+countBoard :: Board n -&gt; Counts n
+countBoard b = map (map toCount) b
+  where
+    toCount x = if x then 1 else 0
+
+addCounts :: Counts n -&gt; Counts n -&gt; Counts n
+addCounts = zipWith (zipWith (+))
+
+neighbourCounts :: KnownNat n =&gt; Board n -&gt; Counts n
+neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
+</code></pre>
+<p><code>KnownNat n</code> says that <code>n</code> is a number whose value is known when the design is compiled, which is what lets a shift of one position know how far round to wrap.
+Where it goes is not a matter of taste: the compiler asks for it by name, at the definition that needs it, and its message suggests the words to add.
+<code>rotateLeftS</code> has to know the length of what it rotates, so the four shifts carry it; <code>neighbourBoards</code> calls the shifts and <code>neighbourCounts</code> calls <code>neighbourBoards</code>, so each of those carries it in turn.</p>
+<p><code>countBoard</code> and <code>addCounts</code> do not, and that is not an oversight.
+<code>map</code> and <code>zipWith</code> do the same thing to every element of a vector whatever the number of elements is, so neither of them ever asks how many there are.</p>
+<p>Then <code>step</code>, which is where the counts and the rule meet:</p>
+<pre><code class="language-haskell">step :: KnownNat n =&gt; Board n -&gt; Board n
+step b = zipWith (zipWith nextCell) b (neighbourCounts b)
+</code></pre>
+<p>The <code>{-# OPAQUE step #-}</code> above it is chapter 9’s and does not change.</p>
+<h2 id="the-one-edit-that-is-not-mechanical"><a class="header" href="#the-one-edit-that-is-not-mechanical">The one edit that is not mechanical</a></h2>
+<p>A <code>Load</code> carries a board, so <code>Command</code> takes the size too, and so does the state record that holds one:</p>
+<pre><code class="language-haskell">data Command n
+  = Load (Board n)
+  | Step
+  | Run
+  | Pause
+  deriving (Generic, Eq, Show)
+
+deriving instance KnownNat n =&gt; NFDataX (Command n)
+deriving instance KnownNat n =&gt; BitPack (Command n)
+</code></pre>
+<pre><code class="language-haskell">data St n = St { board :: Board n, running :: Bool }
+  deriving (Generic)
+
+deriving instance KnownNat n =&gt; NFDataX (St n)
+</code></pre>
+<p>Three <code>deriving instance</code> lines have appeared below the declarations, and what they have in common is the context <code>KnownNat n =&gt;</code>.
+The reason is <code>BitPack</code>: it is what decides that a <code>Command</code> is sixty-six bits, and sixty-six is now <code>n * n + 2</code>, so the width cannot be worked out until <code>n</code> is.
+Inside a <code>deriving</code> clause there is nowhere to say that, and GHC’s answer is <code>solveWanteds: too many iterations</code>, which is the derivation giving up rather than a mistake it can point at.
+Written standalone, <code>KnownNat n =&gt;</code> is the thing there was nowhere to say.
+<code>NFDataX</code> needs a context for the same kind of reason and gets the same one; <code>Generic</code>, <code>Eq</code> and <code>Show</code> need none and stay where they were.</p>
+<h2 id="the-seed-becomes-an-argument"><a class="header" href="#the-seed-becomes-an-argument">The seed becomes an argument</a></h2>
+<p><code>lifeT</code> changes in its signature and nowhere else:</p>
+<pre><code class="language-haskell">lifeT :: KnownNat n =&gt; St n -&gt; Maybe (Command n) -&gt; (St n, Board n)
+lifeT st cmd = (st', board st)
+  where
+    st' = case cmd of
+      Just (Load b) -&gt; St b False
+      Just Step     -&gt; St (step (board st)) False
+      Just Run      -&gt; St (board st) True
+      Just Pause    -&gt; St (board st) False
+      Nothing       -&gt; if running st then St (step (board st)) True else st
+</code></pre>
+<p><code>life</code> changes in one more place:</p>
+<pre><code class="language-haskell">life :: KnownNat n =&gt;
+  Board n -&gt;
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System (Maybe (Command n)) -&gt; Signal System (Board n)
+life seed clk rst en = mealy clk rst en lifeT (St seed False)
+</code></pre>
+<p><code>mealy</code>’s initial state was <code>St glider False</code>, and <code>glider</code> is a <code>Board 8</code>.
+A description that does not know its size cannot name the board it starts from either, so the seed arrives as an argument.
+That is a fifth argument added to the design for the sake of a parameter, and it is the plainest thing in this chapter about generality not being free.</p>
+<h2 id="two-names-at-the-top"><a class="header" href="#two-names-at-the-top">Two names at the top</a></h2>
+<p>Chapter 9’s annotation has to come off <code>life</code>, and this is the first time the tutorial has asked you to unmake something you made.
+Delete the whole <code>{-# ANN life (Synthesize …) #-}</code> block above <code>life</code>’s signature, all nine lines of it.
+A port list is a fixed number of wires and <code>life</code> no longer has a fixed number of them; left where it is, it would also be a third entity.</p>
+<p>Two annotations go in its place, and the first one goes below <code>life</code>:</p>
+<pre><code class="language-haskell">{-# ANN life8
+  (Synthesize
+    { t_name   = "life8"
+    , t_inputs = [ PortName "clk"
+                 , PortName "rst"
+                 , PortName "en"
+                 , PortName "cmd" ]
+    , t_output = PortName "cells"
+    }) #-}
+{-# OPAQUE life8 #-}
+life8 ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System (Maybe (Command 8)) -&gt; Signal System (Board 8)
+life8 = life glider
+</code></pre>
+<p>That is chapter 9’s annotation with one word changed.
+The only eight in it is inside a name, and a name is not a width: <code>t_name</code> says what the entity is called and <code>t_inputs</code> says what its ports are called, and how wide those ports are is settled by <code>life8</code>’s signature and nowhere else.
+<code>life8 = life glider</code> is <code>life</code> with its seed supplied, and the four arguments left over are the four ports the annotation names.
+<code>{-# OPAQUE life8 #-}</code> is chapter 10’s pragma, moved to the binder the test bench is about to instantiate.</p>
+<p>The test bench follows the name.
+Its annotation becomes <code>{-# ANN testBench (TestBench 'life8) #-}</code> and the line that drives the design becomes <code>done = expected (life8 clk rst enableGen commands)</code>.
+The eight commands and the eight boards below them are untouched.</p>
+<p>Reload, and ask whether the 8×8 design still does what it did:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i step
+step :: KnownNat n =&gt; Board n -&gt; Board n
+  	-- Defined at src/Example/Project.hs:111:1
+clashi&gt; putStr (render (step glider))
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+clashi&gt; sampleN 12 testBench
+[False,False,False,False,False,False,False,False,False,True,True,True]
+</code></pre>
+<p><code>:i step</code> is the whole edit in one line: the rule for a generation of Life, on a board of any size, and the size gone from the type.
+The picture below it is chapter 5’s first generation of the glider, and the list below that is chapter 10’s test bench passing, in Haskell, with every board it expects unchanged.</p>
+<h2 id="a-second-size"><a class="header" href="#a-second-size">A second size</a></h2>
+<p>Now there is something to write that could not have been written before.
+Under <code>glider2</code>, a 16×16 board with the same glider in its corner:</p>
+<pre><code class="language-haskell">glider16 :: Board 16
+glider16 = fromRows
+  (  0b0100_0000_0000_0000
+  :&gt; 0b0010_0000_0000_0000
+  :&gt; 0b1110_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; 0b0000_0000_0000_0000
+  :&gt; Nil )
+</code></pre>
+<p>And under <code>life8</code>, a second entity:</p>
+<pre><code class="language-haskell">{-# ANN life16
+  (Synthesize
+    { t_name   = "life16"
+    , t_inputs = [ PortName "clk"
+                 , PortName "rst"
+                 , PortName "en"
+                 , PortName "cmd" ]
+    , t_output = PortName "cells"
+    }) #-}
+life16 ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System (Maybe (Command 16)) -&gt; Signal System (Board 16)
+life16 = life glider16
+</code></pre>
+<p>Identical to <code>life8</code> apart from <code>t_name</code>, the seed and the two numbers in the signature.
+There is no <code>OPAQUE</code> pragma on it, because nothing instantiates it: the test bench drives <code>life8</code>, and a <code>Command 16</code> will not go into it.</p>
+<p>Reload, and run a 16×16 board through code that has never seen one:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; putStr (render glider16)
+.#..............
+..#.............
+###.............
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+clashi&gt; putStr (render (step glider16))
+................
+#.#.............
+.##.............
+.#..............
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+clashi&gt; putStr (render (step (step glider16)))
+................
+..#.............
+#.#.............
+.##.............
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+................
+</code></pre>
+<p>The seed reads back as the picture it was written as, and the two generations after it are the two chapter 5 printed for the 8×8 glider, in the same rows and the same columns.
+Nothing in <code>step</code>, <code>neighbourCounts</code> or the four shifts was changed to make that happen, and nothing in them was written for sixteen.
+<code>render</code> never knew either size: its body is the one written in chapter 3, and it printed sixteen rows because it was handed sixteen.</p>
+<h2 id="one-command-three-directories"><a class="header" href="#one-command-three-directories">One command, three directories</a></h2>
+<p>Generate:</p>
+<pre><code>clashi&gt; :vhdl
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, src/Example/Project.o )
+Ok, one module reloaded.
+GHC: Setting up GHC took: 0.051s
+GHC: Compiling and loading modules took: 1.593s
+Clash: Parsing and compiling primitives took 0.160s
+GHC+Clash: Loading modules cumulatively took 3.016s
+Clash: Compiling Example.Project.life16
+Clash: Normalization took 0.944s
+Clash: Netlist generation took 0.007s
+Clash: Compiling Example.Project.life16 took 1.010s
+Clash: Compiling Example.Project.life8
+Clash: Normalization took 0.107s
+Clash: Netlist generation took 0.006s
+Clash: Compiling Example.Project.life8 took 0.160s
+Clash: Compiling Example.Project.testBench
+Not specializing TopEntity: Example.Project.life8[8214565720323897895]
+Not specializing TopEntity: Example.Project.life8[8214565720323897895]
+Clash: Normalization took 0.061s
+Clash: Netlist generation took 0.015s
+Clash: Compiling Example.Project.testBench took 0.161s
+Clash: Total compilation took 4.354s
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+</code></pre>
+<p>Three binders in the file carry an annotation, so <code>:vhdl</code> compiled three, one after another, and wrote fourteen files into three directories under <code>vhdl/</code>.
+<code>Example.Project.life8/</code> and <code>Example.Project.life16/</code> hold five each, named for their <code>t_name</code>s, and <code>Example.Project.testBench/</code> holds chapter 10’s four.
+The two <code>Not specializing</code> lines are the <code>OPAQUE</code> pragma on <code>life8</code> again, and the number in them is an internal name that will differ from this one.</p>
+<p>Open <code>life8.vhdl</code> and <code>life16.vhdl</code> and read the first thing in each:</p>
+<pre><code class="language-vhdl">entity life8 is
+  port(-- clock
+       clk   : in life8_types.clk_System;
+       -- reset
+       rst   : in life8_types.rst_System;
+       -- enable
+       en    : in life8_types.en_System;
+       cmd   : in life8_types.Maybe;
+       cells : out std_logic_vector(63 downto 0));
+end;
+</code></pre>
+<pre><code class="language-vhdl">entity life16 is
+  port(-- clock
+       clk   : in life16_types.clk_System;
+       -- reset
+       rst   : in life16_types.rst_System;
+       -- enable
+       en    : in life16_types.en_System;
+       cmd   : in life16_types.Maybe;
+       cells : out std_logic_vector(255 downto 0));
+end;
+</code></pre>
+<p>Five ports and five names, twice, from two annotations that say the same thing.
+<code>cells</code> is sixty-four bits in one entity and two hundred and fifty-six in the other, and that is the chapter in two numbers: two files, one description.</p>
+<p><code>cmd</code> widens with it, and the numbers are in <code>life16_types.vhdl</code>:</p>
+<pre><code class="language-vhdl">  subtype Command is std_logic_vector(257 downto 0);
+  subtype Maybe is std_logic_vector(258 downto 0);
+</code></pre>
+<p>Chapter 8 counted a <code>Command</code> as a two-bit tag and a sixty-four-bit payload, sixty-six in all, and a <code>Maybe Command</code> as sixty-seven.
+Two hundred and fifty-eight and two hundred and fifty-nine are the same two sums with a 16×16 board in the payload.</p>
+<h2 id="the-same-description-twice"><a class="header" href="#the-same-description-twice">The same description, twice</a></h2>
+<p>Chapter 9 drew one boundary inside the design, and it is still drawn.
+Each entity has a <code>step</code> of its own beside it, and their declarations are worth putting side by side:</p>
+<pre><code class="language-vhdl">entity Example_Project_life8_step is
+  port(b      : in life8_types.array_of_array_of_8_boolean(0 to 7);
+       result : out life8_types.array_of_array_of_8_boolean(0 to 7));
+end;
+</code></pre>
+<pre><code class="language-vhdl">entity Example_Project_life16_step is
+  port(b      : in life16_types.array_of_array_of_16_boolean(0 to 15);
+       result : out life16_types.array_of_array_of_16_boolean(0 to 15));
+end;
+</code></pre>
+<p>Two components rather than one, and this is where Clash and a VHDL generic part company.
+A generic would have given you a single entity carrying a <code>generic</code> and two instantiations of it; Clash specialises instead, and writes the entity out once for each size it is used at.
+That is worth saying plainly, because the count of copies is the argument this tutorial has been making since chapter 6, and here the count went up.</p>
+<p>What is shared is the description, and the two files show it.
+<code>Example_Project_life8_step.vhdl</code> and <code>Example_Project_life16_step.vhdl</code> are 343 lines each.
+Every line of one has a line of the other in the same position, and every difference between them is a number: <code>0 to 7</code> against <code>0 to 15</code>, <code>1 mod 8</code> against <code>1 mod 16</code>.
+Fifty-five lines of the three hundred and forty-three, and seven more where the only difference is how far across the page a comma sits, because one type name is a character longer than the other.</p>
+<p>The top entities are less alike, and the reason is the seed.
+<code>life8.vhdl</code> is 211 lines, which is chapter 9’s <code>life.vhdl</code> with <code>life</code> renamed to <code>life8</code> and nothing else touched.
+<code>life16.vhdl</code> is 595, and the 384 lines of difference are the 16×16 glider written out twice, once as the state signal’s initial value and once as what the register takes while the reset is asserted: 256 boolean literals in the places where the 8×8 file has 64.</p>
+<h2 id="notice-that-11"><a class="header" href="#notice-that-11">Notice that</a></h2>
+<p><strong>One description, two entities, and the second one was never tested.</strong>
+The 16×16 design was written by adding a seed and a second annotation, and it works because nothing between <code>nextCell</code> and <code>life</code> was ever told a size.
+That is what the <code>n</code> bought, and it is what a VHDL generic buys too.</p>
+<p><strong>What the generic does not buy, and this does, is the check.</strong>
+<code>Board n</code> and <code>Board 8</code> are different types, and a <code>Command 16</code> cannot be handed to <code>life8</code>.
+A VHDL tool would tell you that when it elaborated the instantiation; here the module does not compile, and nothing is generated to elaborate.</p>
+<p><strong>Two sizes cost two of everything below the description.</strong>
+Two entities, two <code>step</code> components, two types packages and two registers, because there are two circuits, and a parameter does not make one circuit fit two widths of wire.
+The source is the thing that is shared, and it is the only thing that is; no part of this chapter claims otherwise.</p>
+<p><strong>A polymorphic function is not a component until something fixes its size.</strong>
+<code>life</code> has no entity of its own anywhere in the generated tree: it carries no annotation, and what it describes reaches the VHDL only through <code>life8</code> and <code>life16</code>.
+That is chapter 9’s sentence from the other side, a port list being a fixed number of wires, and it is why the two annotations sit where the number is fixed.</p>
+<h2 id="where-this-goes-11"><a class="header" href="#where-this-goes-11">Where this goes</a></h2>
+<p>Every version of <code>life</code> in this book has taken a clock, a reset and an enable as arguments and passed them down by hand, and <code>systemClockGen resetGen enableGen</code> has been ritual at the prompt since chapter 6.
+Chapter 13 deletes all three from every signature in the file, adds one constraint where the compiler asks for it, and generates the same VHDL.
+It is the style you will meet in every Clash project you read after this one, and it is worth arriving at last, with both halves of it in view.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="what-the-rest-of-the-world-writes"><a class="header" href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a></h1>
 <div style="break-before: page; page-break-before: always;"></div>
