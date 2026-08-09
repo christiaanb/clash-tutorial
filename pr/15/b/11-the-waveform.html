@@ -205,10 +205,6 @@ That is not the loss it sounds like, and the reason is a decision from chapter 9
 Open <a href="https://app.surfer-project.org/">https://app.surfer-project.org/</a> and drop <code>testBench.fst</code> onto the window.</p>
 <p>The file does not go anywhere.
 The browser build reads the bytes through the browser’s own file interface and never sends them: the one request Surfer can make over the network is the command that fetches a waveform from a URL, and we are not using it.</p>
-<!-- UNVERIFIED: every sentence below that says what Surfer shows or how it is
-     driven needs checking in a real browser against this exact file. The names,
-     times and values are read out of the dump and are verified (V32); the
-     interface is not. See V33 in design/03-verification-queue.md. -->
 <p>The panel on the left is the design hierarchy, and it has one scope at the root: <code>testbench</code>.
 Inside it is one more, called <code>life_cexampleprojecttestbench_app_arg</code>, which is chapter 10’s instantiation of <code>entity life.life</code> under the label Clash gave it.
 Select that scope, and the first five variables in it are <code>clk</code>, <code>rst</code>, <code>en</code>, <code>cmd</code> and <code>cells</code>.
