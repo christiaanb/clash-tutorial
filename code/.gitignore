@@ -1,5 +1,9 @@
 .stack-work/
 dist-newstyle/
+# `:vhdl` compiles the loaded module to object code beside its source, so these
+# appear as soon as anyone follows chapter 9 inside this package.
+src/**/*.hi
+src/**/*.o
 vhdl/
 verilog/
 systemverilog/

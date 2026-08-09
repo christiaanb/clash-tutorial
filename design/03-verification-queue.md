@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All twenty-nine
+Findings from checking every claim against a real toolchain. **All thirty
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -17,13 +17,22 @@ with the date and the observed result, not just a tick.
 
 ## Toolchain and commands
 
-- [x] **V2 — Test bench route.** `-main-is testBench` is chapter 10's one route.
+- [x] **V2 — Test bench route.** `-main-is testBench` was chapter 10's one route.
       No `TestBench` annotation, no `ANNOTATE` pragma, no Template Haskell: plain
       `Vec` literals work with `stimuliGenerator`/`outputVerifier'`, so
       `$(listToVecTH …)` is not needed. NVC exits 0 on a correct expected vector
       and 1 on a wrong one, printing
       `** Error: 130ns+1: outputVerifier, expected: 00000111, actual: 00000110`.
-      *Ch. 10.*
+
+      **Reopened by D17, on the naming rather than the route.** The mechanism
+      still works, but `life` now carries a `Synthesize` annotation, so `:vhdl`
+      generates it whether or not the test bench asks. Two things to settle
+      against a capture before chapter 10 is drafted: what one invocation
+      produces and which directory the reader is meant to work in, and whether
+      the test bench should be annotated too. An un-annotated one is named
+      `Example_Project_testBench_types.vhdl` while the annotated `life` gives
+      `life_types.vhdl`, which is two naming schemes in one directory one chapter
+      after chapter 9 teaches that the names are the ones you wrote. *Ch. 10.*
 
 - [x] **V3 — NVC file ordering.** Checked on the real ch. 9/10 circuit. Three
       generated files, whatever the circuit size. **An alphabetical glob fails**:
@@ -39,8 +48,15 @@ with the date and the observed result, not just a tick.
           -e testBench -r
       ```
 
-      Plain `topEntity` (no test bench) emits types, `.vhdl` and a `.sdc`; `.sdc`
-      is clock constraints, NVC never sees it. Two further facts for ch. 10:
+      **The ordered command above is void and must be re-derived (V30).** It was
+      checked against a `topEntity` that no longer exists, on a flat netlist that
+      chapter 9 now splits in two with `{-# OPAQUE step #-}`. There are three
+      components before the test bench adds any: `life_types.vhdl`, then
+      `Example_Project_life_step.vhdl`, then `life.vhdl`. Alphabetical order
+      fails more obviously than it used to, since `life.vhdl` sorts before
+      `life_types.vhdl`. The trick of naming the stable files and globbing the
+      hash-suffixed one in its middle slot still applies, and `.sdc` is clock
+      constraints that NVC never sees. Two further facts for ch. 10:
       `Clash.Explicit.Prelude` does **not** export `stimuliGenerator`,
       `outputVerifier'` or `tbSystemClockGen` — `import Clash.Explicit.Testbench`
       is required; and the harmless metavalue warning is not one line but 513
@@ -110,10 +126,12 @@ with the date and the observed result, not just a tick.
       `NumericUnderscores`, `DeriveGeneric` and `FlexibleContexts`;
       `common-options` still lists `DeriveAnyClass` and `TemplateHaskell`
       (`TemplateHaskellQuotes` dropped as implied). Chapters 1 to 4 verified
-      (V24); 5 to 8 verified since, and chapter 8 is the first to need
+      (V24); 5 to 9 verified since. Chapter 8 is the first to need
       `DeriveAnyClass`, which is what lets `NFDataX` and `BitPack` sit in a plain
-      `deriving` clause alongside `Generic` (V28). Chapters 9 to 13 inherit the
-      claim, not the check. *All chapters.*
+      `deriving` clause alongside `Generic` (V28), and chapter 9 is the first to
+      need `TemplateHaskell`, which is what lets `{-# ANN life (Synthesize …) #-}`
+      compile; `{-# OPAQUE step #-}` needs nothing (V30). Chapters 10 to 13
+      inherit the claim, not the check. *All chapters.*
 
 - [x] **V24 — the template under `GHC2024`.** D19 is buildable as written.
       `default-language: GHC2024` configures under `cabal-version: 2.4` with
@@ -127,8 +145,8 @@ with the date and the observed result, not just a tick.
       re-capture byte-identical.
 
       **The risk D19 accepts, partly discharged:** `MonoLocalBinds` has rejected
-      nothing in chapters 5 to 8, which are built `-Wall -Wcompat` clean in
-      `code/`. Chapters 9 to 13 are still unchecked. *All chapters.*
+      nothing in chapters 5 to 9, which are built `-Wall -Wcompat` clean in
+      `code/`. Chapters 10 to 13 are still unchecked. *All chapters.*
 
 - [x] **V10 — `unpack` resolves for `fromRows`.** `map unpack` takes its
       `BitPack` instance from `fromRows`'s top-level signature alone — no
@@ -189,7 +207,19 @@ with the date and the observed result, not just a tick.
       Two `topEntity`s from one `life` work: `-main-is topEntity8` and `-main-is
       topEntity16` each elaborate in under two seconds with different port widths
       (64 vs 256 `out boolean`). Note **`-main-is`**, not a bare module argument,
-      is how 1.10.0 picks a binder not named `topEntity`. *Ch. 12.*
+      is how 1.10.0 picks a binder not named `topEntity`.
+
+      **That paragraph is superseded by D17 and is not chapter 12's route.**
+      `-main-is` remains true as a fact about the compiler; what changed is that
+      there is no `topEntity` to need it. Chapter 12 puts a `Synthesize`
+      annotation on each of `life8` and `life16`, and one `:vhdl` generates both,
+      so its command is chapter 9's unchanged. The port widths comparison also
+      moves: with `t_output` named it is one `std_logic_vector(63 downto 0)`
+      against one `(255 downto 0)`, not 64 `out boolean` against 256. The
+      `KnownNat n` and standalone-deriving findings above are untouched. **Still
+      unchecked and owed by chapter 12:** whether `{-# OPAQUE step #-}` survives
+      `step` becoming polymorphic, and whether that gives one shared component or
+      two specialised ones. *Ch. 12.*
 
 - [x] **V13 — Chapter 13 diff.** Equivalent, not byte-identical — say so plainly.
       Chapter 12's `topEntity8` and a chapter 13 rewrite of identical logic
@@ -209,7 +239,18 @@ with the date and the observed result, not just a tick.
       Behaviour was not re-simulated: `lifeT`/`step` are the same unchanged
       Haskell and the structural comparison accounts for every byte. If the
       chapter shows a diff, point at the port and type names rather than asserting
-      "identical". *Ch. 13.*
+      "identical".
+
+      **The numbers are void and the check must be re-run (V30).** Both sides of
+      that diff were `topEntity`s, un-annotated and flat; chapter 12's output is
+      now two entities, each with named ports and each split by
+      `{-# OPAQUE step #-}`, so "same line count (761)" measures nothing that
+      still exists. Re-run it as a directory to directory diff. The conclusion —
+      equivalent, not byte-identical, and say which — is what stands. Two
+      predictions worth testing rather than asserting: the port list should now be
+      identical including names, since the annotation supplies them on both sides,
+      and the step file should be byte-identical between the two chapters, leaving
+      only the wrapper's file to differ. *Ch. 13.*
 
 ---
 
@@ -267,11 +308,12 @@ with the date and the observed result, not just a tick.
         and `zipWith`s as nested `for … generate` blocks labelled `-- map begin`,
         and exactly one `+`.
 
-      **One check owed by chapter 9.** Chapter 4's last "notice that" promises the
-      reader will see these `map`s as `for … generate` in chapter 9. What was
-      checked is chapter 4's code elaborated alone, not chapter 9's `topEntity`.
-      Confirm against chapter 9's real output and change the sentence if it does
-      not hold.
+      **The check owed by chapter 9, discharged 2026-08-09.** Chapter 4's last
+      "notice that" promises the reader will see these `map`s as `for … generate`
+      in chapter 9. What was checked here is chapter 4's code elaborated alone;
+      V30 checked chapter 9's real output and the promise holds there too, single
+      `+` included, in `Example_Project_life_step.vhdl` rather than in the top
+      entity's own file. Chapter 4's sentence stands as written.
 
 - [x] **V25 — chapter 5's session.** Captured 2026-08-08, one real reload, the
       file swapped on disk while `clashi` held the old module. Durable findings:
@@ -464,6 +506,85 @@ with the date and the observed result, not just a tick.
         `:r`, `:i nextCell` at `6:1` and its six evaluations. `plus` and
         `nextCell` both sit above the deleted lines, which is why nothing moved
         — confirmed rather than assumed. *Ch. 1, 2. Drafted.*
+
+- [x] **V30 — chapter 9's session, and the two generations it produces.**
+      Captured 2026-08-09 on a project generated from the edited template, two
+      real reloads, run three times with every generated `.vhdl` byte-identical
+      across runs. Durable findings:
+
+      - **`:vhdl` needs no argument, finds the annotated binder, and prints no
+        warning after one template change.** It compiles the module to object
+        code, generates, and reloads the interpreted module, which is the pair of
+        `Compiling` lines around its dozen timing lines. It used to print
+        `[GHC-74335] [-Winconsistent-flags] -dynamic-too is ignored when using
+        -dynamic` first; `bin/Clashi.hs` now prepends `-Wno-inconsistent-flags`
+        as well as `-fno-unoptimized-core-for-interpreter`, and it is gone. Same
+        precedent and reasoning as V7's addendum. `bin/Clash.hs` needs no such
+        flag — `stack run clash -- … --vhdl` never printed it. The timing lines
+        vary run to run, so the chapter says the numbers are the capture
+        machine's and that the order of magnitude is seconds.
+      - **The port names come out exactly as written**, `en` included:
+        `clk`, `rst`, `en`, `cmd : in life_types.Maybe` and
+        `cells : out std_logic_vector(63 downto 0)`, with Clash's `-- clock`,
+        `-- reset` and `-- enable` comments over the first three. Naming the
+        output collapses the board from sixty-four `out boolean` to one 64-bit
+        port; naming the arguments of a point-free `topEntity` never did anything
+        at all, which is what the withdrawn draft had to say instead.
+      - **`cmd` and `cells` are chosen to avoid collisions, and they work.**
+        With `command` and `board` the types package comes out with
+        `subtype Command_0` and `St_0_sel0_board_2`, because VHDL is case
+        insensitive and Clash renames the generated identifier rather than the
+        port. With `cmd` and `cells` it reads `subtype Command is
+        std_logic_vector(65 downto 0)`, `subtype Maybe is
+        std_logic_vector(66 downto 0)` and `St_0_sel0_board`, which is V28's
+        chapter 8 output unchanged.
+      - **Run one, annotation only: four files** into
+        `vhdl/Example.Project.life/` — `life.vhdl` (548 lines),
+        `life_types.vhdl` (227), `life.sdc` and `clash-manifest.json`. The
+        directory is named for the module and the binder; the three file names
+        come from `t_name`.
+      - **Run two, after `{-# OPAQUE step #-}`: five files.** `life.vhdl` drops
+        to 211 and `Example_Project_life_step.vhdl` (343) appears. Nothing stale
+        survives run one. **The entity declaration is byte identical between the
+        two runs**, which is the chapter's beat: the interface did not move.
+      - **All the combinational logic crosses the boundary.** `life.vhdl` has
+        **zero** `+`, zero `-- map begin` and zero `-- zipWith begin`; the step
+        file has one `+`, seven `-- map begin` and five `-- zipWith begin`. The
+        step entity is `b : in …array_of_array_of_8_boolean(0 to 7)` and
+        `result : out` the same, ports Clash named. It is instantiated **once**,
+        `Example_Project_life_step_result_0`, feeding both the `"01"` row and the
+        running case, which is what makes chapter 6's "one copy of `step`" claim
+        showable at last.
+      - **Chapter 4's promise holds, in the step file.** `zipWith_3`/
+        `zipWith_2_0` are two nested `for … generate` over sixty-four copies of
+        the cell rule, with `to_unsigned(2,4)`, `to_unsigned(3,4)` and a
+        `when … else` chain in chapter 2's row order, reading the port directly
+        as `b(i_10)(i_9_2)`. `zipWith_1`/`zipWith_0`/`zipWith_4` are three deep,
+        seven by eight by eight, around the single `+`: chapter 4's four hundred
+        and forty-eight additions exactly. This is what V23 left owed.
+      - **`life.vhdl` still holds the state.** One process `st_register`, one
+        `rising_edge(clk)`, `en` gating the assignment, sixty-five lines of reset
+        value of which sixty-four are board literals with five `true`; the two
+        selects on `cmd(66 downto 66)` and `cmd(65 downto 64)` with `Load`,
+        `Step`, `Run`, `Pause` at `"00"` to `"11"`; and
+        `b <= …fromSLV(cmd(63 downto 0))` with no condition on it.
+      - **`{-# ANN #-}` needs no per-file `LANGUAGE` pragma** and neither does
+        `OPAQUE`: `TemplateHaskell` in `default-extensions` is enough, and
+        `code/` builds `Chapters.Ch09` `-Wall -Wcompat` clean with both. V16's
+        claim holds for chapter 9.
+      - **`:i` adds nothing to this chapter and is not shown.** `:i life` prints
+        chapter 8's signature at a new line number and says nothing about the
+        annotation; `:i step` prints `step :: Board -> Board` in the same-line
+        form and says nothing about the pragma.
+      - **`clash-manifest.json`'s `hash` field differs between otherwise
+        identical runs.** Every `.vhdl` file is byte identical; only that field
+        moves. Nothing in any chapter reads it, and nothing should start.
+      - **The output analyses, in dependency order.**
+        `nvc -a life_types.vhdl Example_Project_life_step.vhdl life.vhdl` exits
+        0. Alphabetical order does not: `life.vhdl` sorts before
+        `life_types.vhdl`. Not shown in chapter 9, which stops at reading the
+        files, but it is the chapter-9 half of V3 and it is why chapter 10's
+        ordering pre-flag got sharper. *Ch. 9. Drafted.*
 
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and

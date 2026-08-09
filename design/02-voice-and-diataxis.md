@@ -150,7 +150,7 @@ The unteaching beats, distributed across chapters:
 | 6 | `Signal` is VHDL's `signal`. It is not. Feedback is a self-referring binding. |
 | 7 | Valid and data are two things by convention. Here they are one, checked. |
 | 8 | A tagged union is read by convention. Here it cannot be read any other way. |
-| 9 | `topEntity` is new machinery. It is the entity declaration, named at last. |
+| 9 | The function hierarchy survives into the HDL. It does not, unless a binder is marked. |
 | 13 | The hidden prelude changes the circuit. It changes the notation. |
 
 **Do not write a VHDL-to-Clash phrasebook.** It would be easy and popular, and it

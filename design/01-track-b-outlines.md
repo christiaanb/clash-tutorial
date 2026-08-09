@@ -8,7 +8,7 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 8 are right; chapters 9 onward
+corrected as its chapter ships, so chapters 1 to 9 are right; chapters 10 onward
 still say `*Example.Project>`, and it should be read as `clashi>` when they are
 drafted.
 
@@ -484,38 +484,94 @@ Command` adds one, 67. Confirmed twice over: by `pack` at the prompt (V28) and b
 
 ## Chapter 9: An entity
 
-**What we do.** Name the top of the design and generate VHDL.
+**What we do.** Name the top of the design and each of its ports, generate VHDL,
+then draw one boundary inside the design and generate it again.
+
+There is no `topEntity` anywhere in this tutorial (D17). The first edit is an
+annotation attached to `life`:
 
 ```haskell
-topEntity ::
-  Clock System -> Reset System -> Enable System ->
-  Signal System (Maybe Command) -> Signal System Board
-topEntity = life
+{-# ANN life
+  (Synthesize
+    { t_name   = "life"
+    , t_inputs = [ PortName "clk"
+                 , PortName "rst"
+                 , PortName "en"
+                 , PortName "cmd" ]
+    , t_output = PortName "cells"
+    }) #-}
 ```
 
+and the second is a pragma above `step`:
+
+```haskell
+{-# OPAQUE step #-}
 ```
-*Example.Project> :vhdl
+
+**Port names are chosen, not obvious.** `cmd` rather than `command`, and `cells`
+rather than `board`: VHDL is case insensitive, so a port called `command` pushes
+the generated `Command` subtype to `Command_0`, and a port called `board` pushes
+the state record's field to `St_0_sel0_board_2`. Both would contradict chapter 8
+one chapter after it shipped. The chapter does not mention the workaround; D17
+and V30 record why it is one.
+
+**Transcript.** Captured 2026-08-09; see V30. Two edits, two reloads and two
+`:vhdl` runs, which is what makes "Clash inlines the whole design into one file"
+something the reader watches happen rather than a claim:
+
 ```
+clashi> :r
+clashi> :vhdl
+```
+
+The first run writes four files into `vhdl/Example.Project.life/` and
+`life.vhdl` is 548 lines. The second writes five and `life.vhdl` is 211, beside a
+343-line `Example_Project_life_step.vhdl`. The entity declaration is byte
+identical between the two, which is the beat: the interface did not move, only
+the logic behind it did.
+
+**The three things to find**, and they are excerpts from the generated files
+rather than transcripts. Each is introduced by the file it is in, because with
+two files a reader searching the wrong one finds nothing:
+
+1. **`life_types.vhdl`** — `subtype Command is std_logic_vector(65 downto 0)`,
+   `subtype Maybe is std_logic_vector(66 downto 0)`, and the `St_0` record with
+   the fields it was declared with. Chapter 8's 66 and 67 in the file.
+2. **`Example_Project_life_step.vhdl`** — `zipWith_3`/`zipWith_2_0`, two nested
+   `for … generate` holding sixty-four copies of the cell rule with
+   `to_unsigned(2,4)` and `to_unsigned(3,4)`; and `zipWith_1`/`zipWith_0`/
+   `zipWith_4`, three deep around the only `+` in the design. Chapter 4's
+   inherited promise, and it lands harder here than it would have in one flat
+   file: `life.vhdl` has no `+` in it at all.
+3. **`life.vhdl`** — one `st_register` process, one `rising_edge(clk)`, `en`
+   gating the assignment, the glider as the reset value; the two selects on
+   `cmd(66 downto 66)` and `cmd(65 downto 64)`; the unconditional
+   `b <= … fromSLV(cmd(63 downto 0))`; and the single instantiation of the step
+   entity, which is what finally shows the "one copy of `step`" claim made since
+   chapter 6.
 
 **Notice that.**
 
-- `topEntity` is the entity declaration. Its arguments are the ports, and clock,
-  reset and enable are ports because they were arguments all along. Nothing new
-  has been introduced; a name has been given.
-- It is monomorphic. `System` and `Command` are fixed, because a port list is a
-  fixed number of wires.
-- The generated hierarchy has recognisable pieces in it. Find `step`. Find the
-  types package. The reader is reading their own design in their own language,
-  which for this reader is when the tool becomes credible.
+- The annotation wrote down what was already true. The ports are the arguments
+  `life` already had, in order, and clock, reset and enable have been arguments
+  since chapter 6. Nothing was added to give the design a top.
+- Clash flattens unless told not to, and telling it costs something: it does not
+  optimise across the boundary, and the `OPAQUE` component's own ports are
+  Clash's to name rather than ours.
+- A port list is a fixed number of wires, so this is where the design stops being
+  general. Chapter 12 writes two of these annotations and gets two entities from
+  one `:vhdl`.
+- The chosen names are what chapters 10 and 11 read. That is what they were for;
+  chapter 9 is where they are cheapest to introduce.
 
 **Pre-flag.** Tell the reader to look for three specific things and to ignore the
 rest. A reader who tries to read all of it will conclude the output is
 unreadable.
 
-**Inherited promise.** Chapter 4 closes by saying that its `map`s appear in this
-chapter's VHDL as `for … generate`. That holds for chapter 4's code elaborated on
-its own (V23), so one of the three things to look for is that, and the sentence in
-chapter 4 has to be checked against this chapter's actual output before it ships.
+**Inherited promise, discharged.** Chapter 4 closes by saying that its `map`s
+appear in this chapter's VHDL as `for … generate`. It holds, in the step file
+rather than in `life.vhdl`, and it is the second of the three things to look for
+(V30). Chapter 4's sentence stands as written.
 
 ---
 
@@ -539,14 +595,27 @@ nvc --std=<pinned> -a <files, in dependency order> -e testBench -r
 
 **Pre-flag.**
 
-- **File ordering is the hazard.** Clash emits several files and the types package
-  must be analysed first; alphabetical globbing is not dependency order. List the
-  files explicitly, pinned to the pinned Clash version, and let CI catch drift.
+- **File ordering is the hazard, and chapter 9 made it worse.** There are three
+  components now, not one, with a real chain: `life_types` before
+  `Example_Project_life_step` before `life` before the test bench. Alphabetical
+  globbing is not dependency order and now visibly is not — `life.vhdl` sorts
+  before `life_types.vhdl`. List the files explicitly, pinned to the pinned Clash
+  version, and let CI catch drift. V3's ordered command is void and must be
+  re-derived (V30).
 - Linux readers may need `configure`/`make`. One sentence, not a section.
 
-**Decide.** Test bench via `TestBench` annotation (needs Template Haskell and a
-name quote) or via `-main-is testBench` on the command line. Prefer whichever
-avoids the annotation: for this reader it is ritual with no payoff.
+**Decide, and it is a new decision.** Chapter 9 teaches that the generated names
+are the names you wrote, so an un-annotated test bench would put
+`Example_Project_testBench_types.vhdl` in the same directory as `life_types.vhdl`
+and contradict that one chapter later. Either annotate `testBench` too, for one
+naming scheme at the cost of one more annotation block, or keep `-main-is
+testBench` (V2) and spend a sentence on why one file is module qualified. Settle
+it against a real capture, not on paper.
+
+**Also check.** `life` carries a `Synthesize` annotation, so `:vhdl` generates it
+whether or not the test bench asks for it. Confirm what one invocation produces,
+and say which directory the reader works in. A chapter that leaves them with two
+and no guidance has failed.
 
 ---
 
@@ -590,17 +659,33 @@ type Board n = Vec n (Vec n Bool)
 nothing else changes structurally. `neighbourBoards` stays `Vec 8` — eight
 directions, regardless of board size — so the fold is unaffected.
 
-Two top entities, from one `life`:
+Two entities, from one `life`, and **one `:vhdl` produces both**, because Clash
+generates every binder carrying a `Synthesize` annotation in one invocation. The
+withdrawn route was `-main-is topEntity8` and `-main-is topEntity16` (V1), two
+shell invocations of a flag used in exactly one chapter; the annotation keeps
+chapter 12's command byte identical to chapter 9's and the reader never leaves
+`clashi`.
 
 ```haskell
-topEntity8  :: … Signal System (Maybe (Command 8))  -> Signal System (Board 8)
-topEntity16 :: … Signal System (Maybe (Command 16)) -> Signal System (Board 16)
+life8  :: … Signal System (Maybe (Command 8))  -> Signal System (Board 8)
+life16 :: … Signal System (Maybe (Command 16)) -> Signal System (Board 16)
 ```
+
+with a `Synthesize` block on each, identical except for `t_name`, which is itself
+worth a sentence: the annotation does not mention the size, because the size is
+in the signature.
+
+**The edit this costs.** Chapter 9's annotation has to come off `life`, or three
+entities are generated. The reader unmakes something they made three chapters
+ago, which is the first time this tutorial asks that of them, and the outline
+should not pretend otherwise.
 
 **Notice that.**
 
 - One description, two entities, visibly different port widths in the generated
-  VHDL. Sixty-four bits and two hundred and fifty-six.
+  VHDL. With `t_output` named, that is `cells : out std_logic_vector(63 downto 0)`
+  against `(255 downto 0)`: two numbers on two lines rather than sixty-four ports
+  to count against two hundred and fifty-six.
 - The reader writes VHDL generics already. The new part is that vector lengths are
   checked against the parameter at compile time: a `Vec n` cannot silently meet a
   `Vec 8`.
@@ -611,6 +696,11 @@ topEntity16 :: … Signal System (Maybe (Command 16)) -> Signal System (Board 16
 decode. Every signature is given explicitly and inference is never relied upon. If
 it proves fragile in practice, drop the chapter and ship thirteen — the safe
 fallback is recorded in D9.
+
+**Second risk, unverified.** `{-# OPAQUE step #-}` on a `step` that is now
+polymorphic in the board size: one shared component, two specialised ones, or a
+refused boundary. Check it before drafting. If it does not hold, the fallback is
+to drop chapter 12, not to unteach chapter 9.
 
 ---
 
@@ -628,11 +718,29 @@ top, regenerate, diff against chapter 12's output.
   post from here on, including the template they started from. They have now seen
   both and know what the short form is short for.
 
-**Pre-flag.** `exposeClockResetEnable` appears exactly once, at `topEntity`, and is
-the price of the shorter body.
+**Where the annotation goes.** It stays exactly where chapter 12 put it. An
+annotated binder describes real ports, so it cannot have hidden clock, reset and
+enable, which makes `life8` and `life16` the `exposeClockResetEnable` wrappers and
+the only places those three are still written out:
+
+```haskell
+life8 = exposeClockResetEnable life
+```
+
+The annotation is then unchanged between chapters 12 and 13, which is the
+cleanest available demonstration of D4's claim that the hidden prelude is
+notation rather than semantics: the port list did not move, only the body did.
+
+**Pre-flag.** `exposeClockResetEnable` appears exactly once, on the binder the
+annotation is attached to, and is the price of the shorter body.
+`{-# OPAQUE step #-}` is untouched, because `step` has no clock — a free
+reassurance in a chapter otherwise about clocks disappearing.
 
 **Verify.** Whether the two VHDL outputs are byte-identical or merely equivalent.
-Claim only what is true.
+Claim only what is true. V13's 342-of-761 figures are void, since chapter 12's
+output is now two entities in two files; re-run it as a directory to directory
+diff, and test the prediction that the step file is byte identical between the two
+chapters and only the wrapper's file differs.
 
 ---
 
