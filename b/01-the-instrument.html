@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-4080aa1e.js";
+            window.path_to_searchindex_js = "../searchindex-763f4192.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-3cb9540d.js"></script>
@@ -216,15 +216,12 @@ Start it and leave it alone:</p>
 <p>Every later build in this tutorial takes seconds.
 The wait was for Clash itself, and it happens once.</p>
 <h2 id="the-prompt"><a class="header" href="#the-prompt">The prompt</a></h2>
-<p>The template gave us a module at <code>src/Example/Project.hs</code> holding two definitions:</p>
+<p>The template gave us a module at <code>src/Example/Project.hs</code> holding one definition:</p>
 <pre><code class="language-haskell">plus :: Signed 8 -&gt; Signed 8 -&gt; Signed 8
 plus a b = a + b
-
-topEntity :: Signed 8 -&gt; Signed 8 -&gt; Signed 8
-topEntity = plus
 </code></pre>
-<p>We work on the first one in this chapter.
-The second one goes away in chapter 2, along with the first, and is written again in chapter 9, where it turns out to be the entity declaration.</p>
+<p>That is the whole file apart from its header, and it is what we work on in this chapter.
+It goes away in chapter 2, when there is something to replace it with.</p>
 <p>The file’s one import is <code>Clash.Explicit.Prelude</code>.
 Explicit is the operative word: through chapter 12 nothing in this design is supplied behind your back, and clocks, resets and enables are arguments you pass by hand.
 Chapter 13 switches to the shorter style and shows what the short form was short for.</p>

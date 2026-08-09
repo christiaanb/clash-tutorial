@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-4080aa1e.js";
+            window.path_to_searchindex_js = "../searchindex-763f4192.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-3cb9540d.js"></script>
@@ -183,9 +183,8 @@ That is the whole game.</p>
 Counting a cell’s neighbours is chapter 4’s problem and doing all sixty-four cells at once is chapter 5’s, so here the count arrives as an argument and the answer comes back as one bit.</p>
 <h2 id="the-edit"><a class="header" href="#the-edit">The edit</a></h2>
 <p><code>plus</code> has done its job.
-Open <code>src/Example/Project.hs</code> and delete it, and delete <code>topEntity</code> with it: <code>topEntity</code> names the top of the design, and nothing in this chapter is the top of anything.
-We write it again in chapter 9, when there is a design for it to be the top of.</p>
-<p>In their place, write the rule:</p>
+Open <code>src/Example/Project.hs</code> and delete it.</p>
+<p>In its place, write the rule:</p>
 <pre><code class="language-haskell">nextCell :: Bool -&gt; Unsigned 4 -&gt; Bool
 nextCell alive n = case (alive, n) of
   (True,  2) -&gt; True
