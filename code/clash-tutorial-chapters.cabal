@@ -53,6 +53,7 @@ library
                    Chapters.Ch09
                    Chapters.Ch10
                    Chapters.Ch11
+                   Chapters.Ch12
 
 executable clash
   main-is:          bin/Clash.hs

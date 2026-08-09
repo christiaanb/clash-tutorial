@@ -99,6 +99,39 @@ jobs:
             -e testBench -r -w
           test -s testBench.fst
 
+      # Chapter 12 retargets the test bench at `life8` and adds a second entity
+      # the book never simulates. The chapter itself stops at `:vhdl`, so this is
+      # the only thing that would notice the retargeted test bench failing, or
+      # the 16x16 entity being generated but not analysable. Three claims the
+      # chapter makes about the files are asserted here rather than trusted: the
+      # two step entities are the same length, life8.vhdl is chapter 9's 211
+      # lines, and life16's output port is 256 bits wide.
+      - name: Chapter 12's two entities
+        working-directory: code
+        run: stack run clash -- Chapters.Ch12 --vhdl
+
+      - name: Chapter 12, analysed, elaborated and run
+        working-directory: code/vhdl
+        run: |
+          nvc --ieee-warnings=off --work=life8 \
+            -a Chapters.Ch12.life8/life8_types.vhdl \
+               Chapters.Ch12.life8/Chapters_Ch12_life8_step.vhdl \
+               Chapters.Ch12.life8/life8.vhdl \
+               Chapters.Ch12.testBench/Chapters_Ch12_testBench_types.vhdl \
+               Chapters.Ch12.testBench/testBench_slv2string_*.vhdl \
+               Chapters.Ch12.testBench/testBench.vhdl \
+            -e testBench -r
+          nvc --work=life16 \
+            -a Chapters.Ch12.life16/life16_types.vhdl \
+               Chapters.Ch12.life16/Chapters_Ch12_life16_step.vhdl \
+               Chapters.Ch12.life16/life16.vhdl \
+            -e life16
+          test "$(wc -l < Chapters.Ch12.life8/Chapters_Ch12_life8_step.vhdl)" \
+             = "$(wc -l < Chapters.Ch12.life16/Chapters_Ch12_life16_step.vhdl)"
+          test "$(wc -l < Chapters.Ch12.life8/life8.vhdl)" = 211
+          grep -q 'cells : out std_logic_vector(255 downto 0)' \
+            Chapters.Ch12.life16/life16.vhdl
+
   # The book must build, and every {{#include}} must resolve.
   book:
     runs-on: ubuntu-latest

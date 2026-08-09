@@ -8,7 +8,7 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 11 are right; chapters 12 onward
+corrected as its chapter ships, so chapters 1 to 12 are right; chapters 13 onward
 still say `*Example.Project>`, and it should be read as `clashi>` when they are
 drafted.
 
@@ -738,16 +738,30 @@ from one description.
 type Board n = Vec n (Vec n Bool)
 ```
 
-`step`, `neighbourCounts` and the shifts gain a `KnownNat n` constraint and
-nothing else changes structurally. `neighbourBoards` stays `Vec 8` — eight
-directions, regardless of board size — so the fold is unaffected.
+`fromRows`, the four shifts, `neighbourBoards`, `neighbourCounts`, `step` and
+`lifeT` gain a `KnownNat n` constraint and nothing else changes structurally.
+`countBoard`, `addCounts`, `render` and `renderCounts` gain **none** — `map`,
+`zipWith` and `toList` never ask a vector its length — which is what lets the
+chapter say "put it where the compiler asks" and mean it (V34, correcting V1).
+`neighbourBoards` stays `Vec 8` — eight directions, regardless of board size —
+so the fold is unaffected.
 
-Two entities, from one `life`, and **one `:vhdl` produces both**, because Clash
-generates every binder carrying a `Synthesize` annotation in one invocation. The
-withdrawn route was `-main-is topEntity8` and `-main-is topEntity16` (V1), two
-shell invocations of a flag used in exactly one chapter; the annotation keeps
-chapter 12's command byte identical to chapter 9's and the reader never leaves
-`clashi`.
+`Command n` and `St n` derive `NFDataX` and `BitPack` standalone with an explicit
+`KnownNat n` context. This is the chapter's one pre-flagged pitfall and the
+reason is `BitSize (Command n) = n * n + 2`; the plain clause answers
+`solveWanteds: too many iterations`, which the chapter names in half a sentence
+and never puts on screen.
+
+`life` takes the seed it starts from as its first argument, because a description
+that does not know `n` cannot name an 8×8 glider. That is D24, it was not
+anticipated here, and the chapter states the cost in its own sentence.
+
+Two entities, from one `life`, and **one `:vhdl` produces both** and the test
+bench besides, because Clash generates every binder carrying a `Synthesize` or
+`TestBench` annotation in one invocation. The withdrawn route was
+`-main-is topEntity8` and `-main-is topEntity16` (V1), two shell invocations of a
+flag used in exactly one chapter; the annotation keeps chapter 12's command byte
+identical to chapter 9's and the reader never leaves `clashi`.
 
 ```haskell
 life8  :: … Signal System (Maybe (Command 8))  -> Signal System (Board 8)
@@ -756,12 +770,21 @@ life16 :: … Signal System (Maybe (Command 16)) -> Signal System (Board 16)
 
 with a `Synthesize` block on each, identical except for `t_name`, which is itself
 worth a sentence: the annotation does not mention the size, because the size is
-in the signature.
+in the signature. Both are point-free — `life8 = life glider` — and the port
+names come out as written (V34).
 
 **The edit this costs.** Chapter 9's annotation has to come off `life`, or three
 entities are generated. The reader unmakes something they made three chapters
 ago, which is the first time this tutorial asks that of them, and the outline
-should not pretend otherwise.
+should not pretend otherwise. The test bench also follows the name: two lines
+change, and `{-# OPAQUE life8 #-}` is chapter 10's pragma on the binder that is
+now instantiated.
+
+**Transcript.** Captured 2026-08-09; see V34. Two edits, two reloads and one
+`:vhdl`. The first reload's beats are `:i step`, one generation of the 8×8
+glider and `sampleN 12 testBench`, which together say the 8×8 design did not
+move; the second's are `glider16` and two generations of it, which are chapter
+5's two shapes on a bigger board.
 
 **Notice that.**
 
@@ -774,16 +797,18 @@ should not pretend otherwise.
   `Vec 8`.
 - The 16×16 design was never tested and works, because the description never knew
   the size.
+- Two sizes cost two of everything below the description, and the two `step`
+  entities are where that is countable: 343 lines each, 55 lines apiece
+  differing, every difference a number.
 
-**Risk.** This is the chapter most likely to produce type errors the reader cannot
-decode. Every signature is given explicitly and inference is never relied upon. If
-it proves fragile in practice, drop the chapter and ship thirteen — the safe
-fallback is recorded in D9.
+**Risk, discharged.** This was the chapter most likely to produce type errors the
+reader cannot decode. Every signature is given explicitly, inference is never
+relied upon, and `code/` builds `-Wall -Wcompat` clean. The fallback recorded in
+D9 — drop the chapter and ship thirteen — was not needed.
 
-**Second risk, unverified.** `{-# OPAQUE step #-}` on a `step` that is now
-polymorphic in the board size: one shared component, two specialised ones, or a
-refused boundary. Check it before drafting. If it does not hold, the fallback is
-to drop chapter 12, not to unteach chapter 9.
+**Second risk, closed.** `{-# OPAQUE step #-}` on a polymorphic `step` gives two
+specialised components, one per entity. Neither of the bad answers happened, and
+D24 records what the chapter says about it.
 
 ---
 
@@ -807,8 +832,11 @@ enable, which makes `life8` and `life16` the `exposeClockResetEnable` wrappers a
 the only places those three are still written out:
 
 ```haskell
-life8 = exposeClockResetEnable life
+life8 = exposeClockResetEnable (life glider)
 ```
+
+with `life16 = exposeClockResetEnable (life glider16)` beside it: chapter 12 gave
+`life` its seed as an argument (D24), so the wrapper supplies it here too.
 
 The annotation is then unchanged between chapters 12 and 13, which is the
 cleanest available demonstration of D4's claim that the hidden prelude is
@@ -821,9 +849,12 @@ reassurance in a chapter otherwise about clocks disappearing.
 
 **Verify.** Whether the two VHDL outputs are byte-identical or merely equivalent.
 Claim only what is true. V13's 342-of-761 figures are void, since chapter 12's
-output is now two entities in two files; re-run it as a directory to directory
-diff, and test the prediction that the step file is byte identical between the two
-chapters and only the wrapper's file differs.
+output is now three directories and fourteen files; re-run it as a directory to
+directory diff, and test the prediction that the two step files are byte
+identical between the two chapters and only the wrappers' files differ. The
+chapter 12 baseline to diff against is recorded in V34: `life8.vhdl` 211 lines,
+`life16.vhdl` 595, both step files 343, both types packages 227,
+`testBench.vhdl` 629.
 
 ---
 
