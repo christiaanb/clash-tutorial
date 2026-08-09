@@ -8,7 +8,7 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 7 are right; chapters 8 onward
+corrected as its chapter ships, so chapters 1 to 8 are right; chapters 9 onward
 still say `*Example.Project>`, and it should be read as `clashi>` when they are
 drafted.
 
@@ -441,6 +441,30 @@ lifeT st cmd = (st', board st)
       Nothing       -> if running st then St (step (board st)) True else st
 ```
 
+`life` takes `St glider False` as `mealy`'s initial state, so the design comes out
+of reset stopped. That is a change of behaviour from chapters 6 and 7, and it is
+the chapter's clearest single result: the third sampled board used to be the first
+generation and is now still the seed.
+
+**Transcript.** Captured 2026-08-08; see V28. Two edits and two reloads: `Command`
+goes in first and is interrogated on its own, so the chapter has a result before
+any logic changes; then `St`, `lifeT` and `life` together. The stimulus is eleven
+elements for eleven cycles:
+
+```
+clashi> mapM_ (\b -> putStr (render b)) (sampleN 11 (life systemClockGen resetGen enableGen (fromList [Nothing, Nothing, Just Step, Nothing, Just Run, Nothing, Nothing, Just Pause, Just (Load blinker), Nothing, Nothing])))
+```
+
+**The sizes are shown, not stated.** `pack` prints a `Command` as two tag bits and
+sixty-four payload bits, with `Load`'s payload holding the blinker and the other
+three printing sixty-four `.`, and `pack (Just Step)` prints sixty-seven. That is
+the whole "tag and union payload" argument on screen, countable, and it needs
+neither `Data.Proxy` nor a type application (V28, correcting the note below that
+said the widths would be stated). `:i Command` is **not** shown: it prints the
+unreduced `BitSize` type family instance through `Generic`, which is eleven lines
+the reader cannot read. `:i Load` and `:i Step` print three lines each and are
+what the chapter uses.
+
 **Notice that.**
 
 - `Load` carries a board; `Step`, `Run` and `Pause` carry nothing. This is a tag
@@ -449,10 +473,12 @@ lifeT st cmd = (st', board st)
 - `Just (Load b)` matches two levels in one expression and binds the payload in
   the same breath. There is no VHDL construct for this.
 - `St` is a record, which VHDL also has. Familiar. Say so and spend no time on it.
+  It stays a record in the generated hardware, which is worth the half sentence it
+  costs (V28).
 
-**Sizes worth stating.** `Command` is a two-bit tag plus a 64-bit payload;
-`Maybe Command` adds one. Verify the exact widths — they are what the reader looks
-for in chapter 11.
+**Sizes.** `Command` is a two-bit tag plus a 64-bit payload, 66 in all; `Maybe
+Command` adds one, 67. Confirmed twice over: by `pack` at the prompt (V28) and by
+`natVal` (V11). They are what the reader looks for in chapter 11.
 
 ---
 

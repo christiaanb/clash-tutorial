@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All twenty-seven
+Findings from checking every claim against a real toolchain. **All twenty-eight
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-08.
 
-Chapters 1 to 7 are drafted against these entries and their transcripts now live
+Chapters 1 to 8 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -88,9 +88,14 @@ with the date and the observed result, not just a tick.
       and `Data.Char (intToDigit)` (ch. 4, V23). Expect any third to follow that
       pattern.
 
+      Chapter 8 needs no third: `pack`, `Generic`, `NFDataX`, `BitPack`, `Eq` and
+      `Show` are all in scope for a `deriving` clause, and none of `Load`, `Step`,
+      `Run`, `Pause`, `St`, `board` or `running` collides with anything the
+      prelude exports (V28).
+
       In scope from the single import: `Vec`, `:>`, `Nil`, `map`, `zipWith`,
       `toList`, `head`, `foldl1`, `rotateLeftS`, `rotateRightS`, `d1`,
-      `BitVector`, `unpack`, `Signed`, `Unsigned`,
+      `BitVector`, `pack`, `unpack`, `Signed`, `Unsigned`,
       `Clock`/`Reset`/`Enable`/`System`, `systemClockGen`/`resetGen`/`enableGen`,
       `register`, `mealy`, `sampleN`, `fromList`, `fmap`, `mapM_`, `putStr`,
       `Generic`/`NFDataX`/`BitPack` (plain and standalone deriving), `KnownNat`,
@@ -105,7 +110,10 @@ with the date and the observed result, not just a tick.
       `NumericUnderscores`, `DeriveGeneric` and `FlexibleContexts`;
       `common-options` still lists `DeriveAnyClass` and `TemplateHaskell`
       (`TemplateHaskellQuotes` dropped as implied). Chapters 1 to 4 verified
-      (V24); 5 to 13 inherit the claim, not the check. *All chapters.*
+      (V24); 5 to 8 verified since, and chapter 8 is the first to need
+      `DeriveAnyClass`, which is what lets `NFDataX` and `BitPack` sit in a plain
+      `deriving` clause alongside `Generic` (V28). Chapters 9 to 13 inherit the
+      claim, not the check. *All chapters.*
 
 - [x] **V24 — the template under `GHC2024`.** D19 is buildable as written.
       `default-language: GHC2024` configures under `cabal-version: 2.4` with
@@ -118,8 +126,9 @@ with the date and the observed result, not just a tick.
       by hand. Chapter 4's sixty transcript lines survived a from-scratch
       re-capture byte-identical.
 
-      **Not checked, and the risk D19 accepts:** whether `MonoLocalBinds` rejects
-      anything in chapters 5 to 13. *All chapters.*
+      **The risk D19 accepts, partly discharged:** `MonoLocalBinds` has rejected
+      nothing in chapters 5 to 8, which are built `-Wall -Wcompat` clean in
+      `code/`. Chapters 9 to 13 are still unchecked. *All chapters.*
 
 - [x] **V10 — `unpack` resolves for `fromRows`.** `map unpack` takes its
       `BitPack` instance from `fromRows`'s top-level signature alone — no
@@ -366,6 +375,72 @@ with the date and the observed result, not just a tick.
         lines with one process, `current_8_register`, and one `rising_edge(clk)`,
         so the state is still exactly one register. Not shown in the chapter,
         which stays at the prompt. *Ch. 7. Drafted.*
+
+- [x] **V28 — chapter 8's session.** Captured 2026-08-08, two real reloads, the
+      file swapped on disk while `clashi` held the old module, and run twice
+      byte-identically. Durable findings:
+
+      - **`pack` is how the widths go on screen, and `:t pack` is not.**
+        `pack Step` prints
+        `0b01_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....`,
+        which is two tag bits and sixty-four payload bits countable in one
+        84-character line, and `pack (Load blinker)` prints the same shape with
+        the blinker in the payload. The tags run in declaration order: `Load` is
+        `00`, `Step` `01`, `Run` `10`, `Pause` `11`. `pack (Just Step)` is
+        sixty-seven bits, `0b101_…`. This confirms V11's 66 and 67 by a second
+        method and, unlike `natVal`, needs neither `Data.Proxy` nor a type
+        application, so it does not reopen what D4 closed.
+
+        **`:t pack Step` is useless here** and must not be shown: it prints
+        `BitVector (CLog 2 4 + 64)`, and `:t pack (Just Step)` prints
+        `BitVector (CLog 2 2 + Max 0 (CLog 2 4 + 64))`. Same cause as V11's
+        `:kind!` finding: the normalising plugins fire during constraint solving,
+        not when a type is printed. Evaluating the value forces it; asking for its
+        type does not.
+
+      - **`:i Command` is unshowable; `:i` on a constructor is the instrument.**
+        `:i Command` prints the declaration, five `instance` lines, and then the
+        `BitSize Command` type family instance unreduced through
+        `GConstructorCount`/`GFieldSize`/`Rep`, eleven lines of generics the
+        reader cannot parse. `:i Load` prints three lines,
+        `data Command = Load Board | ...`, and `:i Step` prints
+        `data Command = ... | Step | ...`, each with the other constructors
+        elided and `-- Defined at src/Example/Project.hs:88:5` and `:89:5` in the
+        next-line form. `:i St` is clean at five lines, declaration plus
+        `instance Generic St` and `instance NFDataX St`, and is shown.
+
+      - **The line numbers a reader following chapters 2 to 8 in order sees:**
+        `Command` at 87, its constructors at 88:5 and 89:5, `St` at 94, `lifeT`
+        at 98, `life` at 110. `:i lifeT` takes the next-line form and `:i life`
+        the one-argument-per-line form, as in V27.
+
+      - **The eleven-cycle stimulus and what it prints.** With
+        `[Nothing, Nothing, Just Step, Nothing, Just Run, Nothing, Nothing, Just
+        Pause, Just (Load blinker), Nothing, Nothing]` the eleven boards are
+        `glider` three times, the first generation three times, then the second,
+        the third twice, and `blinker` twice. Two of the leading three are
+        `resetGen` as ever; the third is the new beat, and it is the seed rather
+        than the first generation because `mealy`'s initial state is
+        `St glider False`. A command is taken in on the cycle it arrives and its
+        effect is one board later, exactly as V27 established for chapter 7.
+
+      - **`life` elaborates with one register and one port for the input.**
+        `stack run clash -- Chapters.Ch08 -main-is life --vhdl` gives a 761-line
+        `life.vhdl` plus a 226-line types package. The types package has
+        `subtype Command is std_logic_vector(65 downto 0)` and
+        `subtype Maybe is std_logic_vector(66 downto 0)`, which is V11's 66 and
+        67 a third time. One process, `st_register`, one `rising_edge(clk)`, one
+        `eta : in …Maybe`, 64 `out boolean` and no `in boolean`; the same seven
+        `-- map begin` blocks and single `+` counted since chapter 5. The state
+        is `type St_0 is record St_0_sel0_board … St_0_sel1_running : boolean`,
+        so the record survives into the hardware as a record, which is what makes
+        the chapter's "it stays a record" sentence safe. The tag decode is two
+        nested selects, `with (eta(66 downto 66)) select` and
+        `with (…(65 downto 64)) select`, and the payload is decoded
+        unconditionally by `b <= …fromSLV(eta(63 downto 0))` and discarded by the
+        select, which is V27's "nothing is switched off" holding for a four-way
+        command rather than for `Maybe`. Not shown in the chapter, which stays at
+        the prompt. *Ch. 8. Drafted.*
 
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and
