@@ -14,7 +14,7 @@ register ::
   (KnownDomain dom, NFDataX a) =>
   Clock dom
   -> Reset dom -> Enable dom -> a -> Signal dom a -> Signal dom a
-  	-- Defined in `Clash.Explicit.Signal'
+  	-- Defined in ‘Clash.Explicit.Signal’
 ```
 
 After the `=>`, left to right: a clock, a reset, an enable, a value of type `a`, and a `Signal dom a`, giving back a `Signal dom a`.

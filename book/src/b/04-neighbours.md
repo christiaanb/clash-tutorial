@@ -29,7 +29,7 @@ Ask the prompt what `rotateLeftS` wants, before writing anything that uses it:
 ```
 clashi> :i rotateLeftS
 rotateLeftS :: KnownNat n => Vec n a -> SNat d -> Vec n a
-  	-- Defined in `Clash.Sized.Vector'
+  	-- Defined in ‘Clash.Sized.Vector’
 ```
 
 A vector in, a vector of the same length out, and between them the amount to move by, which is an `SNat d` rather than a number.

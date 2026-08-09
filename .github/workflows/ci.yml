@@ -236,6 +236,40 @@ jobs:
           stack build
           stack test
 
+  # Re-run every transcript in the book and diff it against what ships. The
+  # chapters are cumulative, so a rename in chapter 4 reaches chapter 13 and a
+  # `-- Defined at` line number moves when anything above it does. The code job
+  # proves the chapters still compile; only this proves the book still prints
+  # what it says it prints.
+  #
+  # Its own project rather than the template job's, so that a failure here says
+  # a transcript drifted and a failure there says the template broke. The two
+  # were worth telling apart.
+  transcripts:
+    runs-on: ubuntu-latest
+    needs: code
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same caveat as the template job: the path list must match the one the
+      # code job saves under, character for character, or this misses.
+      - name: Restore Stack cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.stack
+            code/.stack-work
+          key: stack-${{ runner.os }}-${{ hashFiles('code/stack.yaml', 'code/*.cabal') }}
+
+      - name: Create a project for the checker to drive
+        run: |
+          stack new transcript-check ./template/clash-tutorial.hsfiles
+          cd transcript-check
+          stack build
+
+      - name: Check every transcript
+        run: python3 tools/check_transcripts.py --project transcript-check
+
   # template/clash-tutorial.hsfiles is the source of truth. Stack resolves the
   # shorthand `christiaanb/clash-tutorial` that chapter 1 tells the reader to type
   # to a repository literally named stack-templates, so the file has to exist
