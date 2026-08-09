@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-f44a8b9d.js";
+            window.path_to_searchindex_js = "../searchindex-5c0899bd.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-3cb9540d.js"></script>
@@ -175,6 +175,331 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="a-test-bench-that-leaves-haskell"><a class="header" href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a></h1>
+<p>Chapter 9 turned the design into VHDL, and we read it.
+Reading VHDL is not the same as knowing that it still does what the prompt did, and the instrument that settles it is a simulator: a program that has never heard of Haskell and does exactly what the file says.
+This chapter writes a test bench in Haskell, generates it beside the entity, and runs both in NVC.</p>
+<p>The stimulus is a list of commands, which is how the last three chapters have driven this design.
+The expected results come from the instrument we have had since chapter 1: we ask the prompt what the design does, and write the answer down.</p>
+<h2 id="eight-boards"><a class="header" href="#eight-boards">Eight boards</a></h2>
+<p>Chapter 8 drove the design with eleven commands.
+This is the same exercise with eight, which is short enough that every board it produces can be written down:</p>
+<pre><code>clashi&gt; mapM_ (\b -&gt; putStr (render b)) (sampleN 8 (life systemClockGen resetGen enableGen (fromList [Nothing, Nothing, Just Step, Just Run, Nothing, Just Pause, Just (Load blinker), Nothing])))
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+..#.....
+#.#.....
+.##.....
+........
+........
+........
+........
+........
+..#.....
+#.#.....
+.##.....
+........
+........
+........
+........
+........
+........
+........
+..###...
+........
+........
+........
+........
+</code></pre>
+<p>Reading down: the glider three times, the first generation twice, the second generation twice, and the blinker.
+The first two are the reset holding the register at the seed and the third is the seed again, because no command has reached the state yet.
+After that every repeat has a reason: <code>Step</code> produces the first generation, <code>Run</code> sets the design going without stepping it, and <code>Pause</code> leaves the second generation where it is.</p>
+<p>Three distinct pictures, and two of them are new.
+Write those two down, under <code>blinker</code>:</p>
+<pre><code class="language-haskell">glider1 :: Board
+glider1 = fromRows
+  (  0b0000_0000
+  :&gt; 0b1010_0000
+  :&gt; 0b0110_0000
+  :&gt; 0b0100_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; Nil )
+
+glider2 :: Board
+glider2 = fromRows
+  (  0b0000_0000
+  :&gt; 0b0010_0000
+  :&gt; 0b1010_0000
+  :&gt; 0b0110_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; Nil )
+</code></pre>
+<p>A <code>1</code> where the picture has a <code>#</code>, exactly as the glider and the blinker were written in chapters 3 and 7.
+Reload and check both against what the prompt printed a moment ago:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; putStr (render glider1)
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+clashi&gt; putStr (render glider2)
+........
+..#.....
+#.#.....
+.##.....
+........
+........
+........
+........
+</code></pre>
+<p>Those two are the only new data this chapter needs; the other pictures in the sequence are the seed and the blinker, which have been in the file since chapters 3 and 7.
+All four were obtained rather than worked out, and that is worth being plain about, because it is also the limit of what this test bench can tell us: it says that the VHDL agrees with the Haskell, and it says nothing about whether the Haskell was right.</p>
+<h2 id="a-test-bench-in-haskell"><a class="header" href="#a-test-bench-in-haskell">A test bench, in Haskell</a></h2>
+<p>A test bench needs three things <code>Clash.Explicit.Prelude</code> does not export, so add a third import, directly under the first:</p>
+<pre><code class="language-haskell">import Clash.Explicit.Testbench
+</code></pre>
+<p>Then one line directly above <code>life</code>’s type signature, under the annotation from chapter 9:</p>
+<pre><code class="language-haskell">{-# OPAQUE life #-}
+</code></pre>
+<p>That is chapter 9’s pragma again, on a different function and for a different reason.
+A <code>Synthesize</code> annotation says what the top of a design is called; it does not stop that design being copied into something else that uses it, and a test bench is something else.
+Without the pragma, Clash inlines the whole of <code>life</code> into the test bench, and what NVC then runs is a second copy of the design rather than the entity we generated.</p>
+<p>Now the test bench itself, at the bottom of the file:</p>
+<pre><code class="language-haskell">{-# ANN testBench (TestBench 'life) #-}
+testBench :: Signal System Bool
+testBench = done
+  where
+    commands = stimuliGenerator clk rst
+      (  Nothing
+      :&gt; Nothing
+      :&gt; Just Step
+      :&gt; Just Run
+      :&gt; Nothing
+      :&gt; Just Pause
+      :&gt; Just (Load blinker)
+      :&gt; Nothing
+      :&gt; Nil )
+    expected = outputVerifier' clk rst
+      (  glider
+      :&gt; glider
+      :&gt; glider
+      :&gt; glider1
+      :&gt; glider1
+      :&gt; glider2
+      :&gt; glider2
+      :&gt; blinker
+      :&gt; Nil )
+    done = expected (life clk rst enableGen commands)
+    clk = tbSystemClockGen (fmap not done)
+    rst = resetGen
+</code></pre>
+<p>The annotation on the first line ties the test bench to the entity it tests, and <code>'life</code> there is a quoted name rather than a call: it is why one <code>:vhdl</code> will generate both.</p>
+<p>Below it are four bindings.
+<code>commands</code> is the stimulus, one element per cycle, the same eight we sampled with.
+<code>expected</code> is the eight boards, in the order the design produces them.
+<code>done</code> is the comparison, and it is the test bench: <code>outputVerifier'</code> takes the boards it expects and the signal it gets, and hands back a signal that goes high once the last of them has been checked.
+<code>clk</code> is a clock that runs until <code>done</code> says otherwise, which is what makes the simulation stop, and <code>rst</code> is the reset the prompt has been supplying since chapter 6.</p>
+<p>Reload, and ask what the two new names are:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i stimuliGenerator
+stimuliGenerator ::
+  (KnownNat l, KnownDomain dom) =&gt;
+  Clock dom -&gt; Reset dom -&gt; Vec l a -&gt; Signal dom a
+  	-- Defined in ‘Clash.Explicit.Testbench’
+clashi&gt; :i outputVerifier'
+outputVerifier' ::
+  (KnownNat l, KnownDomain dom, Eq a, ShowX a, 1 &lt;= l) =&gt;
+  Clock dom
+  -&gt; Reset dom -&gt; Vec l a -&gt; Signal dom a -&gt; Signal dom Bool
+  	-- Defined in ‘Clash.Explicit.Testbench’
+</code></pre>
+<p><code>stimuliGenerator</code> turns a <code>Vec</code> into a signal, one element per cycle, and <code>outputVerifier'</code> does the same in reverse and compares.
+Neither of them is special: both take a clock and a reset as arguments, like everything else in this design.</p>
+<p>The test bench is a <code>Signal System Bool</code>, so the prompt can run it.
+Sample twelve cycles, four more than the eight we gave it:</p>
+<pre><code>clashi&gt; sampleN 12 testBench
+[False,False,False,False,False,False,False,False,False,True,True,True]
+</code></pre>
+<p>It turns <code>True</code> on the tenth cycle, once the eighth board has been checked, and it says nothing at all before that, because nothing disagreed.</p>
+<h2 id="two-entities-one-command"><a class="header" href="#two-entities-one-command">Two entities, one command</a></h2>
+<p>Generate:</p>
+<pre><code>clashi&gt; :vhdl
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, src/Example/Project.o )
+Ok, one module reloaded.
+GHC: Setting up GHC took: 0.055s
+GHC: Compiling and loading modules took: 1.697s
+Clash: Parsing and compiling primitives took 0.169s
+GHC+Clash: Loading modules cumulatively took 3.115s
+Clash: Compiling Example.Project.life
+Clash: Normalization took 0.112s
+Clash: Netlist generation took 0.006s
+Clash: Compiling Example.Project.life took 0.173s
+Clash: Compiling Example.Project.testBench
+Not specializing TopEntity: Example.Project.life[8214565720323891532]
+Not specializing TopEntity: Example.Project.life[8214565720323891532]
+Clash: Normalization took 0.074s
+Clash: Netlist generation took 0.016s
+Clash: Compiling Example.Project.testBench took 0.183s
+Clash: Total compilation took 3.478s
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+</code></pre>
+<p>Two lines there are new, and they are the <code>OPAQUE</code> pragma taking effect: Clash is saying that it left <code>life</code> alone rather than folding a specialised copy of it into the test bench.
+The number in brackets is an internal name for <code>life</code>, and yours may well be a different one: it moves if the session allocated a different number of names before Clash ran.</p>
+<p>There are two directories under <code>vhdl/</code> now, one per entity, and nine files between them:</p>
+<ul>
+<li><code>Example.Project.life/</code> holds <code>life.vhdl</code>, <code>life_types.vhdl</code> and <code>Example_Project_life_step.vhdl</code>, all three byte for byte the ones chapter 9 generated, plus <code>life.sdc</code> and <code>clash-manifest.json</code>;</li>
+<li><code>Example.Project.testBench/</code> holds <code>testBench.vhdl</code> at 629 lines, <code>Example_Project_testBench_types.vhdl</code> at 213, a 24-line package whose name ends in a hash, and a manifest of its own.</li>
+</ul>
+<p>The entity did not change because nothing about the entity changed.
+What we added was a second thing to generate, and Clash generated it.</p>
+<h2 id="what-the-test-bench-turned-into"><a class="header" href="#what-the-test-bench-turned-into">What the test bench turned into</a></h2>
+<p>The eight commands are the first thing to find, and they are near the top of <code>testBench.vhdl</code>:</p>
+<pre><code class="language-vhdl">  \c$vec_0\ &lt;= Example_Project_testBench_types.array_of_Maybe'( std_logic_vector'("0" &amp; "------------------------------------------------------------------")
+                                                              , std_logic_vector'("0" &amp; "------------------------------------------------------------------")
+                                                              , std_logic_vector'("1" &amp; (std_logic_vector'("01" &amp; "----------------------------------------------------------------")))
+                                                              , std_logic_vector'("1" &amp; (std_logic_vector'("10" &amp; "----------------------------------------------------------------")))
+                                                              , std_logic_vector'("0" &amp; "------------------------------------------------------------------")
+                                                              , std_logic_vector'("1" &amp; (std_logic_vector'("11" &amp; "----------------------------------------------------------------")))
+</code></pre>
+<p>Six of the eight entries, and every one of them is chapter 8’s tag and payload written out as bits.
+A <code>Nothing</code> is a <code>0</code> followed by sixty-six don’t-cares.
+<code>Just Step</code> is a <code>1</code>, then the tag <code>01</code>, then sixty-four don’t-cares where the board of a <code>Load</code> would go.
+The seventh entry is the <code>Load</code>, and it spells the blinker out one cell at a time over sixty-four lines, which is why it is not on this page.</p>
+<p>The second thing to find is what those commands are driven into:</p>
+<pre><code class="language-vhdl">  clk_0 &lt;= \Example.Project.testBench_clk\;
+
+  rst_0 &lt;= \c$Example.Project.testBench_app_arg_0\;
+
+  en_0 &lt;= true;
+
+  cmd_0 &lt;= \c$ds_app_arg_0\;
+
+  life_cExampleProjecttestBench_app_arg : entity life.life
+    port map
+      (clk_0, rst_0, en_0, cmd_0, cells_0);
+</code></pre>
+<p>That is the entity from chapter 9, instantiated, with the five port names we chose there.
+<code>entity life.life</code> names a library and an entity in it, and the library is called <code>life</code> because Clash generated that entity as a design of its own rather than as part of this one.
+That library name is about to turn up in the command we type.</p>
+<p>The third is why the simulation ever ends:</p>
+<pre><code class="language-vhdl">  clkGen : process is
+    constant half_periodH : time := 10000000 fs / 2;
+    constant half_periodL : time := 10000000 fs - half_periodH;
+  begin
+    \Example.Project.testBench_clk\ &lt;= '0';
+    wait for 100000 ps;
+    while (not \c$result_rec\) loop
+      \Example.Project.testBench_clk\ &lt;= not \Example.Project.testBench_clk\;
+      wait for half_periodH;
+      \Example.Project.testBench_clk\ &lt;= not \Example.Project.testBench_clk\;
+      wait for half_periodL;
+    end loop;
+    wait;
+  end process;
+</code></pre>
+<p>A clock that toggles every 5 ns while <code>\c$result_rec\</code> is false, and then waits forever.
+<code>\c$result_rec\</code> is <code>done</code>, and that loop is what <code>tbSystemClockGen (fmap not done)</code> asked for.
+Nothing tells NVC how long to run: the test bench stops its own clock, and a simulation with no clock left to run has finished.</p>
+<h2 id="nvc"><a class="header" href="#nvc">NVC</a></h2>
+<p><a href="https://github.com/nickg/nvc">NVC</a> is an open source VHDL simulator.
+Its README covers installation on Windows, macOS and Linux; everything here was run with 1.20.1.
+On Ubuntu the quickest route is the <code>.deb</code> on the releases page rather than the distribution’s own package, and on Debian there is no package at all, so NVC is built from source with the recipe in that README.</p>
+<p>Leave <code>clashi</code> running and open a second terminal in the project directory.
+Everything from here happens in the generated tree:</p>
+<pre><code>$ cd vhdl
+</code></pre>
+<p>One command analyses all six files, elaborates the test bench and runs it:</p>
+<pre><code>$ nvc --ieee-warnings=off --work=life \
+      -a Example.Project.life/life_types.vhdl \
+         Example.Project.life/Example_Project_life_step.vhdl \
+         Example.Project.life/life.vhdl \
+         Example.Project.testBench/Example_Project_testBench_types.vhdl \
+         Example.Project.testBench/testBench_slv2string_*.vhdl \
+         Example.Project.testBench/testBench.vhdl \
+      -e testBench -r
+</code></pre>
+<p>The order of those six files is the one thing in this chapter that has to be right.
+VHDL has no include statement and no dependency solver: a file may only mention things that have already been analysed, so the types package comes before the entity that uses it, <code>step</code> comes before <code>life</code>, and <code>life</code> comes before the test bench that instantiates it.
+Sorting the names alphabetically gets this wrong, which is why they are listed rather than globbed — except for the one whose name ends in a hash, which is globbed in its correct place so that nobody has to copy sixteen hexadecimal digits.</p>
+<p><code>--work=life</code> is what makes <code>entity life.life</code> resolvable: it puts everything into a library called <code>life</code> rather than into the default one called <code>work</code>, and leaves a directory of that name beside the two Clash wrote.
+<code>--ieee-warnings=off</code> suppresses 257 warnings, all of them at time zero, from the standard numeric package being asked to compare values that no signal has driven yet.</p>
+<p>It printed nothing.
+That is the result, and it is the one to want, so ask the shell what it thought:</p>
+<pre><code>$ echo $?
+0
+</code></pre>
+<p>Eight boards were compared against eight boards and every one of them matched.
+Had one not, NVC would have said so on the cycle it happened, in a line of the form <code>** Error: 180ns+1: outputVerifier, expected: …, actual: …</code> with both boards spelled out as sixty-four bits, and it would have exited 1 rather than 0.</p>
+<h2 id="notice-that"><a class="header" href="#notice-that">Notice that</a></h2>
+<p><strong>The stimulus and the expected results were written in Haskell, and they are not in Haskell any more.</strong>
+They are a <code>std_logic_vector</code> array and a pile of boolean literals in a file that a VHDL simulator read without knowing anything about where it came from.
+The description, the test bench and the golden data came out of one <code>:vhdl</code>, from one source file, and the program that checked them knows nothing about Haskell or Clash.</p>
+<p><strong>A test bench is a circuit, and it is one on purpose.</strong>
+<code>stimuliGenerator</code> came out as a counter indexing a constant array and <code>outputVerifier'</code> as a second counter and a comparison, and both took a clock and a reset as arguments because everything in this design does.
+What is not a circuit sits between <code>-- pragma translate_off</code> and <code>-- pragma translate_on</code>: the clock, the reset and the assertion, marked so that a synthesis tool skips them.</p>
+<p><strong>Being the top of a design does not make something a boundary inside another one.</strong>
+Chapter 9 marked <code>step</code> so that it would survive into the VHDL as an entity, and this chapter marked <code>life</code> for the same reason and got the same result.
+The annotation names the top of the design; it decides what the ports are called, not who is allowed to copy the logic.</p>
+<p><strong>NVC answers “does it behave”, and nothing else.</strong>
+It is not a synthesis tool and does not claim to be one, so nothing here says the design fits in an FPGA, or how fast it would run, or whether the adder tree is too deep.
+It says that the entity in <code>life.vhdl</code> produces those eight boards from those eight commands, which is the question this chapter asked.</p>
+<h2 id="where-this-goes"><a class="header" href="#where-this-goes">Where this goes</a></h2>
+<p>The design is checked, and the check told us one bit: it agreed.
+Chapter 11 asks NVC for a waveform of the same run and opens it in a browser, where the command bus stops being sixty-seven bits of don’t-care and becomes something to look at.
+The tag and the payload we have been describing since chapter 7 are on that waveform, side by side, and so is the design ignoring the payload on the seven cycles out of eight where it means nothing.</p>
 
                     </main>
 
