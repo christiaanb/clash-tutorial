@@ -8,9 +8,8 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 12 are right; chapters 13 onward
-still say `*Example.Project>`, and it should be read as `clashi>` when they are
-drafted.
+corrected as its chapter ships, so chapters 1 to 13 are right; chapter 14 still
+says `*Example.Project>`, and it should be read as `clashi>` when it is drafted.
 
 ---
 
@@ -815,21 +814,52 @@ D24 records what the chapter says about it.
 ## Chapter 13: What the rest of the world writes
 
 **What we do.** Switch to `Clash.Prelude`, delete the clock, reset and enable
-arguments, add the constraint where the compiler asks, expose them once at the
-top, regenerate, diff against chapter 12's output.
+arguments from `life`, add the constraint where the compiler asks, expose them
+again on the two annotated binders, regenerate, diff against chapter 12's
+output.
+
+The edit is four hunks and the file gets one line shorter, 219 to 218 (V35).
+The import, `life`'s signature, `life`'s definition, and the right-hand sides of
+`life8` and `life16`. Nothing else in the module moves, and no other signature
+in it gains anything: `life` is the only binder in the file that had a clock.
+
+```haskell
+life :: (KnownNat n, HiddenClockResetEnable System) =>
+  Board n ->
+  Signal System (Maybe (Command n)) -> Signal System (Board n)
+life seed = mealy lifeT (St seed False)
+```
+
+**Transcript.** Captured 2026-08-09; see V35. One edit, one reload and one
+`:vhdl`, plus three shell commands. The REPL beats are `:i mealy`, which is four
+lines against the ten chapter 7 shows for the explicit one; `:i life`, which is
+the constraint arriving; `:i life8`, which is chapter 12's signature unchanged;
+and `sampleN 12 testBench`.
 
 **Notice that.**
 
-- The code is shorter and the circuit is identical. `HiddenClockResetEnable` is
-  notation, not semantics.
+- The circuit did not move and the files are not identical, and the chapter says
+  which. Four of eleven generated files differ, every difference in them is an
+  identifier Clash chose, and one concurrent assignment changed position.
+- The two entity declarations are byte identical. That is the cleanest form of
+  D4's claim that the hidden prelude is notation rather than semantics: the
+  annotation did not change, the signature it describes did not change, and only
+  the body did.
+- The saving is one line, in this design, and the chapter says so with the
+  number. `life` passed the three straight to `mealy`, so there was one place to
+  save; the saving compounds with hierarchy and this design has one level.
+- What the short form costs is the instrument the book has been using. `:i` on
+  `mealy` answered with three ordinary arguments and now answers with a
+  constraint. This is D4's argument, arrived at by the reader rather than
+  asserted.
 - This is the style the reader will meet in every Clash project, example and blog
   post from here on, including the template they started from. They have now seen
   both and know what the short form is short for.
 
-**Where the annotation goes.** It stays exactly where chapter 12 put it. An
-annotated binder describes real ports, so it cannot have hidden clock, reset and
-enable, which makes `life8` and `life16` the `exposeClockResetEnable` wrappers and
-the only places those three are still written out:
+**Where the annotation goes.** It stays exactly where chapter 12 put it, and so
+do both signatures. An annotated binder describes real ports, a port cannot be
+hidden, so `life8` and `life16` are the `exposeClockResetEnable` wrappers and the
+only places those three are still written out:
 
 ```haskell
 life8 = exposeClockResetEnable (life glider)
@@ -838,23 +868,35 @@ life8 = exposeClockResetEnable (life glider)
 with `life16 = exposeClockResetEnable (life glider16)` beside it: chapter 12 gave
 `life` its seed as an argument (D24), so the wrapper supplies it here too.
 
-The annotation is then unchanged between chapters 12 and 13, which is the
-cleanest available demonstration of D4's claim that the hidden prelude is
-notation rather than semantics: the port list did not move, only the body did.
+**Pre-flag.** Two, and the first is the chapter's only real hazard.
 
-**Pre-flag.** `exposeClockResetEnable` appears exactly once, on the binder the
-annotation is attached to, and is the price of the shorter body.
-`{-# OPAQUE step #-}` is untouched, because `step` has no clock — a free
-reassurance in a chapter otherwise about clocks disappearing.
+- **`mv vhdl vhdl-12` before editing anything.** `:vhdl` overwrites the tree, and
+  the tree is what the second half of the chapter compares against. This is the
+  one step in the chapter that cannot be recovered from later in it.
+- **The file does not compile between the import and the last edit**, because
+  `mealy` under this prelude does not take a clock. The chapter says so and asks
+  for one `:r` at the end of three edits rather than one after each, which is the
+  only place in the book where the edit-reload-evaluate habit is stretched.
 
-**Verify.** Whether the two VHDL outputs are byte-identical or merely equivalent.
-Claim only what is true. V13's 342-of-761 figures are void, since chapter 12's
-output is now three directories and fourteen files; re-run it as a directory to
-directory diff, and test the prediction that the two step files are byte
-identical between the two chapters and only the wrappers' files differ. The
-chapter 12 baseline to diff against is recorded in V34: `life8.vhdl` 211 lines,
-`life16.vhdl` 595, both step files 343, both types packages 227,
-`testBench.vhdl` 629.
+`exposeClockResetEnable` appears **twice**, once per annotated binder; this
+outline said once, from before chapter 12 made two entities.
+`{-# OPAQUE step #-}` and `{-# OPAQUE life8 #-}` are untouched, because neither
+binder has a clock — a free reassurance in a chapter otherwise about clocks
+disappearing.
+
+**Verify, discharged.** V13's question was whether the two outputs are
+byte-identical or merely equivalent, and V35 answers it: equivalent, and the
+chapter says which. Both of V13's predictions held. The port lists are identical
+including names, and the step files are byte identical between the two chapters
+— as is the whole of `Example.Project.testBench/`, which V13 did not predict
+because it predates the retargeted test bench. The four files that differ are
+the two entities and their two types packages, and every difference in them is a
+generated identifier.
+
+**NVC is not re-run**, on chapter 12's grounds: the command would be chapter
+10's with the file names changed. CI runs it against `code/`'s `Chapters.Ch13`,
+and asserts the byte-identity claims there too, after normalising the module
+name that `code/` bakes into three of the generated identifiers.
 
 ---
 
