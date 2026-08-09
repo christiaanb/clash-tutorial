@@ -28,6 +28,12 @@ Two details are load bearing and were arrived at the hard way:
   match, so a capture does not change shape with the terminal it was taken in.
   `:i` output was checked at 40, 80 and 200 columns and does not move, but the
   width is pinned rather than trusted.
+- The locale is pinned to UTF-8, because GHC chooses its quoting from it.
+  `:i register` ends `-- Defined in ‘Clash.Explicit.Signal’` under any UTF-8
+  locale and `-- Defined in `Clash.Explicit.Signal'` under `LC_ALL=C`. A reader
+  has a UTF-8 locale, so that is what a capture must have; leaving it to the
+  environment means the book records whichever one the last capture happened to
+  run under.
 - haskeline redraws a command line longer than the terminal, so the *echo* of a
   long command is not the command. The echo is dropped and the line that was
   actually sent is written back in its place. Everything after it is verbatim.
@@ -97,7 +103,8 @@ class Session:
         return self.text
 
 
-def run(project, steps, out_path=None, cols=80, hdl_dir="vhdl", timeout=900):
+def run(project, steps, out_path=None, cols=80, hdl_dir="vhdl", timeout=900,
+        locale="C.UTF-8"):
     """Run `steps` against `project` and return a Session.
 
     `project` is a directory generated from `template/clash-tutorial.hsfiles`,
@@ -110,6 +117,8 @@ def run(project, steps, out_path=None, cols=80, hdl_dir="vhdl", timeout=900):
         os.chdir(project)
         os.environ["TERM"] = "dumb"
         os.environ["COLUMNS"] = str(cols)
+        os.environ["LC_ALL"] = locale
+        os.environ["LANG"] = locale
         os.execvp("stack", ["stack", "run", "clashi", "--", READER_FILE])
 
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 50, cols, 0, 0))
@@ -162,7 +171,11 @@ def run(project, steps, out_path=None, cols=80, hdl_dir="vhdl", timeout=900):
     os.waitpid(pid, 0)
 
     for sent, echo in echoes:
-        if echo != sent:
+        # A command at least as wide as the terminal is redrawn by haskeline, so
+        # its echo is expected not to match and says nothing. A short one that
+        # differs does: something ate or added characters, and the transcript
+        # below it should not be trusted.
+        if echo != sent and len(sent) + len(PROMPT) < cols:
             print(
                 "echo differed for %r\n  terminal showed %r" % (sent[:60], echo[:60]),
                 file=sys.stderr,

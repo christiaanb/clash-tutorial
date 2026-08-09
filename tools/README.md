@@ -9,6 +9,7 @@ is a chapter that is *almost* what the terminal said.
 | `clashi_capture.py` | Drives `clashi` through a pty and records what a reader sees |
 | `reader_file.py` | Derives the reader's `src/Example/Project.hs` from `code/src/Chapters/ChNN.hs` |
 | `chapter_source.py` | Fills a prose template from real generated files, by line range |
+| `check_transcripts.py` | Re-runs every transcript in the book and diffs it against what ships |
 
 Each has a docstring covering the details worth knowing. What follows is the
 recipe they fit into.
@@ -86,19 +87,45 @@ they are the capture machine's.
 **7. Then the ordinary checks.** `stack build` and `stack test` in `code/`,
 `mdbook build` in `book/`, and the definition of done in `CLAUDE.md`.
 
+## Checking what already shipped
+
+The chapters are cumulative: a rename in chapter 4 reaches chapter 13, and a
+`-- Defined at` line number moves when anything above it does. `code/` being
+green proves the chapters still compile, not that the book still prints what it
+says it prints.
+
+```
+python3 tools/check_transcripts.py                       # every chapter
+python3 tools/check_transcripts.py --chapter 8
+python3 tools/check_transcripts.py --project /tmp/life   # reuse a build
+```
+
+It replays each chapter and compares two kinds of block: a fenced block whose
+first line is `clashi> …`, command by command, and a ```vhdl block, which must
+appear as a contiguous run of lines in one of the files Clash generated during
+that chapter. Eight chapters take about eighty seconds against a project that is
+already built. CI runs it on every push and pull request.
+
+Nothing configures it. A chapter's `{{#include …:anchor}}` directives say which
+regions of its module are on screen and its `clashi> :r` lines say when the
+reader reloads, so the file at each reload is derived the same way step 3 above
+derives it. That works because the tutorial's habit does not vary: edit, `:r`,
+evaluate, one edit per reload. **A chapter that reloads without showing the `:r`
+would be staged wrongly here** — and would be wrong in the book for the same
+reason, so the constraint is one worth having.
+
+`:vhdl` reports how long it took, which is a fact about the machine rather than
+about the design, so those numbers are blanked before comparing. A missing or
+extra timing line still fails.
+
 ## What these do not do
 
-**Intermediate states that replace rather than add.** `--without` drops anchored
-regions from a chapter's end state, which builds the intermediate state whenever
-the chapter's edits are additions. Where a later edit rewrites an earlier
-definition, as chapter 8 rewrites chapter 7's `lifeT` and `life`, the
-intermediate state is not a subset of the end state and has to be written by
-hand.
+**Intermediate states that replace rather than add**, without help. `--without`
+drops anchored regions, and `--revert` puts an earlier chapter's version of a
+region back, which between them cover every chapter so far. A chapter that
+rewrites a region with something in no committed module would need that state
+written by hand.
 
-**Checking what already shipped.** These build a chapter; nothing re-checks one.
-The chapters are cumulative, so a change in chapter 4 can invalidate the
-transcripts in chapter 9, and today the only thing standing between that and a
-reader is whoever remembers to look. A tool that re-captures every fenced block
-in `book/` and diffs it against what ships is the obvious next thing to build,
-and it is a much larger job: it needs `clashi` and a generated project in CI, and
-it would be slow.
+**Prove a chapter teaches anything.** Everything here checks that the book
+matches the terminal. Whether the terminal was worth showing is the reviewer's
+problem, and `design/02-voice-and-diataxis.md` is what they read.

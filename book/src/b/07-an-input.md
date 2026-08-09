@@ -67,7 +67,7 @@ mealy ::
   -> s
   -> Signal dom i
   -> Signal dom o
-  	-- Defined in `Clash.Explicit.Mealy'
+  	-- Defined in ‘Clash.Explicit.Mealy’
 ```
 
 After the `=>` it is chapter 6's `register` with a function inserted into it: a clock, a reset and an enable, then `(s -> i -> (s, o))`, then an `s`, and then a `Signal dom i` becomes a `Signal dom o`.

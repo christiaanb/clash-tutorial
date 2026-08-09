@@ -470,10 +470,21 @@ with the date and the observed result, not just a tick.
       `:i shiftN` put it on the **same** line after a space and a tab; `plus`,
       `nextCell`, `fromRows`, `render`, `neighbourCounts` and `renderCounts` put
       it on the **next** line, indented by two spaces and a tab. `:i rotateLeftS`
-      does the next-line form with `-- Defined in` and the module in GHC's
-      asymmetric quotes. Not a terminal-width artefact: byte-identical at `stty
-      cols` 40, 80 and 200. Line numbers quoted in a chapter are the ones a reader
-      following it in order sees.
+      does the next-line form with `-- Defined in` and the module in quotes. Not
+      a terminal-width artefact: byte-identical at `stty cols` 40, 80 and 200.
+      Line numbers quoted in a chapter are the ones a reader following it in
+      order sees.
+
+      **Which quotes, corrected 2026-08-09.** GHC picks them from the locale, not
+      from the terminal: `‘Clash.Explicit.Signal’` under any UTF-8 locale and
+      `` `Clash.Explicit.Signal' `` under `LC_ALL=C`. Chapters 4, 6 and 7 shipped
+      the second, which is what a capture piped through `grep` in a C locale
+      prints and not what a reader sees; all three were corrected to the first
+      and `tools/clashi_capture.py` now pins `LC_ALL=C.UTF-8` so a capture cannot
+      pick up whichever locale it happened to run under. Found by
+      `tools/check_transcripts.py` on its first run, which is the case for having
+      it. Only these three lines are affected: `-- Defined at`, which is what
+      `:i` gives for the reader's own definitions, quotes nothing.
 
 - [x] **V9 — Reset behaviour in the first samples.** Paste this verbatim in
       chapter 6 — two repeats, then evolution. Against the `register`-based `life`
