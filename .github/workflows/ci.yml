@@ -55,13 +55,18 @@ jobs:
         working-directory: code
         run: stack run clash -- Chapters.Ch13 --vhdl
 
-      # VERIFY (V3): the file list must match what Clash 1.10.0 actually emits,
-      # in dependency order. This command is the one printed in chapter 10, so it
-      # is tested here for the reader's benefit, not ours.
+      # VERIFY (V3, reopened by V30): the file list must match what Clash 1.10.0
+      # actually emits, in dependency order. This command is the one printed in
+      # chapter 10, so it is tested here for the reader's benefit, not ours.
+      #
+      # Two things changed with chapter 9 and are not settled yet. The generated
+      # directory is named for the annotated binder, so this step needs to `cd`
+      # into it rather than assuming one directory exists; and `{-# OPAQUE step #-}`
+      # means there are three components to analyse, not one.
       - name: Analyse, elaborate and run
         working-directory: code
         run: |
-          echo "VERIFY: replace with the explicit, ordered file list from V3"
+          echo "VERIFY: replace with the explicit, ordered file list from V3/V30"
           exit 1
 
   # The book must build, and every {{#include}} must resolve.

@@ -396,6 +396,37 @@ captured session is byte-identical under the new edition, line numbers included
 
 ---
 
+## D20. Chapter 9 marks `step` `OPAQUE`, and hierarchy is opt-in
+
+Clash inlines everything into one entity unless a binder is marked, and for a
+reader who writes VHDL that is the single most surprising thing in the generated
+output: the function hierarchy they wrote does not survive, and there is no
+component where they expected one. Chapter 9 shows this rather than asserting it.
+It generates once with the design flat, then adds `{-# OPAQUE step #-}` and
+generates again, and the reader watches one 548-line file become a 211-line one
+and a 343-line one (V30).
+
+`step` is the right binder to mark. It is the one function the reader has been
+told since chapter 6 exists in exactly one copy, and the instantiation in
+`life.vhdl` is what finally shows that. It is also fully representable, so the
+boundary costs nothing structurally.
+
+What it costs, and the chapter says both out loud:
+
+- Clash does not optimise across the boundary. Nothing in this design suffers
+  from that, and the sentence is there because the next design might.
+- An `OPAQUE` component's ports are named by Clash, not by the reader. `b` and
+  `result` appear in the step entity, one chapter after the reader chose five
+  names for the top. `Synthesize` names the top of a design and this is not the
+  top of one, so the two facts sit side by side and the chapter says so.
+
+The alternative was to state the flattening in a sentence and generate once.
+That is cheaper by one edit and one transcript, and it turns a "notice that" into
+a claim the reader has to accept, which is what the voice guide exists to
+prevent.
+
+---
+
 ## Open, deliberately
 
 **Chapter 14, the optional board chapter.** An 8×8 display is not standard on

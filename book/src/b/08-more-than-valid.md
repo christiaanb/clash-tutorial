@@ -321,6 +321,6 @@ A mode is not machinery: it is state, and it cost a field.
 
 ## Where this goes
 
-Eight chapters in, this design has an input, an output, a clock, a reset, an enable, and no name for the thing that has them.
-Chapter 9 gives it that name, `topEntity`, and turns it into VHDL you can read.
+Eight chapters in, this design has an input, an output, a clock, a reset and an enable, and nothing outside Haskell can see any of them.
+Chapter 9 names the design and each of its ports, and turns it into VHDL you can read.
 Leave `clashi` running.
