@@ -116,7 +116,10 @@ reason, so the constraint is one worth having.
 
 `:vhdl` reports how long it took, which is a fact about the machine rather than
 about the design, so those numbers are blanked before comparing. A missing or
-extra timing line still fails.
+extra timing line still fails. The same goes for the unique in chapter 10's
+`Not specializing TopEntity: Example.Project.life[…]`: it is GHC's internal
+number for that binder and it moves if the session allocated a different number
+of names before Clash ran, so the line is checked and the number in it is not.
 
 ## What these do not do
 

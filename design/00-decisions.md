@@ -427,6 +427,86 @@ prevent.
 
 ---
 
+## D21. Chapter 10 annotates the test bench and marks `life` `OPAQUE`
+
+V2 left chapter 10 two things to settle against a capture: whether the test
+bench should carry an annotation of its own, and which directory the reader
+works in. Both are settled by V31, and a third thing turned up that neither the
+outline nor V2 had anticipated.
+
+**The test bench is annotated.** `{-# ANN testBench (TestBench 'life) #-}` names
+the entity it tests, and one `:vhdl` then generates both. The withdrawn
+alternative was `-main-is testBench`, which is a flag used in exactly one
+chapter and a second invocation of the compiler; the annotation keeps chapter
+10's command byte identical to chapter 9's, which is the same argument D17 made
+for chapter 12.
+
+**`life` is marked `{-# OPAQUE life #-}`, and this is the part nobody predicted.**
+A `Synthesize` annotation names the top of a design. It does not stop that
+design being inlined into something else that uses it, and a test bench uses it:
+without the pragma, Clash copies the whole of `life` into `testBench.vhdl` and
+what NVC runs is a second copy of the logic rather than the entity chapter 9
+generated. The generated `Example.Project.testBench/` directory then holds its
+own `step.vhdl` and its own types package, and `life.vhdl` is never analysed at
+all.
+
+What the pragma buys, and it is why it is worth its costs:
+
+- The simulation exercises the entity chapter 9 read. The three files in
+  `Example.Project.life/` are byte identical with the pragma and without it, so
+  the entity being simulated is provably the one that chapter 9 shows (V31).
+- `testBench.vhdl` instantiates `entity life.life` with `clk`, `rst`, `en`,
+  `cmd` and `cells` in its port map. Chapter 9 closes by saying those names are
+  what chapters 10 and 11 read; without the pragma they appear nowhere in the
+  simulation and that sentence would have to be withdrawn, along with most of
+  the reason for choosing them.
+- Chapter 11 gets a hierarchy to open. The command bus is a port on an instance
+  rather than a signal called `\c$ds_app_arg_0\` inside a flattened test bench.
+
+What it costs, and the chapter says the first of these out loud:
+
+- Two lines of `Not specializing TopEntity: Example.Project.life[…]` in the
+  `:vhdl` output, which is Clash saying it declined to fold a specialised copy
+  of `life` into the test bench. The bracketed number is GHC's unique for the
+  binder and it moves if the reader types anything extra at the prompt before
+  generating, so the chapter says it will differ and
+  `tools/check_transcripts.py` blanks it the way it blanks the timings.
+- The `nvc` command names two directories and six files, and needs
+  `--work=life`, because `entity life.life` is a library-qualified reference and
+  the library has to exist. That is one flag and one more thing to explain,
+  against a test bench that would otherwise be self-contained in one directory.
+
+**One `nvc` invocation, and it prints nothing.** `--ieee-warnings=off` is the
+other flag: without it the run prints 257 warnings, all of them at time zero,
+from `NUMERIC_STD."="` being handed values no signal has driven yet. Showing
+771 lines of warning and telling the reader to ignore them is exactly the thing
+D1 forbids, so they are turned off and the chapter says in one sentence what was
+turned off and why. A passing run then prints nothing at all, and the visible
+result is `echo $?`.
+
+---
+
+## D22. The template fixes the order of Clash's progress lines
+
+`bin/Clashi.hs` gains `-fclash-no-concurrent-topentity-compilation`, beside the
+two flags V7 and V30 put there.
+
+Clash compiles top entities concurrently, and from chapter 10 there are two of
+them. The `Clash: Compiling …`, `Clash: Normalization took …` and
+`Clash: Netlist generation took …` lines then interleave in whichever order the
+two compilations finish, which differs from run to run: two captures of the same
+session produced two different orderings, and the `Not specializing` lines
+appeared once in one and twice in another. A chapter cannot quote that, and
+`tools/check_transcripts.py` cannot check it.
+
+The cost is real and falls on the reader rather than on us: their `:vhdl` is
+sequential, so a design with several entities in it takes longer than it needs
+to. This design has two, each of which normalises in under half a second, and
+the flag is in the template rather than in the book so that no chapter has to
+mention it.
+
+---
+
 ## Open, deliberately
 
 **Chapter 14, the optional board chapter.** An 8×8 display is not standard on

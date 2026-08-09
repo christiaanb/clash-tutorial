@@ -8,7 +8,7 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 9 are right; chapters 10 onward
+corrected as its chapter ships, so chapters 1 to 10 are right; chapters 11 onward
 still say `*Example.Project>`, and it should be read as `clashi>` when they are
 drafted.
 
@@ -577,45 +577,94 @@ rather than in `life.vhdl`, and it is the second of the three things to look for
 
 ## Chapter 10: A test bench that leaves Haskell
 
-**What we do.** Generate a self-checking test bench and run it under NVC.
+**What we do.** Write a self-checking test bench in Haskell, generate it beside
+the entity, and run both under NVC.
 
-Expected outputs are obtained by asking the REPL — the same instrument, used the
-way a verification engineer bootstraps golden vectors — and pasted into the source.
+The expected boards are obtained by asking the REPL — the same instrument, used
+the way a verification engineer bootstraps golden vectors — and written into the
+source as pictures. The stimulus is eight commands rather than chapter 8's
+eleven, because eight is short enough that every board it produces can be shown
+and the two new ones written down.
+
+Three edits' worth of new source, in two edits:
+
+```haskell
+import Clash.Explicit.Testbench
+
+{-# OPAQUE life #-}
+
+{-# ANN testBench (TestBench 'life) #-}
+testBench :: Signal System Bool
+testBench = done
+  where
+    commands = stimuliGenerator clk rst (…eight commands…)
+    expected = outputVerifier'  clk rst (…eight boards…)
+    done = expected (life clk rst enableGen commands)
+    clk  = tbSystemClockGen (fmap not done)
+    rst  = resetGen
+```
+
+plus `glider1` and `glider2`, the two new pictures, under `blinker`.
+
+**Transcript.** Captured 2026-08-09; see V31. Two edits, two reloads, one
+`:vhdl` and one shell command. The REPL beats are the eight boards, the two new
+ones rendered back, `:i` on both new names, and `sampleN 12 testBench`, which is
+`False` nine times and then `True`: the test bench passing before it leaves
+Haskell.
+
+**The two decisions this chapter made** are D21 and D22, and neither was on
+paper before it. The test bench is annotated rather than reached with `-main-is`,
+and `life` is marked `OPAQUE` so that the simulation exercises the entity rather
+than a second copy of its logic. The second of those also puts two
+`Not specializing TopEntity: Example.Project.life[…]` lines in the transcript,
+which the chapter explains in two sentences.
+
+**The command**, from `vhdl/`, and it is one:
 
 ```
-nvc --std=<pinned> -a <files, in dependency order> -e testBench -r
+nvc --ieee-warnings=off --work=life \
+    -a Example.Project.life/life_types.vhdl \
+       Example.Project.life/Example_Project_life_step.vhdl \
+       Example.Project.life/life.vhdl \
+       Example.Project.testBench/Example_Project_testBench_types.vhdl \
+       Example.Project.testBench/testBench_slv2string_*.vhdl \
+       Example.Project.testBench/testBench.vhdl \
+    -e testBench -r
 ```
+
+It prints nothing and exits 0, so the chapter asks the shell with `echo $?`.
+
+**Three excerpts from `testBench.vhdl`**, and they are what the chapter reads:
+the stimulus as an `array_of_Maybe` of tags and don't-cares, which is chapter
+8's `pack` output in a file; the instantiation of `entity life.life` with the
+five port names chapter 9 chose; and the clock generator, whose
+`while (not …) loop` is what `tbSystemClockGen (fmap not done)` asked for and
+why the simulation ends.
 
 **Notice that.**
 
 - The stimulus and the expected results were written in Haskell, and they are now
   running in a simulator that has never heard of Haskell.
+- A test bench is a circuit: two counters, a lookup table and a comparison, all
+  taking a clock and a reset as arguments. What is not a circuit sits between
+  `-- pragma translate_off` and `-- pragma translate_on`.
+- Being the top of a design does not make something a boundary inside another
+  one. Chapter 9's lesson, in the one place where forgetting it changes what is
+  simulated.
 - NVC is not a synthesizer and says so itself. This chapter answers "does it
   behave". The optional board chapter answers "can it be built".
 
 **Pre-flag.**
 
-- **File ordering is the hazard, and chapter 9 made it worse.** There are three
-  components now, not one, with a real chain: `life_types` before
-  `Example_Project_life_step` before `life` before the test bench. Alphabetical
-  globbing is not dependency order and now visibly is not — `life.vhdl` sorts
-  before `life_types.vhdl`. List the files explicitly, pinned to the pinned Clash
-  version, and let CI catch drift. V3's ordered command is void and must be
-  re-derived (V30).
-- Linux readers may need `configure`/`make`. One sentence, not a section.
-
-**Decide, and it is a new decision.** Chapter 9 teaches that the generated names
-are the names you wrote, so an un-annotated test bench would put
-`Example_Project_testBench_types.vhdl` in the same directory as `life_types.vhdl`
-and contradict that one chapter later. Either annotate `testBench` too, for one
-naming scheme at the cost of one more annotation block, or keep `-main-is
-testBench` (V2) and spend a sentence on why one file is module qualified. Settle
-it against a real capture, not on paper.
-
-**Also check.** `life` carries a `Synthesize` annotation, so `:vhdl` generates it
-whether or not the test bench asks for it. Confirm what one invocation produces,
-and say which directory the reader works in. A chapter that leaves them with two
-and no guidance has failed.
+- **File ordering is the hazard, and chapter 9 made it worse.** Six files across
+  two directories, with a real chain: `life_types` before the step entity before
+  `life` before the test bench's types package before `slv2string` before the
+  test bench. Alphabetical globbing is not dependency order and visibly is not —
+  `life.vhdl` sorts before `life_types.vhdl`. The files are listed explicitly,
+  except the one whose name ends in a content hash, which is globbed in its
+  correct slot so that nobody copies sixteen hexadecimal digits. CI runs the same
+  command against `code/`.
+- Linux readers may need `configure`/`make`. One sentence, not a section (V17).
 
 ---
 
