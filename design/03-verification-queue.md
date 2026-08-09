@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All thirty-three
+Findings from checking every claim against a real toolchain. **All thirty-four
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-09.
 
-Chapters 1 to 11 are drafted against these entries and their transcripts now live
+Chapters 1 to 12 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -223,10 +223,16 @@ with the date and the observed result, not just a tick.
       so its command is chapter 9's unchanged. The port widths comparison also
       moves: with `t_output` named it is one `std_logic_vector(63 downto 0)`
       against one `(255 downto 0)`, not 64 `out boolean` against 256. The
-      `KnownNat n` and standalone-deriving findings above are untouched. **Still
-      unchecked and owed by chapter 12:** whether `{-# OPAQUE step #-}` survives
-      `step` becoming polymorphic, and whether that gives one shared component or
-      two specialised ones. *Ch. 12.*
+      `KnownNat n` and standalone-deriving findings above are untouched.
+
+      **The two things this entry owed are answered by V34.** `{-# OPAQUE step #-}`
+      survives `step` becoming polymorphic and gives **two specialised
+      components**, one per size, in the two entities' own directories. One
+      correction to the paragraph above: `countBoard` and `addCounts` do **not**
+      need `KnownNat n` — `map` and `zipWith` never ask a vector its length — and
+      chapter 12 leaves them without it, which is what makes "put it where the
+      compiler asks" a rule the reader can follow rather than a slogan.
+      *Ch. 12. Drafted.*
 
 - [x] **V13 — Chapter 13 diff.** Equivalent, not byte-identical — say so plainly.
       Chapter 12's `topEntity8` and a chapter 13 rewrite of identical logic
@@ -791,6 +797,92 @@ with the date and the observed result, not just a tick.
         mentioned in the chapter: the locality sentence there is about what
         Surfer sends, which is nothing (V6), and the chapter never suggests
         sending the file anywhere. *Ch. 11. Drafted.*
+
+- [x] **V34 — chapter 12's session, and the two entities it produces.** Captured
+      2026-08-09 on a project generated from the edited template, holding chapter
+      11's end state, two real reloads and one `:vhdl`. Durable findings:
+
+      - **`Board n` costs less than V1 predicted.** `code/` builds
+        `Chapters.Ch12` `-Wall -Wcompat` clean with `KnownNat n` on `fromRows`,
+        the four shifts, `neighbourBoards`, `neighbourCounts`, `step` and
+        `lifeT`, and on **neither** `countBoard` nor `addCounts`. `render` and
+        `renderCounts` need no constraint either: `map`, `zipWith` and `toList`
+        never ask a vector its length. Standalone deriving is needed exactly
+        where V1 said, for `NFDataX` and `BitPack` on `Command n` and `NFDataX`
+        on `St n`; `Generic`, `Eq` and `Show` stay in the plain clause.
+      - **`life` takes its seed as an argument, and this was not on paper.**
+        `mealy`'s initial state was `St glider False` and `glider` is a
+        `Board 8`, so a `life` that does not know `n` cannot name its seed.
+        `life seed clk rst en = mealy clk rst en lifeT (St seed False)` is the
+        whole change, and it is a fifth argument added to the 8×8 design for the
+        16×16 design's sake. This is D24.
+      - **A point-free binder does get its port names.** `life8 = life glider`
+        with a `Synthesize` annotation on it generates
+        `clk`, `rst`, `en`, `cmd : in life8_types.Maybe` and
+        `cells : out std_logic_vector(63 downto 0)`, exactly as written. V30's
+        remark that naming the arguments of a point-free `topEntity` "never did
+        anything at all" was about a binder with no annotation of its own to
+        take names from, and does not generalise: `t_inputs` matches the type's
+        arguments, not syntactic lambdas.
+      - **One `:vhdl`, three binders, fourteen files in three directories.**
+        `Example.Project.life8/` and `Example.Project.life16/` hold five each
+        (`.vhdl`, `_types.vhdl`, the step entity, `.sdc`, manifest) and
+        `Example.Project.testBench/` holds four. With
+        `-fclash-no-concurrent-topentity-compilation` (D22) the order is fixed:
+        `life16`, then `life8`, then `testBench`, with the two
+        `Not specializing TopEntity: Example.Project.life8[…]` lines in the
+        third. Three top entities rather than two is the reason D22 matters more
+        here than it did in chapter 10.
+      - **`{-# OPAQUE step #-}` gives two specialised components.** This is what
+        V1 left owed. `Example_Project_life8_step.vhdl` and
+        `Example_Project_life16_step.vhdl` are **343 lines each**; every line of
+        one has a line of the other in the same position; 55 lines per side
+        differ in a number (`0 to 7`/`0 to 15`, `1 mod 8`/`1 mod 16`) and 7 more
+        differ only in alignment, because `array_of_array_of_16_boolean` is one
+        character longer than `array_of_array_of_8_boolean`. Normalising every
+        digit run and ignoring whitespace makes them identical. Each carries one
+        `+`, seven `-- map begin` and five `-- zipWith begin`, as chapter 9's did.
+      - **The 8×8 entity did not move.** `life8.vhdl` is 211 lines and is chapter
+        9's `life.vhdl` with `life` renamed to `life8`: `diff -w` after that one
+        substitution is empty, and the same holds for the step file. So the
+        chapter's claim that the 8×8 design is untouched is checked rather than
+        asserted.
+      - **The 16×16 numbers.** `cells : out std_logic_vector(255 downto 0)`
+        against `(63 downto 0)`; `subtype Command is std_logic_vector(257 downto
+        0)` and `subtype Maybe is std_logic_vector(258 downto 0)`, which are
+        chapter 8's 66 and 67 with `n * n` at 256. `life16.vhdl` is 595 lines
+        against `life8.vhdl`'s 211, and the 384-line difference is the seed
+        written out twice, once as the signal's initial value (lines 22 to 278
+        against 22 to 86) and once as the reset value (296 to 552 against 104 to
+        168). The two types packages are 227 lines each but differ in
+        declaration order as well as in numbers, so no "differ only in numbers"
+        claim may be made about them; the chapter quotes two of their lines and
+        nothing structural.
+      - **The test bench is retargeted, not rewritten.** Two lines change:
+        `{-# ANN testBench (TestBench 'life8) #-}` and
+        `done = expected (life8 clk rst enableGen commands)`. The eight commands
+        and eight boards are untouched, `sampleN 12 testBench` is chapter 10's
+        nine `False` and three `True`, and `testBench.vhdl` is 629 lines and
+        instantiates `entity life8.life8`. `{-# OPAQUE life8 #-}` carries chapter
+        10's pragma across; `life16` gets none, because nothing instantiates it.
+      - **NVC is not re-run in the chapter, and is run in CI.** The command
+        would be chapter 10's with three file names changed and `--work=life8`,
+        which is a how-to repeated rather than a step learned, and
+        `sampleN 12 testBench` already says the 8×8 behaviour did not move. The
+        chapter says the test bench passes in Haskell and claims nothing about
+        the simulator. CI makes the claim anyway, because nothing else would
+        notice the retargeted test bench breaking: against `code/`'s
+        `Chapters.Ch12` the six-file command exits 0, and
+        `nvc --work=life16 -a life16_types.vhdl … life16.vhdl -e life16`
+        elaborates the 16×16 entity, which is the strongest available support
+        for the chapter's "never tested and works".
+      - **The REPL beats.** `:i step` is
+        `step :: KnownNat n => Board n -> Board n` with `-- Defined at
+        src/Example/Project.hs:111:1` in the same-line form;
+        `putStr (render (step glider))` is chapter 5's first generation
+        unchanged; and `step glider16` and `step (step glider16)` give chapter
+        5's two shapes in the same rows and columns of a 16×16 board, checked
+        against chapter 5's shipped transcript. *Ch. 12. Drafted.*
 
 - [x] **V33 — Surfer's browser build, against this file.** Confirmed in a real
       browser on 2026-08-09: `testBench.fst` opens at

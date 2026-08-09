@@ -181,6 +181,12 @@ abstraction argument is already carried by chapter 4 (`map` and `zipWith` as
 The `fold` depth argument should move to an explanation page, where it can be
 stated rather than discovered.
 
+**Shipped 2026-08-09, and the risk did not materialise.** The chapter is drafted,
+`code/src/Chapters/Ch12.hs` builds `-Wall -Wcompat` clean and every block in the
+chapter replays (V34). The fallback above — drop chapter 12 and ship thirteen —
+is withdrawn. Two things the chapter had to settle that this entry did not
+anticipate are in D24.
+
 ---
 
 ## D10. Debouncing: not mentioned
@@ -553,6 +559,62 @@ waveform into its own chapter precisely so that it could not do that; and the
 marker comes out in the same commit as the confirmation, not later. V33 also
 notes the one way this differs from every other closed item: the browser build
 carries no version, so that check has a shelf life and the rest do not.
+
+---
+
+## D24. `life` takes its seed as an argument, and chapter 12 generates three entities
+
+Three things chapter 12 settled, none of which was on paper before it (V34).
+
+**The seed becomes an argument to `life`.** `mealy`'s initial state has been
+`St glider False` since chapter 8, and `glider` is an 8×8 board. A `life` that
+does not know its size cannot name the board it starts from, so the seed arrives
+as a fifth argument and `life8` and `life16` are `life glider` and
+`life glider16`.
+
+The alternative was an initial state that needs no seed — an empty board of any
+size, filled by the reader with `Load` — and it is worse in three ways. Chapter
+9's reset value is the glider written out in the VHDL, and chapter 11 reads
+`cells` holding the glider from time zero, so both chapters would have to be
+withdrawn or re-captured. The 16×16 half of the chapter would have nothing to
+show at the prompt without typing a command first. And "the design comes out of
+reset holding a seed" is a fact about this design that chapter 6 established and
+nothing since has needed to change.
+
+The cost is one argument added to the 8×8 design for the 16×16 design's benefit,
+and the chapter says so in its own sentence rather than presenting the parameter
+as free.
+
+**`{-# OPAQUE step #-}` on a polymorphic `step` gives two specialised
+components.** This was V1's open question and the outline's "second risk,
+unverified". Neither of the bad answers happened: the boundary is not refused,
+and it is not one shared component either. Each entity gets a `step` of its own,
+343 lines apiece, differing in 55 lines that are all numbers.
+
+That is where Clash and a VHDL generic genuinely part company, and the chapter
+says which is which rather than claiming the outcome is the better one. A
+generic gives one entity with a `generic` on it and two instantiations; Clash
+specialises and writes the entity out per size. What is shared here is the
+source, and nothing in the generated tree is.
+
+**The test bench is retargeted rather than dropped.** Two lines change,
+`{-# ANN testBench (TestBench 'life8) #-}` and the line that drives the design,
+and `{-# OPAQUE life8 #-}` carries chapter 10's pragma to the binder that is now
+instantiated. `life16` gets no pragma, because nothing instantiates it, and the
+asymmetry is stated in one sentence rather than smoothed over with a pragma that
+does nothing.
+
+Chapter 12 does not re-run NVC. The command would be chapter 10's with three
+file names changed, which repeats a how-to instead of teaching a step, and
+`sampleN 12 testBench` already shows that the 8×8 behaviour did not move. The
+chapter therefore claims that the test bench passes in Haskell and claims
+nothing about the simulator.
+
+**What this leaves chapter 13.** Its outline writes
+`life8 = exposeClockResetEnable life`; with the seed argument that becomes
+`life8 = exposeClockResetEnable (life glider)`, and there are two of them. The
+annotation is still unchanged between the two chapters, which is what D4's claim
+rested on.
 
 ---
 
