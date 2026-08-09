@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-763f4192.js";
+            window.path_to_searchindex_js = "searchindex-34e33fc4.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -1421,11 +1421,265 @@ Chapter 6’s state was a board and chapter 7’s still was; this one is a board
 There is still one <code>step</code>, still one register, and still one combinational function between the register’s output and its input.
 A mode is not machinery: it is state, and it cost a field.</p>
 <h2 id="where-this-goes-7"><a class="header" href="#where-this-goes-7">Where this goes</a></h2>
-<p>Eight chapters in, this design has an input, an output, a clock, a reset, an enable, and no name for the thing that has them.
-Chapter 9 gives it that name, <code>topEntity</code>, and turns it into VHDL you can read.
+<p>Eight chapters in, this design has an input, an output, a clock, a reset and an enable, and nothing outside Haskell can see any of them.
+Chapter 9 names the design and each of its ports, and turns it into VHDL you can read.
 Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="an-entity"><a class="header" href="#an-entity">An entity</a></h1>
+<p>Eight chapters have built a design that nothing outside Haskell can see.
+Clash will not generate anything until it is told which function is the top of that design, and it has nothing to call the entity or its ports until it is told that too.
+This chapter says both of those things in the source, generates the VHDL, and then draws one boundary inside the design and generates it again.</p>
+<h2 id="naming-the-entity-and-naming-its-ports"><a class="header" href="#naming-the-entity-and-naming-its-ports">Naming the entity, and naming its ports</a></h2>
+<p>Add this directly above <code>life</code>:</p>
+<pre><code class="language-haskell">{-# ANN life
+  (Synthesize
+    { t_name   = "life"
+    , t_inputs = [ PortName "clk"
+                 , PortName "rst"
+                 , PortName "en"
+                 , PortName "cmd" ]
+    , t_output = PortName "cells"
+    }) #-}
+</code></pre>
+<p>It is not a definition, and <code>life</code> itself does not change: it is a note attached to <code>life</code> that Clash reads and the rest of the file ignores.
+<code>t_name</code> is what the entity will be called.
+<code>t_inputs</code> is one name per argument, in the order the arguments come, which is why the clock, the reset and the enable each need one: each of them is an argument, and has been since chapter 6.
+<code>t_output</code> is the one name for what comes back.</p>
+<p>Reload, and then the one command that turns the loaded module into VHDL:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :vhdl
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, src/Example/Project.o )
+Ok, one module reloaded.
+GHC: Setting up GHC took: 0.140s
+GHC: Compiling and loading modules took: 3.083s
+Clash: Parsing and compiling primitives took 0.352s
+GHC+Clash: Loading modules cumulatively took 6.003s
+Clash: Compiling Example.Project.life
+Clash: Normalization took 0.255s
+Clash: Netlist generation took 0.009s
+Clash: Compiling Example.Project.life took 0.368s
+Clash: Total compilation took 6.375s
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+</code></pre>
+<p><code>:vhdl</code> was given nothing to work on, because a binder carrying that annotation is what it goes looking for.
+It compiled the module to object code rather than interpreting it, generated from that, and put the interpreted module back afterwards, which is what the two <code>Compiling</code> lines around the timings are.
+Those timings are the capture machine’s and yours will be different; what they are worth reading for is the order of magnitude, which is seconds.</p>
+<p>Four files were written, into <code>vhdl/Example.Project.life/</code> under the project directory:</p>
+<ul>
+<li><code>life.vhdl</code>, 548 lines, the entity and its architecture;</li>
+<li><code>life_types.vhdl</code>, 227 lines, a package declaring every type those two use;</li>
+<li><code>life.sdc</code>, one line, the clock constraint;</li>
+<li><code>clash-manifest.json</code>, which lists the other three.</li>
+</ul>
+<p>Three of those four file names are the one we wrote in <code>t_name</code>.
+Open <code>life.vhdl</code>, and the first thing in it is the reason this chapter exists:</p>
+<pre><code class="language-vhdl">entity life is
+  port(-- clock
+       clk   : in life_types.clk_System;
+       -- reset
+       rst   : in life_types.rst_System;
+       -- enable
+       en    : in life_types.en_System;
+       cmd   : in life_types.Maybe;
+       cells : out std_logic_vector(63 downto 0));
+end;
+</code></pre>
+<p>Five ports, with the five names we chose, in the order we wrote them down.
+Clash has put a comment over the first three, and they are ports for the same reason the others are: they were arguments.</p>
+<p>One name buys one port, which is worth being plain about.
+<code>cells</code> is a single port sixty-four bits wide rather than sixty-four ports of one bit, and <code>cmd</code> is a single port sixty-seven bits wide with the tag and the payload inside it.
+That is what asking for one name gets, and it is the shape chapter 11 puts on a waveform.</p>
+<h2 id="a-boundary-and-a-second-file"><a class="header" href="#a-boundary-and-a-second-file">A boundary, and a second file</a></h2>
+<p>Those 548 lines are the whole design.
+The register is in there, and so is the command decode, and so are the four shifts, the adder tree and all sixty-four copies of the cell rule, because Clash inlines everything into one entity unless it is told where not to.</p>
+<p>Tell it, directly above <code>step</code>:</p>
+<pre><code class="language-haskell">{-# OPAQUE step #-}
+</code></pre>
+<p>That says <code>step</code> is not to be inlined into whatever uses it.
+Reload and generate again:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :vhdl
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, src/Example/Project.o )
+Ok, one module reloaded.
+GHC: Setting up GHC took: 0.132s
+GHC: Compiling and loading modules took: 3.025s
+Clash: Parsing and compiling primitives took 0.870s
+GHC+Clash: Loading modules cumulatively took 5.446s
+Clash: Compiling Example.Project.life
+Clash: Normalization took 0.692s
+Clash: Netlist generation took 0.012s
+Clash: Compiling Example.Project.life took 0.721s
+Clash: Total compilation took 6.171s
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+</code></pre>
+<p>There are five files now.
+<code>life.vhdl</code> has gone from 548 lines to 211, and a file that was not there before, <code>Example_Project_life_step.vhdl</code>, is 343.
+Nothing about the design changed, and nothing about the interface changed either: the entity declaration above is byte for byte the one that is in the file now.
+What changed is where Clash put the logic.</p>
+<h2 id="three-things-to-find"><a class="header" href="#three-things-to-find">Three things to find</a></h2>
+<p>Between them the three <code>.vhdl</code> files are 781 lines, and reading all of them is not the exercise: it is the way to come away convinced the output is unreadable, which it is if you read it as prose.
+There are three things worth finding, and the rest can be left alone.</p>
+<h3 id="the-widths-in-life_typesvhdl"><a class="header" href="#the-widths-in-life_typesvhdl">The widths, in <code>life_types.vhdl</code></a></h3>
+<pre><code class="language-vhdl">  type St_0 is record
+    St_0_sel0_board : array_of_array_of_8_boolean(0 to 7);
+    St_0_sel1_running : boolean;
+  end record;
+  subtype Command is std_logic_vector(65 downto 0);
+  subtype Maybe is std_logic_vector(66 downto 0);
+</code></pre>
+<p><code>65 downto 0</code> is sixty-six bits and <code>66 downto 0</code> is sixty-seven, which are the two numbers chapter 8 counted off the end of <code>pack</code>.
+<code>St_0</code> is the state, a record with the two fields it was declared with under the names they were declared with.</p>
+<h3 id="the-cell-rule-in-example_project_life_stepvhdl"><a class="header" href="#the-cell-rule-in-example_project_life_stepvhdl">The cell rule, in <code>Example_Project_life_step.vhdl</code></a></h3>
+<p>That file is an entity like any other, and it begins:</p>
+<pre><code class="language-vhdl">entity Example_Project_life_step is
+  port(b      : in life_types.array_of_array_of_8_boolean(0 to 7);
+       result : out life_types.array_of_array_of_8_boolean(0 to 7));
+end;
+</code></pre>
+<p>Two ports, one in and one out, named <code>b</code> and <code>result</code>.
+Those names are Clash’s: we named the top’s ports and only the top’s, and a boundary drawn inside the design comes with whatever names Clash makes for it.</p>
+<p>Further down is what chapter 2 wrote:</p>
+<pre><code class="language-vhdl">  -- zipWith begin
+  zipWith_3 : for i_10 in result'range generate
+  begin
+    -- zipWith begin
+    zipWith_2_0 : for i_9_2 in result(i_10)'range generate
+    begin
+      fun_0 : block
+          signal result_1                   : boolean;
+          signal \c$case_alt\               : boolean;
+          signal \c$case_alt_0\             : boolean;
+          signal \c$case_alt_selection_res\ : boolean;
+        begin
+          result(i_10)(i_9_2) &lt;= result_1;
+
+          result_1 &lt;= \c$case_alt\ when b(i_10)(i_9_2) else
+                      \c$case_alt_0\;
+
+          \c$case_alt_selection_res\ &lt;= \c$vec2_0\(i_10)(i_9_2) = to_unsigned(2,4);
+
+          \c$case_alt\ &lt;= true when \c$case_alt_selection_res\ else
+                          \c$case_alt_0\;
+
+          \c$case_alt_0\ &lt;= \c$vec2_0\(i_10)(i_9_2) = to_unsigned(3,4);
+
+
+        end block;
+    end generate;
+    -- zipWith end
+  end generate;
+  -- zipWith end
+</code></pre>
+<p>Two <code>for … generate</code> blocks, one inside the other, eight rows by eight columns, and inside them one copy of the cell rule per cell.
+<code>b(i_10)(i_9_2)</code> is one cell of the board arriving on the port, <code>to_unsigned(2,4)</code> and <code>to_unsigned(3,4)</code> are the two counts chapter 2’s <code>case</code> named, and the <code>when … else</code> nested inside each other are the order its rows were written in: alive with two survives, three regardless, otherwise dead.</p>
+<p>The counts those two are compared against are higher up the same file:</p>
+<pre><code class="language-vhdl">  -- zipWith begin
+  zipWith_1 : for i_4 in ws1'range generate
+  begin
+    r_block_4 : block
+      signal \c$bb_res_res\ : life_types.array_of_array_of_8_unsigned_4(0 to 7);
+    begin
+      -- zipWith begin
+      zipWith_0 : for i_3 in \c$bb_res_res\'range generate
+      begin
+        -- zipWith begin
+        zipWith_4 : for i_2_1 in \c$bb_res_res\(i_3)'range generate
+        begin
+          \c$bb_res_res\(i_3)(i_2_1) &lt;= \c$vec2\(i_4)(i_3)(i_2_1) + \c$vec1\(i_4)(i_3)(i_2_1);
+
+
+        end generate;
+        -- zipWith end
+      end generate;
+      -- zipWith end
+
+      ws1(i_4) &lt;= \c$bb_res_res\;
+
+
+    end block;
+  end generate;
+  -- zipWith end
+</code></pre>
+<p>Three <code>for … generate</code> blocks this time, seven by eight by eight, and one <code>+</code> at the centre of them.
+Seven, because summing eight shifted copies of the board takes seven additions; eight by eight, because each of those additions is done for every cell.
+Chapter 4 said that was four hundred and forty-eight four-bit additions described by a single <code>+</code>, and this is that <code>+</code>.
+There is exactly one in this file and there are none at all in <code>life.vhdl</code>: every piece of arithmetic in the design is inside the boundary we drew.</p>
+<p>That is the promise chapter 4 made about this chapter, paid: the <code>map</code>s and <code>zipWith</code>s are here, and they are <code>for … generate</code>.</p>
+<h3 id="the-register-and-the-decode-in-lifevhdl"><a class="header" href="#the-register-and-the-decode-in-lifevhdl">The register and the decode, in <code>life.vhdl</code></a></h3>
+<p>There is one process in the file, and it starts like this:</p>
+<pre><code class="language-vhdl">  -- register begin
+  st_register : process(clk,rst)
+  begin
+    if rst =  '1'  then
+</code></pre>
+<p>The sixty-five lines after that are the value the register holds while the reset is asserted: the glider, as sixty-four <code>true</code>s and <code>false</code>s with five of them <code>true</code>, and then <code>St_0_sel1_running =&gt; false</code>, which is the mode chapter 8 started the design in.
+Then the process ends:</p>
+<pre><code class="language-vhdl">    elsif rising_edge(clk) then
+      if en then
+        st &lt;= result;
+      end if;
+    end if;
+  end process;
+  -- register end
+</code></pre>
+<p>One <code>rising_edge</code>, on <code>clk</code>.
+<code>en</code> gates the assignment, so on a cycle when the enable is low the register keeps what it has.
+<code>result</code> is what it takes otherwise, and just below the process is what decides <code>result</code>:</p>
+<pre><code class="language-vhdl">  with (cmd(66 downto 66)) select
+    result &lt;= \c$ds_case_alt_0\ when "0",
+              \c$ds_case_alt\ when others;
+
+  \c$ds_case_alt_selection_1\ &lt;= cmd(65 downto 0);
+
+  with (\c$ds_case_alt_selection_1\(65 downto 64)) select
+    \c$ds_case_alt\ &lt;= ( St_0_sel0_board =&gt; b
+                       , St_0_sel1_running =&gt; false ) when "00",
+                       ( St_0_sel0_board =&gt; result_0
+                       , St_0_sel1_running =&gt; false ) when "01",
+                       ( St_0_sel0_board =&gt; st.St_0_sel0_board
+                       , St_0_sel1_running =&gt; true ) when "10",
+                       ( St_0_sel0_board =&gt; st.St_0_sel0_board
+                       , St_0_sel1_running =&gt; false ) when others;
+</code></pre>
+<p><code>cmd(66 downto 66)</code> is the <code>Maybe</code>’s tag, the top bit of the port, and it picks between the branch for <code>Nothing</code> and the branch for a command that arrived.
+<code>cmd(65 downto 64)</code> is the <code>Command</code>’s own tag, and its four rows are <code>Load</code>, <code>Step</code>, <code>Run</code> and <code>Pause</code> in the order they were declared, <code>00</code> through <code>11</code>, which is the numbering chapter 8 read off <code>pack</code>.
+<code>b</code> in the <code>"00"</code> row is the board that <code>Load</code> carried, and it is decoded here:</p>
+<pre><code class="language-vhdl">  b &lt;= life_types.array_of_array_of_8_boolean'(life_types.fromSLV(cmd(63 downto 0)));
+</code></pre>
+<p>That line has no condition on it.
+The payload is sliced out of the port and turned into a board on every cycle, whatever the two tags say, and the selects above throw the result away when they disagree.
+Chapters 7 and 8 both said that nothing is switched off; this is the line that makes it true.</p>
+<p><code>result_0</code> in the <code>"01"</code> row is a generation of Life, and it arrives from the other file:</p>
+<pre><code class="language-vhdl">  Example_Project_life_step_result_0 : entity Example_Project_life_step
+    port map
+      (result =&gt; result_0, b      =&gt; result_fun_arg);
+</code></pre>
+<p>One instantiation.
+<code>lifeT</code> names <code>step</code> twice, in the <code>Just Step</code> row and in the running case of the <code>Nothing</code> row, and there is one copy of it here feeding both.</p>
+<h2 id="notice-that-8"><a class="header" href="#notice-that-8">Notice that</a></h2>
+<p><strong>The annotation wrote down what was already true.</strong>
+The entity’s ports are the arguments <code>life</code> already had, in the order it already had them, and the clock, the reset and the enable have been arguments since chapter 6.
+Nothing was added to the design to give it a top: a fact about it was recorded where Clash could read it, and the names in that record are ours rather than something the compiler chose.</p>
+<p><strong>Clash flattens unless you tell it not to, and telling it costs something.</strong>
+One pragma made one boundary and one more file, and it is the only boundary anywhere in the design, because it is the only one we asked for.
+The cost runs both ways: Clash does not optimise across that boundary, and <code>step</code>’s own ports are named by Clash rather than by us, because the annotation names the top of a design and this is not the top of one.</p>
+<p><strong>A port list is a fixed number of wires, so this is where the design stops being general.</strong>
+Everything above the annotation could be written for a board of any size, and chapter 12 rewrites it that way; the annotation cannot be, because eight is what decides that <code>cells</code> is sixty-four bits wide rather than some other number.
+Chapter 12 writes two of these annotations and gets two entities from one <code>:vhdl</code>, which is the whole of that chapter’s result.</p>
+<p><strong>The names you chose are the names you will keep meeting.</strong>
+<code>clk</code>, <code>rst</code>, <code>en</code>, <code>cmd</code> and <code>cells</code> are what chapter 10 hands to a simulator and what chapter 11 finds on a waveform.
+That is why they were worth choosing, and it is why the two names in this chapter that we did not choose, <code>b</code> and <code>result</code>, sit inside a file neither of those chapters has to open.</p>
+<h2 id="where-this-goes-8"><a class="header" href="#where-this-goes-8">Where this goes</a></h2>
+<p>The design is VHDL now, and reading it is not the same as knowing it still works.
+Chapter 10 has Clash generate a self-checking test bench beside this entity and runs both in NVC, a simulator that has never heard of Haskell.
+The three files have to be handed over in the right order, which is the one thing about that chapter worth knowing in advance.
+Leave <code>clashi</code> running.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="a-test-bench-that-leaves-haskell"><a class="header" href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a></h1>
 <div style="break-before: page; page-break-before: always;"></div>
