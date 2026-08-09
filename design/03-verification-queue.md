@@ -1,6 +1,6 @@
 # Verification queue
 
-Findings from checking every claim against a real toolchain. **All thirty
+Findings from checking every claim against a real toolchain. **All thirty-one
 items are closed.** What is recorded here is *what was observed* and what each
 chapter must therefore do. Do not re-derive these; do not contradict one without
 re-running the check and rewriting the entry.
@@ -9,7 +9,7 @@ Toolchain unless stated: Stack 3.11.1, resolver lts-24.38, GHC 9.10.3, Clash
 1.10.0, NVC 1.20.1, devcontainer, on a project freshly generated from
 `template/clash-tutorial.hsfiles`. Checked 2026-08-05 to 2026-08-09.
 
-Chapters 1 to 8 are drafted against these entries and their transcripts now live
+Chapters 1 to 10 are drafted against these entries and their transcripts now live
 in the book; only the durable facts are kept below. Mark any future item `[x]`
 with the date and the observed result, not just a tick.
 
@@ -18,21 +18,20 @@ with the date and the observed result, not just a tick.
 ## Toolchain and commands
 
 - [x] **V2 — Test bench route.** `-main-is testBench` was chapter 10's one route.
-      No `TestBench` annotation, no `ANNOTATE` pragma, no Template Haskell: plain
+      No `ANNOTATE` pragma and no Template Haskell beyond the quoted name: plain
       `Vec` literals work with `stimuliGenerator`/`outputVerifier'`, so
       `$(listToVecTH …)` is not needed. NVC exits 0 on a correct expected vector
       and 1 on a wrong one, printing
       `** Error: 130ns+1: outputVerifier, expected: 00000111, actual: 00000110`.
 
-      **Reopened by D17, on the naming rather than the route.** The mechanism
-      still works, but `life` now carries a `Synthesize` annotation, so `:vhdl`
-      generates it whether or not the test bench asks. Two things to settle
-      against a capture before chapter 10 is drafted: what one invocation
-      produces and which directory the reader is meant to work in, and whether
-      the test bench should be annotated too. An un-annotated one is named
-      `Example_Project_testBench_types.vhdl` while the annotated `life` gives
-      `life_types.vhdl`, which is two naming schemes in one directory one chapter
-      after chapter 9 teaches that the names are the ones you wrote. *Ch. 10.*
+      **Closed by V31, on the route as well as the naming.** `-main-is testBench`
+      is not what chapter 10 does: `{-# ANN testBench (TestBench 'life) #-}` puts
+      the choice in the source, and one `:vhdl` generates both entities into two
+      directories named for their binders. The two things this entry left open
+      are settled there and recorded as D21. The error line above still holds in
+      shape; the one this circuit produces is
+      `** Error: 180ns+1: outputVerifier, expected: …, actual: …` with both
+      boards as sixty-four bits. *Ch. 10. Drafted.*
 
 - [x] **V3 — NVC file ordering.** Checked on the real ch. 9/10 circuit. Three
       generated files, whatever the circuit size. **An alphabetical glob fails**:
@@ -48,21 +47,19 @@ with the date and the observed result, not just a tick.
           -e testBench -r
       ```
 
-      **The ordered command above is void and must be re-derived (V30).** It was
+      **The ordered command above is void and was re-derived by V31.** It was
       checked against a `topEntity` that no longer exists, on a flat netlist that
-      chapter 9 now splits in two with `{-# OPAQUE step #-}`. There are three
-      components before the test bench adds any: `life_types.vhdl`, then
-      `Example_Project_life_step.vhdl`, then `life.vhdl`. Alphabetical order
-      fails more obviously than it used to, since `life.vhdl` sorts before
-      `life_types.vhdl`. The trick of naming the stable files and globbing the
-      hash-suffixed one in its middle slot still applies, and `.sdc` is clock
-      constraints that NVC never sees. Two further facts for ch. 10:
-      `Clash.Explicit.Prelude` does **not** export `stimuliGenerator`,
+      chapter 9 splits in two with `{-# OPAQUE step #-}` and chapter 10 splits
+      again with `{-# OPAQUE life #-}`. Six files across two directories now, in
+      the order V31 records, and `.sdc` is clock constraints that NVC never sees.
+      The trick of naming the stable files and globbing the hash-suffixed one in
+      its correct slot survives unchanged. Two further facts, both confirmed by
+      V31: `Clash.Explicit.Prelude` does **not** export `stimuliGenerator`,
       `outputVerifier'` or `tbSystemClockGen` — `import Clash.Explicit.Testbench`
-      is required; and the harmless metavalue warning is not one line but 513
-      (`NUMERIC_STD."=": metavalue detected`, from `Unsigned 4` comparisons before
-      reset settles) — say "many warnings, all harmless" rather than quoting one.
-      *Ch. 10.*
+      is required; and the harmless metavalue warnings are 257 of them, 771 lines
+      (`NUMERIC_STD."=": metavalue detected`), all at time zero, which is why
+      chapter 10 turns them off with `--ieee-warnings=off` rather than telling
+      the reader to scroll past them. *Ch. 10. Drafted.*
 
 - [x] **V4 — VHDL standard.** Omit `--std` entirely. Clash emits VHDL-93, NVC
       defaults to 2008, and the mismatch is harmless for everything Clash's
@@ -130,8 +127,10 @@ with the date and the observed result, not just a tick.
       `DeriveAnyClass`, which is what lets `NFDataX` and `BitPack` sit in a plain
       `deriving` clause alongside `Generic` (V28), and chapter 9 is the first to
       need `TemplateHaskell`, which is what lets `{-# ANN life (Synthesize …) #-}`
-      compile; `{-# OPAQUE step #-}` needs nothing (V30). Chapters 10 to 13
-      inherit the claim, not the check. *All chapters.*
+      compile; `{-# OPAQUE step #-}` needs nothing (V30). Chapter 10 needs the same
+      extension for `{-# ANN testBench (TestBench 'life) #-}`, and the quoted
+      name in it needs nothing further (V31). Chapters 11 to 13 inherit the
+      claim, not the check. *All chapters.*
 
 - [x] **V24 — the template under `GHC2024`.** D19 is buildable as written.
       `default-language: GHC2024` configures under `cabal-version: 2.4` with
@@ -145,8 +144,8 @@ with the date and the observed result, not just a tick.
       re-capture byte-identical.
 
       **The risk D19 accepts, partly discharged:** `MonoLocalBinds` has rejected
-      nothing in chapters 5 to 9, which are built `-Wall -Wcompat` clean in
-      `code/`. Chapters 10 to 13 are still unchecked. *All chapters.*
+      nothing in chapters 5 to 10, which are built `-Wall -Wcompat` clean in
+      `code/`. Chapters 11 to 13 are still unchecked. *All chapters.*
 
 - [x] **V10 — `unpack` resolves for `fromRows`.** `map unpack` takes its
       `BitPack` instance from `fromRows`'s top-level signature alone — no
@@ -586,6 +585,109 @@ with the date and the observed result, not just a tick.
         files, but it is the chapter-9 half of V3 and it is why chapter 10's
         ordering pre-flag got sharper. *Ch. 9. Drafted.*
 
+- [x] **V31 — chapter 10's session, the two entities and the simulation.**
+      Captured 2026-08-09 on a project generated from the edited template, two
+      real reloads, and the session re-run three times. Durable findings:
+
+      - **A `TestBench` annotation is enough, and one `:vhdl` generates both.**
+        `{-# ANN testBench (TestBench 'life) #-}` needs no per-file `LANGUAGE`
+        pragma beyond the `TemplateHaskell` already in `default-extensions`, and
+        the output is two directories named for their binders:
+        `vhdl/Example.Project.life/` and `vhdl/Example.Project.testBench/`. The
+        test bench directory gets no `.sdc`.
+      - **A `Synthesize` annotation is not a boundary.** Without
+        `{-# OPAQUE life #-}` the whole of `life` is inlined into
+        `testBench.vhdl`, which then holds its own `step.vhdl` and its own types
+        package, mentions `life` nowhere, and is self-contained in one directory
+        and one library. With the pragma, `testBench.vhdl` has
+        `life_cExampleProjecttestBench_app_arg : entity life.life` and a port map
+        of `clk_0, rst_0, en_0, cmd_0, cells_0`. The three files in
+        `Example.Project.life/` are **byte identical either way**, and byte
+        identical to chapter 9's second run: 211, 227 and 343 lines. This is D21.
+      - **The pragma costs two trace lines.**
+        `Not specializing TopEntity: Example.Project.life[8214565720323891532]`,
+        printed twice, between `Clash: Compiling Example.Project.testBench` and
+        the normalisation timings. Not suppressible: `-fclash-debug DebugNone`,
+        `-v0` and `-fclash-spec-limit=0` all leave it. The bracketed number is
+        GHC's unique for the binder and it is **not stable across session
+        shapes** — `stack run clash` gives `…787780`, the captured session
+        `…891532`, and adding two commands at the prompt before `:vhdl` moved it
+        again. `tools/check_transcripts.py` blanks it, and the chapter says it
+        will differ.
+      - **Two top entities compile concurrently and print out of order.** Two
+        captures of the identical session produced two different interleavings of
+        the `Compiling`/`Normalization`/`Netlist generation` lines, and the
+        `Not specializing` lines appeared once in one run and twice in another.
+        `-fclash-no-concurrent-topentity-compilation` in `bin/Clashi.hs` fixes
+        the order; with it, two full captures are byte identical apart from the
+        timings, and every generated `.vhdl` is byte identical. This is D22, and
+        chapter 12 will need it for the same reason.
+      - **The eight-command stimulus and what it produces.** With
+        `[Nothing, Nothing, Just Step, Just Run, Nothing, Just Pause,
+        Just (Load blinker), Nothing]` the eight boards are `glider` three times,
+        the first generation twice, the second twice, and `blinker`. `Run` sets
+        the mode without stepping, which is what puts the second repeat there,
+        and the rule that a command arriving on a cycle shows up one board later
+        is V28's, unchanged. The two new pictures go into the source as `glider1`
+        and `glider2`.
+      - **`sampleN 12 testBench` is nine `False` then three `True`**, and prints
+        nothing else: the test bench passes in Haskell before it leaves it.
+        `:i stimuliGenerator` prints in four lines and `:i outputVerifier'` in
+        five, both ending `-- Defined in ‘Clash.Explicit.Testbench’` in the
+        same-line form.
+      - **One `nvc` invocation, six files, and it prints nothing.** From `vhdl/`:
+
+        ```
+        nvc --ieee-warnings=off --work=life \
+            -a Example.Project.life/life_types.vhdl \
+               Example.Project.life/Example_Project_life_step.vhdl \
+               Example.Project.life/life.vhdl \
+               Example.Project.testBench/Example_Project_testBench_types.vhdl \
+               Example.Project.testBench/testBench_slv2string_*.vhdl \
+               Example.Project.testBench/testBench.vhdl \
+            -e testBench -r
+        ```
+
+        Exit 0 and no output, so the chapter asks with `echo $?`. `--work=life`
+        is load bearing: `entity life.life` is library qualified, and without the
+        flag the run fails with `design unit depends on WORK.TESTBENCH which was
+        analysed with errors`. Analysing the entity into its own library in a
+        separate `nvc --work=life -a …` and then elaborating with `-L .` also
+        works, and is not what the chapter does, because one command is the
+        convention. `--std` is still omitted (V4).
+      - **`--ieee-warnings=off` must be a global option**, before `-a`. After
+        `-r` NVC answers `the --ieee-warnings option may have no effect as the
+        IEEE packages have already been initialised`. What it suppresses is 257
+        warnings in 771 lines, all `NUMERIC_STD."=": metavalue detected` and all
+        at `0ms+0` or `0ms+4`, from the neighbour counts before any signal has
+        settled.
+      - **A wrong expected board fails visibly.** Replacing the eighth expected
+        board gives `** Error: 180ns+1: outputVerifier, expected: <64 bits>,
+        actual: <64 bits>` and exit 1. Quoted in the chapter in prose, never put
+        on screen: no step may fail.
+      - **`testBench.vhdl` is 629 lines from `clashi` and holds three things
+        worth reading.** The same source through `stack run clash` gives 632
+        lines and a different set of generated signal names, with or without the
+        concurrency flag; each route is reproducible on its own, and the book
+        quotes the interactive one because that is what the chapter runs.
+        The stimulus is one `array_of_Maybe` aggregate at lines 103 to 173, of
+        which the `Load` entry alone is sixty-four lines; a `Nothing` is
+        `"0" & "---…"` and `Just Step` is `"1" & ("01" & "---…")`, which is
+        chapter 8's `pack` output as a VHDL literal. The instantiation is at 605.
+        The clock generator's `while (not \c$result_rec\) loop` is at 207, and it
+        is what `tbSystemClockGen (fmap not done)` compiles to. There are six
+        `-- pragma translate_off` regions: two index guards, the clock, the reset
+        and the assertion.
+      - **Clash caches generated results, and a replay must not inherit them.**
+        A second `:vhdl` over an unchanged source answers `Clash: Using cached
+        result for: Example.Project.life` instead of the normalisation timings,
+        so `tools/check_transcripts.py` deletes the HDL tree before replaying a
+        chapter. No chapter is affected — every `:vhdl` in the book follows an
+        edit — but running the checker twice in a row was, which is how this was
+        found.
+      - **CI runs the same command against `code/`**, where the module name
+        changes the generated file names and nothing else. *Ch. 10. Drafted.*
+
 - [x] **`-- Defined at` placement, from V7, V21, V22 and V23.** Two forms, and
       both are to be reproduced as observed, never normalised. `:i glider` and
       `:i shiftN` put it on the **same** line after a space and a tab; `plus`,
@@ -705,9 +807,13 @@ with the date and the observed result, not just a tick.
 - [x] **V18 — CI.** `nickg/setup-nvc@v1` with `version: '1.20.1'` needs no
       change: the input validates, resolves to tag `r1.20.1`, and that release
       ships `nvc_1.20.1-1_amd64_ubuntu-24.04.deb`, which `ubuntu-latest` (still
-      24.04) matches. **Still open, as part of the chapter 10 work:** the
-      `V3`-tagged `exit 1` placeholder in the `simulate` job must be replaced by
-      V3's ordered `nvc -a` command.
+      24.04) matches. **Closed by V31:** the `simulate` job's `exit 1`
+      placeholder is gone, and the job now runs chapter 10's command against
+      `code/`'s `Chapters.Ch10`. The module name is the only difference, and it
+      is in the generated file names rather than in the shape of the command:
+      `Chapters_Ch10_life_step.vhdl` and `Chapters_Ch10_testBench_types.vhdl` for
+      the reader's `Example_Project_…`. Run by hand from `code/vhdl/`, it exits
+      0.
 
 - [x] **V19 — the template's `doctests` suite did not compile.** Fixed
       2026-08-06: the suite imports `common-options`, which turns on

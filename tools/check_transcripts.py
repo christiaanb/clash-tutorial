@@ -61,6 +61,13 @@ INCLUDE = re.compile(r"^\{\{#include\s+\S*?Ch(\d+)\.hs:(\S+)\}\}\s*$")
 TIMING = re.compile(r"^(GHC|Clash|GHC\+Clash): .*\btook:? [0-9.]+s$")
 SECONDS = re.compile(r"[0-9]+\.[0-9]+s")
 
+# Chapter 10's `:vhdl` prints "Not specializing TopEntity: Example.Project.life
+# [8214565720323891532]", and the number is GHC's unique for that binder. It
+# depends on how many names the session allocated before Clash ran, so typing
+# one extra command at the prompt changes it. The line is checked; the unique in
+# it is not, for the same reason the timings are not.
+UNIQUE = re.compile(r"^(Not specializing TopEntity: \S+)\[[0-9]+\]$")
+
 
 class Mismatch(Exception):
     pass
@@ -152,7 +159,11 @@ def write_state(spec, path):
 def normalise(text):
     out = []
     for line in text.split("\n"):
-        out.append(SECONDS.sub("…s", line) if TIMING.match(line) else line)
+        if TIMING.match(line):
+            line = SECONDS.sub("…s", line)
+        else:
+            line = UNIQUE.sub(r"\1[…]", line)
+        out.append(line)
     return "\n".join(out)
 
 
@@ -171,7 +182,12 @@ def check_chapter(number, path, project, work):
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
 
-    steps, expected, saves, reload_at, run = [], [], [], 0, 0
+    # Clash caches what it generated and answers `Clash: Using cached result
+    # for: …` when the source has not moved since, which is a different
+    # transcript from the one a chapter shows. Replaying a chapter twice against
+    # the same project is exactly that case, so the tree goes before each replay
+    # rather than the checker being idempotent only by luck.
+    steps, expected, saves, reload_at, run = [("clean",)], [], [], 0, 0
     for pairs in sessions:
         for command, output in pairs:
             if command == ":r":

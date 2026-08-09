@@ -312,5 +312,5 @@ That is why they were worth choosing, and it is why the two names in this chapte
 
 The design is VHDL now, and reading it is not the same as knowing it still works.
 Chapter 10 has Clash generate a self-checking test bench beside this entity and runs both in NVC, a simulator that has never heard of Haskell.
-The three files have to be handed over in the right order, which is the one thing about that chapter worth knowing in advance.
+Six files have to be handed over in the right order, which is the one thing about that chapter worth knowing in advance.
 Leave `clashi` running.

@@ -30,8 +30,10 @@ jobs:
         working-directory: code
         run: stack test
 
-  # Generate VHDL for the final chapter's top entity and simulate the generated
-  # test bench, exactly as chapter 10 instructs the reader to.
+  # Generate VHDL for the last chapter that has a test bench in it and simulate
+  # it, with the command chapter 10 prints. The chapter's own transcripts are
+  # checked by the transcripts job; what this one proves is that the command
+  # still analyses, elaborates and passes against the files Clash emits today.
   simulate:
     runs-on: ubuntu-latest
     needs: code
@@ -51,23 +53,30 @@ jobs:
             code/.stack-work
           key: stack-${{ runner.os }}-${{ hashFiles('code/stack.yaml', 'code/*.cabal') }}
 
+      # One invocation generates both entities, because `life` carries a
+      # Synthesize annotation and `testBench` carries a TestBench one. It writes
+      # vhdl/Chapters.Ch10.life/ and vhdl/Chapters.Ch10.testBench/.
       - name: Generate VHDL
         working-directory: code
-        run: stack run clash -- Chapters.Ch13 --vhdl
+        run: stack run clash -- Chapters.Ch10 --vhdl
 
-      # VERIFY (V3, reopened by V30): the file list must match what Clash 1.10.0
-      # actually emits, in dependency order. This command is the one printed in
-      # chapter 10, so it is tested here for the reader's benefit, not ours.
-      #
-      # Two things changed with chapter 9 and are not settled yet. The generated
-      # directory is named for the annotated binder, so this step needs to `cd`
-      # into it rather than assuming one directory exists; and `{-# OPAQUE step #-}`
-      # means there are three components to analyse, not one.
+      # Chapter 10's command, with the module name changed: this package's module
+      # is Chapters.Ch10 where the reader's is Example.Project, and the generated
+      # file names carry it. The order of the six is the chapter's and is the
+      # reason this step exists — sorted alphabetically it fails, since life.vhdl
+      # sorts before life_types.vhdl. The glob is the one file whose name ends in
+      # a content hash, in its correct slot.
       - name: Analyse, elaborate and run
-        working-directory: code
+        working-directory: code/vhdl
         run: |
-          echo "VERIFY: replace with the explicit, ordered file list from V3/V30"
-          exit 1
+          nvc --ieee-warnings=off --work=life \
+            -a Chapters.Ch10.life/life_types.vhdl \
+               Chapters.Ch10.life/Chapters_Ch10_life_step.vhdl \
+               Chapters.Ch10.life/life.vhdl \
+               Chapters.Ch10.testBench/Chapters_Ch10_testBench_types.vhdl \
+               Chapters.Ch10.testBench/testBench_slv2string_*.vhdl \
+               Chapters.Ch10.testBench/testBench.vhdl \
+            -e testBench -r
 
   # The book must build, and every {{#include}} must resolve.
   book:
