@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-5c0899bd.js";
+            window.path_to_searchindex_js = "searchindex-3d1cfe2f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-3cb9540d.js"></script>
@@ -2009,6 +2009,128 @@ Chapter 11 asks NVC for a waveform of the same run and opens it in a browser, wh
 The tag and the payload we have been describing since chapter 7 are on that waveform, side by side, and so is the design ignoring the payload on the seven cycles out of eight where it means nothing.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="the-waveform"><a class="header" href="#the-waveform">The waveform</a></h1>
+<p>Chapter 10’s simulation printed nothing and exited 0.
+That is one bit of information, and it is the right bit to want, but it is one bit: the design agreed with itself, and nothing on screen says how.</p>
+<p>This chapter asks the same run to write down what its signals did, and then looks at it.
+The REPL has been a good instrument for the boards and a poor one for everything around them: <code>sampleN</code> prints sixty-four cells per cycle, which is the right shape for data and the wrong shape for a clock, a reset, and a command that arrives one cycle before it takes effect.
+Those are what a waveform is for, and the two instruments divide this design between them.</p>
+<h2 id="one-more-flag"><a class="header" href="#one-more-flag">One more flag</a></h2>
+<p>Leave <code>clashi</code> running and go back to the second terminal, in <code>vhdl/</code>, where chapter 10 left off.
+The command is chapter 10’s with <code>-w</code> on the end:</p>
+<pre><code>$ nvc --ieee-warnings=off --work=life \
+      -a Example.Project.life/life_types.vhdl \
+         Example.Project.life/Example_Project_life_step.vhdl \
+         Example.Project.life/life.vhdl \
+         Example.Project.testBench/Example_Project_testBench_types.vhdl \
+         Example.Project.testBench/testBench_slv2string_*.vhdl \
+         Example.Project.testBench/testBench.vhdl \
+      -e testBench -r -w
+** Note: writing FST waveform data to testBench.fst
+** Note: arrays of composite types such as ARRAY_OF_ARRAY_OF_8_BOOLEAN are not dumped by default, pass --dump-arrays to include these in the waveform dump
+</code></pre>
+<p>The first note is the result.
+<code>testBench.fst</code> is beside the two generated directories, about four kilobytes of it, and it covers the whole run: 190 nanoseconds, from time zero to a little after the test bench stopped its own clock.
+FST is the compressed binary waveform format GTKWave introduced, and NVC writes it without being asked, which is why turning the dump on is a flag with nothing after it.</p>
+<p>The second note is worth a sentence, because it is telling us something true about the design rather than something to scroll past.
+<code>ARRAY_OF_ARRAY_OF_8_BOOLEAN</code> is our <code>Board</code>, and a dump does not hold an array of arrays unless it is asked to, so every signal in the design that is a board is left out of it: the two ports of the <code>step</code> entity, the field the state record holds, and the ones in between.
+That is not the loss it sounds like, and the reason is a decision from chapter 9: the output port is called <code>cells</code>, Clash packed it into a single 64-bit vector, and that is the same board and is in the file.</p>
+<h2 id="surfer"><a class="header" href="#surfer">Surfer</a></h2>
+<p><a href="https://surfer-project.org/">Surfer</a> is an open source waveform viewer with a build that runs in a browser.
+Open <a href="https://app.surfer-project.org/">https://app.surfer-project.org/</a> and drop <code>testBench.fst</code> onto the window.</p>
+<p>The file does not go anywhere.
+The browser build reads the bytes through the browser’s own file interface and never sends them: the one request Surfer can make over the network is the command that fetches a waveform from a URL, and we are not using it.</p>
+<p>The panel on the left is the design hierarchy, and it has one scope at the root: <code>testbench</code>.
+Inside it is one more, called <code>life_cexampleprojecttestbench_app_arg</code>, which is chapter 10’s instantiation of <code>entity life.life</code> under the label Clash gave it.
+Select that scope, and the first five variables in it are <code>clk</code>, <code>rst</code>, <code>en</code>, <code>cmd</code> and <code>cells</code>.
+Those are the names we chose in chapter 9, in the order the port map has them, and they arrived here unchanged.
+They are lower case because a VHDL identifier is case insensitive and NVC writes the dump in lower case, which is also why the test bench’s own clock appears as <code>\example.project.testbench_clk\</code> rather than with the capitals chapter 10 read in the file.
+Ours were lower case to begin with.</p>
+<p>Below the five are seven more things, and it is worth knowing what they are before deciding not to open most of them.
+Four are records: <code>st</code>, which is the state register and which we come back to, and <code>result</code>, <code>\c$ds_case_alt\</code> and <code>\c$ds_case_alt_0\</code>, which are the signals feeding it.
+Two are Clash’s own signals, both named <code>\c$ds_case_alt_selection…</code>.
+The seventh is another scope, <code>example_project_life_step_result_0</code>, and it is chapter 9’s <code>step</code> entity: inside it are the <code>for … generate</code> blocks that chapter read, one per cell and one per addition, and there are 1890 of them.
+Everything this chapter looks at is in the level above.</p>
+<p>Add <code>clk</code>, <code>rst</code>, <code>cmd</code> and <code>cells</code>.
+<code>en</code> is worth looking at once and then leaving: it is held at <code>true</code> for the whole run, because chapter 6 passed <code>enableGen</code> and every chapter since has passed it too, and seeing that the ritual was a constant is the only thing it has to teach.</p>
+<p>Four signals are now on screen, and the first two are the ones a hardware engineer reads first:</p>
+<ul>
+<li><code>clk</code> is low until 100 nanoseconds and then toggles every 5, so its rising edges are at 100, 110, 120 and so on: nine of them, which are the eight cycles chapter 10 sampled and the one on which the test bench finished;</li>
+<li><code>rst</code> is high from time zero and falls at 110 nanoseconds, which is <code>resetGen</code> asserting for the first two cycles: it is why chapter 6’s first two boards were the seed, and why every chapter since has counted from the third.</li>
+</ul>
+<h2 id="the-command-bus"><a class="header" href="#the-command-bus">The command bus</a></h2>
+<p><code>cmd</code> is one bus, 67 bits wide, and Surfer shows a bus in hexadecimal.
+Sixty-seven bits of hexadecimal is not what we came for, so click <code>cmd</code> to focus it, press space to open Surfer’s command prompt, and type <code>item_set_format binary</code>.</p>
+<p>Now the whole of chapter 8 is on one line, and it changes six times:</p>
+<ul>
+<li>from 0 to 120 nanoseconds, <code>0</code> followed by sixty-six <code>-</code>;</li>
+<li>at 120, <code>101</code> followed by sixty-four <code>-</code>;</li>
+<li>at 130, <code>110</code> followed by sixty-four <code>-</code>;</li>
+<li>at 140, <code>0</code> followed by sixty-six <code>-</code>;</li>
+<li>at 150, <code>111</code> followed by sixty-four <code>-</code>;</li>
+<li>at 160, <code>100</code> followed by the blinker;</li>
+<li>at 170, <code>0</code> followed by sixty-six <code>-</code>.</li>
+</ul>
+<p>Read the leading bits.
+The first says whether there is a command at all, which is <code>Maybe</code>’s tag; the next two say which one, which is <code>Command</code>’s.
+Chapter 8 counted those off with <code>pack</code> and they are in declaration order, so <code>Load</code> is <code>00</code>, <code>Step</code> is <code>01</code>, <code>Run</code> is <code>10</code> and <code>Pause</code> is <code>11</code>.
+<code>101</code> is <code>Just Step</code>, <code>110</code> is <code>Just Run</code>, <code>111</code> is <code>Just Pause</code>, and the <code>100</code> at 160 nanoseconds is <code>Just (Load blinker)</code> with the board it carries.
+That is chapter 10’s stimulus, in order: the type this design has taken as its input since chapter 7 is three bits and a field, and here it is.</p>
+<p>The <code>-</code> is a don’t care, and it is the same one chapter 10 read in <code>testBench.vhdl</code> as <code>"0" &amp; "------…"</code>.
+Here it is on a wire, on seven cycles out of eight, and it is what <code>Nothing</code> and the three payload-free commands put on the sixty-four wires a board would have used.</p>
+<p>Then watch the design ignore them.
+<code>cells</code> changes at 130, 150 and 170 nanoseconds, and the payload holds a board only at 160: the state takes one when the tag says <code>Load</code> and at no other time.
+It is worth being exact about what that costs, and chapter 9’s VHDL was exact about it: <code>b &lt;= … fromSLV(cmd(63 downto 0))</code> has no condition on it, so those sixty-four bits are turned into a board on every cycle and a multiplexer throws it away.
+The type system removed a class of mistake, not a wire.</p>
+<p>The one-cycle rule the last four chapters have described in prose is here as a picture.
+<code>Just Step</code> is on the bus at 120 nanoseconds and <code>cells</code> changes at 130.
+A command is what the register reads at the next edge, so its effect is one cycle later, every time.</p>
+<h2 id="one-bit-of-the-state"><a class="header" href="#one-bit-of-the-state">One bit of the state</a></h2>
+<p>Open the <code>st</code> scope and there is one variable in it, <code>st_0_sel1_running</code>.
+That is <code>St</code>’s second field, the <code>Bool</code> chapter 8 added so that <code>Run</code> and <code>Pause</code> would have something to change, and it is one bit of the state register carrying the name it was declared with.</p>
+<p>It is <code>false</code> until 140 nanoseconds, <code>true</code> from 140 to 160, and <code>false</code> after that.
+<code>Just Run</code> is on the bus at 130 and <code>Just Pause</code> at 150, so both take effect one edge later: the same rule again, on a different field of the same register.</p>
+<p>The field that is missing is the first one, the board, and it is the array the second note was about.
+Nothing is hidden by that, because <code>lifeT</code> returns the current board as its output, so the state’s board and <code>cells</code> are the same sixty-four bits by construction.
+It is the reason all four of those record scopes hold one variable where the record has two fields.</p>
+<h2 id="the-board-as-bits"><a class="header" href="#the-board-as-bits">The board, as bits</a></h2>
+<p><code>cells</code> is 64 bits wide and changes three times.
+Read as bits it is the board, row 0 first, a <code>1</code> where a cell is alive, which means the pictures the REPL has printed since chapter 3 are on this waveform too and are merely harder to see.</p>
+<p>Ask the prompt for the dictionary between the two.
+<code>pack</code> is the function chapter 8 used to count the width of a <code>Command</code>; on a <code>Board</code> it gives the sixty-four bits in the order the port carries them:</p>
+<pre><code>clashi&gt; pack glider
+0b0100_0000_0010_0000_1110_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
+clashi&gt; pack glider1
+0b0000_0000_1010_0000_0110_0000_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000
+clashi&gt; pack glider2
+0b0000_0000_0010_0000_1010_0000_0110_0000_0000_0000_0000_0000_0000_0000_0000_0000
+clashi&gt; pack blinker
+0b0000_0000_0000_0000_0000_0000_0011_1000_0000_0000_0000_0000_0000_0000_0000_0000
+</code></pre>
+<p>Two groups of four to a row, eight rows to a board.
+<code>cells</code> holds <code>glider</code> from the start of the run, <code>glider1</code> from 130 nanoseconds, <code>glider2</code> from 150 and <code>blinker</code> from 170: chapter 10’s eight expected boards, with the repeats collapsed into the three moments where something changed.</p>
+<p>That is the division of labour, and it is worth stating once.
+A board is a picture and belongs in the REPL, where <code>render</code> prints it as eight lines of <code>#</code> and <code>.</code>; a clock, a reset, a bus and a one-cycle latency are shapes in time and belong on a waveform.
+Neither instrument is the better one.</p>
+<h2 id="notice-that-10"><a class="header" href="#notice-that-10">Notice that</a></h2>
+<p><strong>The algebraic data type did not disappear at the boundary.</strong>
+<code>Maybe Command</code> is a tag and a payload in Haskell, and on this waveform it is a tag and a payload: one bit, then two, then sixty-four.
+Nothing was translated away and nothing was added, which is why the bits are countable against what <code>pack</code> printed at the prompt three chapters ago.</p>
+<p><strong>The payload is driven with meaningless values, and the design decodes them anyway.</strong>
+On seven cycles out of eight, sixty-four wires carry don’t cares into a <code>fromSLV</code> that turns them into a board, and a multiplexer discards it.
+What chapter 7 bought is not fewer wires: it is that no Haskell in this design can read that board, because the payload is unreachable without matching on <code>Just</code> and the compiler is what enforces it.
+Nothing is switched off.</p>
+<p><strong>The names on the waveform are the ones we chose, except where we did not choose them.</strong>
+<code>clk</code>, <code>rst</code>, <code>en</code>, <code>cmd</code> and <code>cells</code> are chapter 9’s <code>Synthesize</code> annotation, and <code>st_0_sel1_running</code> is chapter 8’s record field with Clash’s prefix on it; <code>life_cexampleprojecttestbench_app_arg</code> and <code>example_project_life_step_result_0</code> are Clash’s alone, and so are the four <code>\c$</code> signals beside them.
+A <code>Synthesize</code> annotation names the top of a design and nothing inside it, which is exactly what chapter 9 said it would cost.</p>
+<p><strong>A dump is not the design.</strong>
+This one does not hold the boards inside the <code>step</code> entity, because they are arrays of arrays and NVC said so in a note.
+It says nothing about how fast the design would run or whether it fits, because NVC is not a synthesis tool.
+And it agrees with chapter 10’s <code>sampleN</code> because both are the same circuit, not because either one checked the other.</p>
+<h2 id="where-this-goes-10"><a class="header" href="#where-this-goes-10">Where this goes</a></h2>
+<p>The design is written, checked, read as VHDL, simulated and now watched.
+All of it has been an 8×8 board, and that 8 has been written into every type since chapter 3.</p>
+<p>Chapter 12 takes the size out.
+One description with the board size as a parameter, and one <code>:vhdl</code> that generates two entities from it: an 8×8 and a 16×16, with <code>cells</code> sixty-four bits wide in one file and two hundred and fifty-six in the other.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="one-description-two-sizes"><a class="header" href="#one-description-two-sizes">One description, two sizes</a></h1>
 <div style="break-before: page; page-break-before: always;"></div>
