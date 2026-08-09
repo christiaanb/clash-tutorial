@@ -1,8 +1,7 @@
 -- | The reader's @src/Example/Project.hs@ at the end of chapter 2.
 --
--- @plus@ and @topEntity@ are gone: the template's example has served its
--- purpose, and @topEntity@ is written again in chapter 9, when there is a
--- design for it to be the top of.
+-- @plus@ is gone: the template's example has served its purpose, and the file
+-- holds nothing but the design from here on.
 module Chapters.Ch02 where
 
 import Clash.Explicit.Prelude

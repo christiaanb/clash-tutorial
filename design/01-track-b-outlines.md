@@ -30,8 +30,8 @@ stack run clashi -- src/Example/Project.hs
 The path argument to `clashi` is not optional: without it the prompt comes up
 with nothing loaded and `:i plus` is an error (V7).
 
-**Code state.** Untouched template. `Example.Project` contains `plus` and a
-`topEntity`. The reader edits nothing in this chapter.
+**Code state.** Untouched template. `Example.Project` contains `plus` and nothing
+else (D17). The reader edits nothing in this chapter.
 
 **Transcript.** Captured 2026-08-06; see V7's addendum.
 
@@ -80,8 +80,8 @@ The reader should be able to picture chapter 13 from chapter 1.
 
 ## Chapter 2: A cell
 
-**What we do.** Replace `plus` with the rule for a single cell, and delete
-`topEntity` along with it (D17).
+**What we do.** Replace `plus` with the rule for a single cell. That is the whole
+edit: the template ships nothing else to delete (D17).
 
 ```haskell
 nextCell :: Bool -> Unsigned 4 -> Bool

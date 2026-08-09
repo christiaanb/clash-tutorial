@@ -45,7 +45,7 @@ Chosen over a seven-segment display spine and a UART transmitter because:
 - A known start state has a known state after *n* generations, so the test bench
   writes itself.
 
-The weakness — no input ports, thin `topEntity` — is fixed by the command input,
+The weakness — no input ports, a thin top entity — is fixed by the command input,
 which restores the port interface and carries the algebraic data type lesson.
 
 Life is not useful for anything. It does not need to be useful, it needs to be
@@ -69,8 +69,9 @@ In favour of explicit:
 - Errors degrade to ordinary type errors instead of unresolved constraints.
 - It removes `@System` type applications from the tutorial entirely: the domain is
   fixed by passing `systemClockGen`, an ordinary value.
-- `topEntity` stops being a discontinuity. No `exposeClockResetEnable` appearing
-  once and doing something invisible.
+- The top of the design stops being a discontinuity. No `exposeClockResetEnable`
+  appearing once and doing something invisible: the entity's ports are the
+  arguments the function already had.
 - One style end to end. `Clash.Explicit.Testbench` is used either way, so the
   hidden route forces a style switch mid-tutorial.
 - It keeps chapter 1's promise that nothing is inferred behind the reader's back.
@@ -281,23 +282,46 @@ A fork's pull request still builds the book, and CI says in the summary why no U
 
 ---
 
-## D17. `topEntity` is deleted in chapter 2 and written again in chapter 9
+## D17. `topEntity` does not appear; chapter 9 annotates `life`
 
-The template's module holds `plus` and `topEntity = plus`. Chapter 2 replaces
-`plus` with `nextCell`, which leaves `topEntity` referring to a name that no longer
-exists, so chapter 2 has to do something about it. It deletes it.
+**This replaces the original D17**, which had the template ship `topEntity = plus`,
+chapter 2 delete it and chapter 9 write it again. That decision was about *when*
+the name gets written. This one is about whether the name should be the mechanism
+at all, and it concludes that it should not.
 
-The alternative was to keep it pointing at whatever the chapter's newest definition
-happens to be: `topEntity = nextCell` in chapter 2, and so on. That costs the reader
-an edit in every chapter, and each of those edits asserts something false — that the
-cell rule, or the board, or `step`, is the top of a design. Chapter 9's beat is
-"nothing new has been introduced, a name has been given", and it lands better on a
-name the reader has not been carrying around unexplained for seven chapters.
+`topEntity` is a magic name. It means something only because Clash goes looking
+for a binder called that, which is a fact about the compiler rather than about the
+design. A `Synthesize` annotation says the same thing about a function that
+already has a name of its own, and it says three more things the magic name
+cannot: what the entity is called, what each of its ports is called, and both of
+those in the reader's own source where they can be read and changed.
 
-The cost is one sentence of forward reference in chapter 2 (`topEntity` names the top
-of the design; we write it again in chapter 9) and a corrected sentence in chapter 1,
-which used to say the reader leaves `topEntity` alone until chapter 9. They do not:
-they delete it in the next chapter.
+So the template holds `plus` and nothing else, chapter 2 replaces `plus` rather
+than deleting two things, and chapter 9 annotates `life` where it already stands.
+
+What it buys:
+
+- Chapters 1 and 2 each lose a forward reference and an unexplained name. Chapter
+  1 introduces one definition instead of two; chapter 2's edit is a replacement
+  rather than two deletions with an explanation attached to the second.
+- Chapters 10 and 11 read a test bench and a waveform whose ports carry the
+  reader's names rather than `carg`, `carg_0`, `carg_1`, `carg_2` and sixty-four
+  `result_N_M`. That is worth more in those two chapters than it is in chapter 9.
+- Chapter 12 gets two entities from one `:vhdl`, because Clash generates every
+  annotated binder in one invocation. The `-main-is topEntity8`/`-main-is
+  topEntity16` route it used to plan is withdrawn with V1.
+
+What it costs, and none of it is free:
+
+- Seven lines of record syntax the reader types in a chapter that is otherwise
+  about reading VHDL, without record syntax having been taught. Chapter 8's `St`
+  is the nearest thing to preparation and it is not much.
+- One rule that has to be stated rather than discovered: `t_inputs` takes one
+  entry per argument, in argument order, and the clock, the reset and the enable
+  each need one because each of them is an argument.
+- The template's `stack run clash -- Example.Project --vhdl` stops working on its
+  own, since nothing in a fresh project is named `topEntity` or annotated. It
+  gains `-main-is plus` in both places the template writes it.
 
 ---
 
