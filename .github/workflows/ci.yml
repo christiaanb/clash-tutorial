@@ -78,6 +78,27 @@ jobs:
                Chapters.Ch10.testBench/testBench.vhdl \
             -e testBench -r
 
+      # Chapter 11's command is the one above with -w on the end, and what it
+      # has to keep doing is write a file. The chapter quotes names, times and
+      # values out of that file, so a run that stopped producing one, or that
+      # started printing a third note, is chapter 11 going stale. The module is
+      # Chapters.Ch11 in code/ and its source is Chapters.Ch10's byte for byte
+      # (D23), so this reuses the tree generated above rather than generating a
+      # second identical one.
+      - name: Chapter 11's waveform
+        working-directory: code/vhdl
+        run: |
+          rm -f testBench.fst
+          nvc --ieee-warnings=off --work=life \
+            -a Chapters.Ch10.life/life_types.vhdl \
+               Chapters.Ch10.life/Chapters_Ch10_life_step.vhdl \
+               Chapters.Ch10.life/life.vhdl \
+               Chapters.Ch10.testBench/Chapters_Ch10_testBench_types.vhdl \
+               Chapters.Ch10.testBench/testBench_slv2string_*.vhdl \
+               Chapters.Ch10.testBench/testBench.vhdl \
+            -e testBench -r -w
+          test -s testBench.fst
+
   # The book must build, and every {{#include}} must resolve.
   book:
     runs-on: ubuntu-latest

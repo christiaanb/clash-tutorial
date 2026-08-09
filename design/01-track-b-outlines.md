@@ -8,7 +8,7 @@ terminal.
 
 The indicative transcripts below write the prompt as `*Example.Project>`. That is
 wrong: the observed prompt is `clashi>`, in every case. See D12. An outline is
-corrected as its chapter ships, so chapters 1 to 10 are right; chapters 11 onward
+corrected as its chapter ships, so chapters 1 to 11 are right; chapters 12 onward
 still say `*Example.Project>`, and it should be read as `clashi>` when they are
 drafted.
 
@@ -673,6 +673,30 @@ why the simulation ends.
 **What we do.** Ask NVC for a waveform, open it in Surfer's browser build, find
 the command encoding.
 
+The chapter edits no Haskell. `code/src/Chapters/Ch11.hs` is chapter 10's module
+byte for byte, and D23 says why it exists anyway.
+
+**Transcript.** Captured 2026-08-09; see V32. One shell command, which is chapter
+10's with `-w` on the end, and one REPL block, which is `pack` on the four boards
+`cells` takes. Everything else the chapter quotes — names, times and values — is
+read out of the dump rather than out of a viewer, which is why V33, the browser,
+could be checked separately and afterwards.
+
+**The five things to find**, in this order, because each is a name from an
+earlier chapter arriving somewhere new:
+
+1. The scope `life_cexampleprojecttestbench_app_arg` and the five variables in
+   it: `clk`, `rst`, `en`, `cmd` and `cells`, which are chapter 9's port names
+   folded to lower case by NVC and otherwise unchanged.
+2. `cmd` as bits: `0` and sixty-six don't cares, then `101`, `110`, `111` and
+   `100` with the blinker, which is chapter 8's tag and payload and chapter 10's
+   stimulus at once.
+3. The one-cycle rule as a picture: `Just Step` on the bus at 120 ns, `cells`
+   changing at 130.
+4. `st_0_sel1_running`, chapter 8's record field, `true` from 140 ns to 160.
+5. `cells` against `pack`, which is the dictionary between the ASCII pictures and
+   the bus.
+
 **Notice that.**
 
 - The board is legible as ASCII in the REPL; the control is legible as a waveform.
@@ -685,11 +709,21 @@ the command encoding.
 **Pre-flag.**
 
 - Confirm the file never leaves the reader's machine, then say so in one sentence.
-  A hardware engineer at a company will wonder and will not ask.
+  A hardware engineer at a company will wonder and will not ask. V6 is the
+  reading of Surfer's source that makes the sentence safe.
 - No screenshots, no click-by-click instructions.
+- The `step` entity's 1776 generate scopes are in the dump. Say what they are and
+  say not to open them, the way chapter 9 said which three things to read.
 
-**Decide.** FST (NVC's default) or VCD (universally understood, human readable).
-Verify what Surfer's web build accepts.
+**Decided.** FST, which is NVC's default, so the flag is a bare `-w` (V5, V32).
+The dump is not filtered and the one note NVC prints about arrays of composite
+types is explained rather than suppressed: D23.
+
+**Closed after drafting.** V33, the browser: the chapter shipped with an
+`UNVERIFIED` marker over the paragraphs that say what Surfer does with the file,
+and it was confirmed in a browser and the marker removed. Nothing in chapters 1
+to 11 is now unrun. The one thing to re-run rather than trust is V33 itself,
+because the browser build ships continuously and carries no version.
 
 ---
 
