@@ -11,7 +11,7 @@ not a how-to guide, not reference, not explanation.
 It is a standalone project for now. It may later be proposed for
 `docs.clash-lang.org`, so its structure should stay compatible with mdBook.
 
-The repository contains four things:
+The repository contains five things:
 
 | Path | What it is |
 |---|---|
@@ -19,6 +19,7 @@ The repository contains four things:
 | `book/` | The mdBook source. The tutorial itself. |
 | `code/` | A single Stack project holding every chapter's end state as a module. Built in CI. |
 | `template/` | The Stack project template the reader uses in chapter 1. |
+| `tools/` | How transcripts are captured and chapters assembled. Not shipped to the reader. |
 
 ## Read these first, in order
 
@@ -44,6 +45,11 @@ prose and leave a marker:
 and add an entry to `design/03-verification-queue.md`. Do not invent plausible
 output. A tutorial that prints something other than what it promised has failed
 at the only thing it had to do.
+
+`tools/` is how this rule is met rather than merely intended: a session is driven
+through a pty and recorded, the reader's file is derived from `code/` rather than
+kept in step by hand, and a chapter's fenced blocks are filled in from the real
+artefacts by line range. Read `tools/README.md` before capturing anything.
 
 ## Working rules
 
