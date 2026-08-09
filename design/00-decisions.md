@@ -507,6 +507,55 @@ mention it.
 
 ---
 
+## D23. Chapter 11 dumps everything, and ships one unverified marker
+
+Three things chapter 11 settled, none of which was on paper before it (V32).
+
+**The dump is not filtered.** `nvc … -r -w` prints two notes rather than one: the
+second says that arrays of composite types are not dumped without
+`--dump-arrays`, and it means our `Board`, in the `step` entity's two ports and
+in the state record's board field. Two ways to make it go away were tried and
+both are worse. `--dump-arrays` suppresses it and adds sixty-four names to a
+hierarchy that already has 4800, for a board that is already on screen as `cells`
+because chapter 9 named that port. `--include`/`--exclude` filter on
+colon-separated paths, which is a glob to explain, and a glob that matches
+nothing does not warn: the run dies with `** Fatal: 190ns+0: fstReaderOpen failed
+for temporary FST file`. So the note stays and the chapter spends one sentence on
+it. That sentence is not "ignore this": the note is telling the reader something
+true about the design, which is the test D1 applies to output a chapter cannot
+prevent.
+
+**`code/src/Chapters/Ch11.hs` exists and is chapter 10's module byte for byte.**
+Chapter 11 edits nothing — it reads a waveform of chapter 10's run — so the
+duplication buys no new code. It buys the rule in `CLAUDE.md` holding without an
+exception: `ChNN.hs` is the reader's file at the end of chapter NN, and both
+`tools/reader_file.py` and `tools/check_transcripts.py` derive every state from
+that. Concretely, chapter 11's `pack` block is replayed against this module, and
+chapter 12's edits will be staged as a diff from it; without the file the
+checker skips chapter 11 with `no module in code/` and crashes on chapter 12.
+The cost is 207 duplicated lines and one more module in CI.
+
+**Surfer is driven by a typed command.** The chapter tells the reader to press
+space and type `item_set_format binary` rather than to find a menu entry, because
+a documented command is something we can quote and a menu is a screenshot we are
+not allowed to take. The outline forbids click-by-click for the same reason, and
+a command is also the thing least likely to move under a web application that
+ships continuously.
+
+**Chapter 11 was drafted with an `UNVERIFIED` marker over those paragraphs, and
+the marker lasted one review round.** There is no browser in the authoring
+container, so what Surfer does with the file was written from V6's reading of its
+source and from its documented command set, and V33 held it open until it was
+confirmed in a browser. Both halves of that are worth keeping as precedent. A
+chapter may ship a marker rather than wait, because the alternative here was to
+block chapters 12 and 13 on a third-party web application, and D6 split the
+waveform into its own chapter precisely so that it could not do that; and the
+marker comes out in the same commit as the confirmation, not later. V33 also
+notes the one way this differs from every other closed item: the browser build
+carries no version, so that check has a shelf life and the rest do not.
+
+---
+
 ## Open, deliberately
 
 **Chapter 14, the optional board chapter.** An 8×8 display is not standard on
