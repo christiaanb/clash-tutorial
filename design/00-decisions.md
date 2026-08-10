@@ -741,6 +741,21 @@ transcribe. Like `currying.md`, the page took only its primary link (chapter 2)
 and left the two secondaries in the outline's table unbuilt, and its "Where you
 met this" list names chapters 3, 4, 7 and 8 as well.
 
+**`vec-and-lists.md` shipped third, and one of its outline beats was wrong.** The
+outline listed `toList` and `fromList` together as "the bridges", one in each
+direction. They are not a pair: `toList :: Vec n a -> [a]` leaves the vector and
+`fromList :: NFDataX a => [a] -> Signal dom a` enters the *signal*, so the list
+sits outside both types rather than between them, and nothing in the book crosses
+from a list back to a `Vec`. The page says so, and the reason is the length. Two
+smaller corrections came from running things: `:>` is a pattern synonym for the
+constructor `Cons` rather than a constructor in its own right, which the page
+states without dwelling on it, and the outline's "`<...>` never appears" beat was
+dropped rather than asserted, because 1.10.0's `Show` instance was only observed
+printing `:>` chains and a claim about what a library never prints needs more
+than one observation. Like the two pages before it, this one took only its
+primary link (chapter 3, after the `glider` block); the chapter 6 and 7
+secondaries stay unbuilt, and the "Where you met this" list names both anyway.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
