@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e6cc90e8.js";
+            window.path_to_searchindex_js = "../searchindex-69313275.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2990804e.js"></script>
+        <script src="../toc-6006584b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -241,7 +241,8 @@ There is no process, no sensitivity list and no clock, and there will not be one
 <code>nextCell True 3</code> matches the second row, <code>(_, 3)</code>, and it also matches the third row, which matches everything.
 The second row wins because it is written first.
 This is where your VHDL will mislead you: there, the choices of a <code>case</code> must be mutually exclusive and must cover every value, and the compiler holds you to both.
-Here they need not be exclusive, and the overlap is what lets three rows say what a table of thirty-two would otherwise have to.</p>
+Here they need not be exclusive, and the overlap is what lets three rows say what a table of thirty-two would otherwise have to.
+What kind of construct this is, and what may stand to the left of a <code>-&gt;</code>, is explained in <a href="../explanation/pattern-matching.html">A case expression is a multiplexer</a>.</p>
 <p><strong>The width is in the type, and the range is not.</strong>
 <code>Unsigned 4</code> is a four bit unsigned number, which is what a count that reaches eight needs, and those four bits are in the type rather than in a comment or a constant.
 A caller cannot hand <code>nextCell</code> a <code>Signed 8</code> or a <code>Bool</code> in that position, and the compiler is the one checking.

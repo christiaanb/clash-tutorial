@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-e6cc90e8.js";
+            window.path_to_searchindex_js = "searchindex-69313275.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-2990804e.js"></script>
+        <script src="toc-6006584b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -378,7 +378,8 @@ There is no process, no sensitivity list and no clock, and there will not be one
 <code>nextCell True 3</code> matches the second row, <code>(_, 3)</code>, and it also matches the third row, which matches everything.
 The second row wins because it is written first.
 This is where your VHDL will mislead you: there, the choices of a <code>case</code> must be mutually exclusive and must cover every value, and the compiler holds you to both.
-Here they need not be exclusive, and the overlap is what lets three rows say what a table of thirty-two would otherwise have to.</p>
+Here they need not be exclusive, and the overlap is what lets three rows say what a table of thirty-two would otherwise have to.
+What kind of construct this is, and what may stand to the left of a <code>-&gt;</code>, is explained in <a href="#a-case-expression-is-a-multiplexer">A case expression is a multiplexer</a>.</p>
 <p><strong>The width is in the type, and the range is not.</strong>
 <code>Unsigned 4</code> is a four bit unsigned number, which is what a count that reaches eight needs, and those four bits are in the type rather than in a comment or a constant.
 A caller cannot hand <code>nextCell</code> a <code>Signed 8</code> or a <code>Bool</code> in that position, and the compiler is the one checking.
@@ -2830,6 +2831,143 @@ None of those lines can be written at all without the rule this page describes.<
 <li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: four shift functions under one signature.</li>
 <li>Chapters 8 and 10, <a href="#more-than-valid">More than valid</a> and <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: <code>st'</code> and <code>outputVerifier'</code>.</li>
 <li>Chapter 13, <a href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a>: <code>exposeClockResetEnable (life glider)</code>, in front of the argument it already had.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="a-case-expression-is-a-multiplexer"><a class="header" href="#a-case-expression-is-a-multiplexer">A case expression is a multiplexer</a></h1>
+<p>Chapter 2 wrote the whole of Conway’s rule as three rows:</p>
+<pre><code class="language-haskell">nextCell :: Bool -&gt; Unsigned 4 -&gt; Bool
+nextCell alive n = case (alive, n) of
+  (True,  2) -&gt; True
+  (_,     3) -&gt; True
+  _          -&gt; False
+</code></pre>
+<p>and called it a truth table.
+It is one, and the chapter left it there: three rows, read left to right, the cell, the count and the answer.
+Then it checked the rows one at a time, and the second row answered twice:</p>
+<pre><code>clashi&gt; nextCell True 3
+True
+clashi&gt; nextCell False 3
+True
+</code></pre>
+<p>Three things about that construct were left standing.
+It sits to the right of an <code>=</code>, where a value belongs.
+The shapes to the left of each <code>-&gt;</code> are not expressions, and one of them is a single underscore.
+And the thing after the word <code>case</code> is a pair in parentheses, of a kind nothing in the file declared.
+This page is all three.</p>
+<h2 id="the-reading-that-does-not-survive-1"><a class="header" href="#the-reading-that-does-not-survive-1">The reading that does not survive</a></h2>
+<p>A <code>case</code> in VHDL is a statement.
+It appears inside a process, it assigns to a signal or a variable, and its choices must be mutually exclusive and must between them cover every value the selector can take.
+The compiler holds you to both, and chapter 2 told the reader that the first of the two is not true here: the rows may overlap, and the first one that matches wins.</p>
+<p>That leaves the rest of the reading in place, and the rest of the reading does more damage than the part chapter 2 corrected.
+Under it a <code>case</code> is something that runs and does something to a target, so chapter 7’s <code>lifeT</code> is a statement written where a value was wanted.
+<code>Just seed</code> is a comparison against an object called <code>Just seed</code>, and nothing declared any such object.
+<code>case (alive, n) of</code> selects on something with two things in it, which no selector may be.
+All three compile, and none of them is doing what that reading says it does.</p>
+<h2 id="a-case-has-a-value"><a class="header" href="#a-case-has-a-value">A case has a value</a></h2>
+<p><code>nextCell</code>’s definition is a name, two arguments, an <code>=</code>, and then the <code>case</code>.
+Nothing follows the <code>case</code>, so the <code>case</code> is the whole of the right hand side, and a definition’s right hand side is not a body that computes a value but <a href="#a-definition-is-an-equation">the value itself</a>.
+Something that ran and assigned could not stand in that position at all.</p>
+<p>Being a value has one consequence worth stating on its own: every row must produce the same type.
+Chapter 2’s three rows all produce a <code>Bool</code> and chapter 8’s five all produce an <code>St</code>, and the <code>case</code> has the type that its rows have.
+There is no row that produces nothing, and no row that produces something of another shape to be sorted out later.</p>
+<p>In hardware this is the multiplexer and not the process around it.
+The value after <code>case</code> is the select input, the rows are the inputs being selected between, and the value of the whole expression is what leaves the multiplexer.
+Nothing is assigned, so nothing can be assigned twice on one pass and nothing can be left unassigned on a path through the logic.
+The branch that mentions no target and quietly leaves a latch behind has nothing to work on here, because there is no target to mention and no branch that produces less than a value.</p>
+<h2 id="a-pattern-is-a-shape-with-holes"><a class="header" href="#a-pattern-is-a-shape-with-holes">A pattern is a shape with holes</a></h2>
+<p>Left of each <code>-&gt;</code> is a pattern.
+A pattern is matched rather than evaluated, and chapter 2’s three rows use three kinds of it.</p>
+<p>A literal matches itself and nothing else: the <code>2</code> in the first row matches the count 2, and the <code>True</code> beside it matches a cell that is alive.
+An underscore matches anything and binds nothing, which is how the second row says that three live neighbours settle the question and the cell’s own state is not consulted.
+A lowercase name matches anything and gives it that name, and this is the kind that is not in the <code>case</code> at all: it is in the line above.
+<code>nextCell alive n</code> puts two patterns to the left of the <code>=</code>, and <code>alive</code> and <code>n</code> are names for whatever arrived.</p>
+<p>Chapter 7 adds the fourth kind, and it is the one the tutorial gets the most out of:</p>
+<pre><code class="language-haskell">lifeT :: Board -&gt; Maybe Board -&gt; (Board, Board)
+lifeT current input = (next, current)
+  where
+    next = case input of
+      Just seed -&gt; seed
+      Nothing   -&gt; step current
+</code></pre>
+<p>A constructor pattern matches a value built with that constructor, and whatever is written after the constructor matches what it carries.
+<code>Just seed</code> therefore tests the tag and names the payload in one expression, which is chapter 7’s sentence for it, and <code>seed</code> is the name of the board that was inside the <code>Just</code>.</p>
+<p>How far that name reaches is a property of patterns rather than a property of <code>Maybe</code>: a name a pattern binds exists in its own row and nowhere else.
+Chapter 7 leans on exactly that, and reports that writing the <code>Nothing</code> row in terms of <code>seed</code> is <code>Variable not in scope</code> before anything runs.
+The reason is that <code>Nothing</code> is a different row, and there is no point at which both rows’ names are in scope, because there is no moment at which both rows happened.</p>
+<h2 id="rows-are-tried-in-order-and-patterns-nest"><a class="header" href="#rows-are-tried-in-order-and-patterns-nest">Rows are tried in order, and patterns nest</a></h2>
+<p>Chapter 8 is the same construct with more in it:</p>
+<pre><code class="language-haskell">lifeT :: St -&gt; Maybe Command -&gt; (St, Board)
+lifeT st cmd = (st', board st)
+  where
+    st' = case cmd of
+      Just (Load b) -&gt; St b False
+      Just Step     -&gt; St (step (board st)) False
+      Just Run      -&gt; St (board st) True
+      Just Pause    -&gt; St (board st) False
+      Nothing       -&gt; if running st then St (step (board st)) True else st
+</code></pre>
+<p><code>Just (Load b)</code> is a pattern inside a pattern.
+The outer one tests that something arrived, the inner one tests that what arrived is a <code>Load</code>, and <code>b</code> names the board that <code>Load</code> carries.
+Two tests and a binding, nested the way the value was built, and a pattern may go as deep as the value does.
+Chapter 8 puts the VHDL beside it: test the valid line, decode the tag, slice the payload, three steps in which nothing stops you doing the third without the first two.</p>
+<p>Order decides, and it decides differently in the two chapters.
+Chapter 2’s rows overlap on purpose, so <code>nextCell True 3</code> matches the second row and the third one as well, and the second wins because it is written first:</p>
+<pre><code>clashi&gt; nextCell True 1
+False
+clashi&gt; nextCell True 4
+False
+</code></pre>
+<p>Both of those answers come from the third row, and what that row means is everything the two rows above it did not take.
+That is what lets three rows say what a table of thirty-two would otherwise have to.
+Chapter 8’s five rows do not overlap at all, because a <code>Maybe Command</code> is exactly one of <code>Nothing</code>, <code>Just (Load b)</code>, <code>Just Step</code>, <code>Just Run</code> and <code>Just Pause</code>.
+Reordering them would change nothing, and first match wins is a licence rather than an obligation.</p>
+<h2 id="the-thing-after-the-word-case"><a class="header" href="#the-thing-after-the-word-case">The thing after the word <code>case</code></a></h2>
+<p><code>(alive, n)</code> is a tuple.
+Two values in parentheses with a comma between them are one value holding both, and nothing had to be declared for it: the type is <code>(Bool, Unsigned 4)</code>, written the same way as the value.
+It is there because a <code>case</code> selects on one value while the rule depends on two, so the two are put together and taken apart again in the same expression.</p>
+<p>The same shape appears on the way out of <code>lifeT</code>, which returns <code>(next, current)</code> and has <code>(Board, Board)</code> at the end of its type.
+That is also why <code>mealy</code>’s signature has a pair inside it.
+Chapter 7 quotes <code>(s -&gt; i -&gt; (s, o))</code> as the function <code>mealy</code> wants, and the pair in it is how one function says two things: what the register takes next, and what comes out now.</p>
+<p>A tuple is not storage and not a component.
+Chapter 7’s <code>lifeT</code> returns two boards and chapter 7’s design has one register in it, the same width as chapter 6’s, because the two halves of that pair go to two different places and neither of them is a box around anything.</p>
+<h2 id="if-is-the-two-row-case"><a class="header" href="#if-is-the-two-row-case"><code>if</code> is the two row case</a></h2>
+<p>The first <code>if</code> in the book is in the one block chapter 3 said had nothing in it to learn:</p>
+<pre><code class="language-haskell">render :: Board -&gt; String
+render b = unlines (toList (map row b))
+  where
+    row r = toList (map cell r)
+    cell x = if x then '#' else '.'
+</code></pre>
+<p><code>if x then '#' else '.'</code> has both branches, and both of them are a <code>Char</code>.
+Neither of those is a style rule.
+The whole expression must have a value, so there has to be a branch for <code>False</code>, and the value has to have one type, so the two branches have to agree on it.
+There is no <code>if</code> with only a <code>then</code>, and chapter 4’s <code>toCount x = if x then 1 else 0</code> is the same two rows deciding between two numbers instead of two characters.</p>
+<p>That is the difference worth carrying away, and chapter 8’s <code>Nothing</code> row is where it shows, in the two words <code>else st</code>.
+A VHDL process would write nothing at all in that branch and let the register keep what it had.
+Here keeping it is a value like any other, and <code>st</code> is that value: the state as it stands, handed back unchanged.
+There is no branch in which nothing happens, because a branch is not a place where things happen.</p>
+<h2 id="what-it-costs-1"><a class="header" href="#what-it-costs-1">What it costs</a></h2>
+<p>The compiler has two opinions about a <code>case</code>, both of them warnings rather than rejections, and they are switched on differently.</p>
+<p>A row that cannot be reached is reported wherever the module is compiled, the prompt included.
+Moving chapter 2’s <code>_</code> row above the other two gets <code>[GHC-53633] Pattern match is redundant</code>, naming the row that can no longer happen.
+A <code>case</code> that does not cover its type is reported only where the warning has been asked for.
+The project chapter 1 generates asks for it, so <code>stack build</code> answers a missing row with <code>[GHC-62161] Pattern match(es) are non-exhaustive</code> and lists the values that have no row to go to, while <code>:r</code> at the prompt says <code>Ok, one module reloaded.</code> and nothing more.</p>
+<p>Neither warning has anything to say about the code in this book, and that is the cost rather than the reassurance it sounds like.
+Every <code>case</code> in the tutorial ends in a row that matches everything, so none of them is incomplete and none of them can be.
+The fall through row is what makes three rows do the work of thirty-two, and it is also what turns a row you meant to write and did not into an answer that looks deliberate.
+Chapter 2 shows the shape of that without the mistake in it: <code>nextCell True 12</code> answers <code>False</code>, which is correct here because twelve is neither two nor three.
+Four bits hold twelve, nothing in <code>Unsigned 4</code> says the count stops at eight, and the third row answers for twelve exactly as confidently as it answers for five.
+What makes it safe is chapter 4, where the count is eight one bit values added together and cannot be larger, and that argument lives in the design rather than in the <code>case</code>.</p>
+<p>This one is not a difference between the two languages.
+VHDL makes the coverage check compulsory and makes it an error, and <code>when others</code> is the same escape from it, bought at the same price.
+It is worth saying on a page that has spent its length on what the construct does well.</p>
+<h2 id="where-you-met-this-1"><a class="header" href="#where-you-met-this-1">Where you met this</a></h2>
+<ul>
+<li>Chapter 2, <a href="#a-cell">A cell</a>: three rows, six evaluations, and the first match winning.</li>
+<li>Chapter 3, <a href="#a-board-and-a-picture">A board, and a picture</a>: <code>if x then '#' else '.'</code>, in <code>render</code>.</li>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: the same <code>if</code> in <code>toCount</code>, between two numbers.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>Just seed</code>, a pattern that names what it matched, and a pair returned.</li>
+<li>Chapter 8, <a href="#more-than-valid">More than valid</a>: <code>Just (Load b)</code>, five rows that do not overlap, and <code>else st</code>.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
