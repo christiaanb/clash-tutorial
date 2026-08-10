@@ -677,6 +677,51 @@ the port list demonstrably did not move while the body did.
 
 ---
 
+## D26. Explanation pages, under `book/src/explanation/`, linked at first bare use
+
+The introduction promises that where the reader wants to know why, "we link to
+one [an explanation] rather than stopping to argue the point." This decision
+gives that promise a structure. Outlines are in `04-explanation-outlines.md`:
+twelve pages, Haskell-language topics plus one on the simulation/synthesis
+model, scoped to what the Track B reader meets in chapters 1–13.
+
+**Where they live.** `book/src/explanation/<slug>.md`, one theme per file, under
+a `# Explanation` part header in `SUMMARY.md` placed after the Track B list and
+before the closing suffix. Not under `book/src/b/`: `tools/check_transcripts.py`
+replays every numerically prefixed file there, and explanation pages are
+track-agnostic — Track A links to the same pages when it exists.
+
+**No stubs.** A page enters `SUMMARY.md` in the pull request that writes it, and
+not before. The publish script serves exactly what `SUMMARY.md` lists, and an
+empty page damages the same confidence a failed step would.
+
+**How chapters link.** One sentence at the concept's first bare use, usually in
+or immediately after a "notice that" beat, of the shape "why X works this way is
+explained in [title]". One sentence is the budget; a second link from a later
+chapter is allowed only where the concept visibly escalates, and each outline
+names its insertion points. The link lands in the same pull request as the page,
+so no link ever points at nothing and no shipped chapter waits on an unwritten
+page.
+
+**What a page may do that a chapter may not.** State claims, weigh costs, argue.
+D20's principle stands untouched — a chapter only shows — and this is the other
+half of it: the place where "notice that" material can finally be asserted.
+The voice guide binds explanation prose exactly as it binds chapters.
+
+**What a page inherits unchanged.** One sentence per line (D14). The name D18
+bans stays banned, greps and all. Code is pulled from existing `code/` anchors,
+and transcripts are reused from what the chapters already captured; a page that
+wants a new demonstration takes an `UNVERIFIED` marker and a queue entry like
+anything else in `book/`.
+
+**Deferred but owed.** The `fold` depth argument (D9 assigned it here when
+chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
+assigns it here) are explanation pages, and they are not in this first batch:
+the batch stays about reading Haskell rather than designing circuits. Neither
+earmark is withdrawn.
+
+---
+
 ## Open, deliberately
 
 **Chapter 14, the optional board chapter.** An 8×8 display is not standard on
