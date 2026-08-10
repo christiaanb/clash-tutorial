@@ -19,6 +19,10 @@
 - [What the rest of the world writes](./b/13-hidden.md)
 - [On a board](./b/14-on-a-board.md)
 
+# Explanation
+
+- [Why a two-input function has three arrows](./explanation/currying.md)
+
 ---
 
 [Where to go next](./next.md)

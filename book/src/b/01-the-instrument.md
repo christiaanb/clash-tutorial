@@ -129,6 +129,7 @@ We use `:i` for names and `:t` for expressions throughout, and the line `:i` add
 `plus` takes two arguments and we supplied one, and what came back is not an error: it is something that still wants a `Signed 8` and will give you a `Signed 8`.
 Leave that where it is.
 It comes back in chapter 4, and by then it is doing real work.
+Why one argument at a time is enough, and why the type has three arrows, is explained in [Why a two-input function has three arrows](../explanation/currying.md).
 
 **Nothing here has an entity, an architecture or a port map.**
 `plus` is a component, its type is its port list, and `plus 3 5` is not a subroutine call: it is that component instantiated with both of its inputs driven.
