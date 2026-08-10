@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-adbd5511.js";
+            window.path_to_searchindex_js = "searchindex-e6cc90e8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-3cb9540d.js"></script>
+        <script src="toc-2990804e.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -298,7 +298,8 @@ We use <code>:i</code> for names and <code>:t</code> for expressions throughout,
 <p><strong><code>plus 3</code> is a legal thing to have.</strong>
 <code>plus</code> takes two arguments and we supplied one, and what came back is not an error: it is something that still wants a <code>Signed 8</code> and will give you a <code>Signed 8</code>.
 Leave that where it is.
-It comes back in chapter 4, and by then it is doing real work.</p>
+It comes back in chapter 4, and by then it is doing real work.
+Why one argument at a time is enough, and why the type has three arrows, is explained in <a href="#why-a-two-input-function-has-three-arrows">Why a two-input function has three arrows</a>.</p>
 <p><strong>Nothing here has an entity, an architecture or a port map.</strong>
 <code>plus</code> is a component, its type is its port list, and <code>plus 3 5</code> is not a subroutine call: it is that component instantiated with both of its inputs driven.
 This is the first place your VHDL reflexes will mislead you, and it will not be the last.
@@ -2723,6 +2724,113 @@ The hidden prelude is what you will meet everywhere else, and it is the same cir
 Knowing what the short form is short for is the whole reason for having done it in that order.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="on-a-board"><a class="header" href="#on-a-board">On a board</a></h1>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="why-a-two-input-function-has-three-arrows"><a class="header" href="#why-a-two-input-function-has-three-arrows">Why a two-input function has three arrows</a></h1>
+<p>Chapter 1 asked the compiler what <code>plus</code> was:</p>
+<pre><code>clashi&gt; :i plus
+plus :: Signed 8 -&gt; Signed 8 -&gt; Signed 8
+  	-- Defined at src/Example/Project.hs:6:1
+</code></pre>
+<p>Two numbers in and one number out, written with three arrows, and nothing in the type saying which side the result is on.
+Then the chapter supplied one of the two arguments, and the compiler did not object:</p>
+<pre><code>clashi&gt; :t plus 3
+plus 3 :: Signed 8 -&gt; Signed 8
+</code></pre>
+<p><code>plus 3</code> is a legal thing to have, chapter 1 said, and left it there.
+This page is why it is legal, and why the type is a chain of arrows rather than something shaped like a port list.</p>
+<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
+<p>A function in VHDL is declared in one piece: a parameter list, a return type, and a body that ends in <code>return</code>.
+The parameters are named and declared together, and there is no expression anywhere in the language that stands for the function with some of its parameters bound and the rest still wanted.
+Read <code>Signed 8 -&gt; Signed 8 -&gt; Signed 8</code> in that spirit and the arrows are punctuation between parameters, with a convention that the last one is the result.</p>
+<p>That reading gets chapter 1 right, and then fails on almost everything after it.
+<code>plus 3</code> is a call with an argument missing.
+<code>fromRows = map unpack</code>, in chapter 3, is a function defined without naming the thing it works on.
+<code>life8 = life glider</code>, in chapter 12, supplies one of five arguments.
+<code>life8 = exposeClockResetEnable (life glider)</code>, in chapter 13, supplies one and then hands what is left to something else.
+All four are errors under the port list reading, and all four compile.</p>
+<h2 id="one-argument-at-a-time"><a class="header" href="#one-argument-at-a-time">One argument at a time</a></h2>
+<p>The rule is the whole of this page: every function takes exactly one argument and gives back exactly one result.</p>
+<p><code>Signed 8 -&gt; Signed 8 -&gt; Signed 8</code> is two of those in a chain, because the arrow groups to the right:</p>
+<pre><code>Signed 8 -&gt; (Signed 8 -&gt; Signed 8)
+</code></pre>
+<p><code>plus</code> takes a <code>Signed 8</code>, and what it gives back is a function that takes a <code>Signed 8</code> and gives back a <code>Signed 8</code>.
+Application groups the other way, to the left, so <code>plus 3 5</code> is:</p>
+<pre><code>(plus 3) 5
+</code></pre>
+<p>Two applications, not one call with two operands.
+<code>plus 3</code> is the value in between, and the type wrote it down before we asked: it is everything after the first arrow.</p>
+<p>Chapter 1’s sentence, that <code>plus</code>’s type is its port list, is still the right thing to read off a use that supplies every argument.
+It is the answer rather than the mechanism, and the mechanism is what lets a use supply fewer.</p>
+<h2 id="what-plus-3-is"><a class="header" href="#what-plus-3-is">What <code>plus 3</code> is</a></h2>
+<p><code>plus</code> is a component with two inputs and one output.
+<code>plus 3</code> is that component with one input held at 3, and one input and one output left over, which is what <code>Signed 8 -&gt; Signed 8</code> says.
+The 3 is inside it.
+There is no half filled port map sitting somewhere waiting to be completed, and nothing to keep in step with anything: the value is captured, and what remains is a thing whose type is its remaining ports.</p>
+<p>Nothing has been built.
+At the prompt, <code>plus 3</code> is a value being evaluated rather than logic being elaborated, in the same way that chapter 5’s four applications of <code>step</code> cost four copies of the logic in a design and four times almost nothing at the prompt.
+Where a partial application does reach the VHDL generator, the arguments already supplied are constants in the generated logic and the ones still missing are its ports.</p>
+<h2 id="a-definition-is-an-equation"><a class="header" href="#a-definition-is-an-equation">A definition is an equation</a></h2>
+<pre><code class="language-haskell">plus :: Signed 8 -&gt; Signed 8 -&gt; Signed 8
+plus a b = a + b
+</code></pre>
+<p>Left of the <code>=</code> is the name and then its arguments, in order.
+Right of the <code>=</code> is what comes out.
+There is no <code>return</code>, and there is nothing for one to do, because the right hand side is not a value the body computes and then reports: it is the value.</p>
+<p>Two names to the left is shorthand for the chain the type describes: one argument, and then the other.
+How few of those names have to be written down at all is the next section.</p>
+<h2 id="arguments-you-can-leave-off-both-sides"><a class="header" href="#arguments-you-can-leave-off-both-sides">Arguments you can leave off both sides</a></h2>
+<p>Chapter 3 defines <code>fromRows</code> without mentioning a row:</p>
+<pre><code class="language-haskell">fromRows :: Vec 8 (BitVector 8) -&gt; Board
+fromRows = map unpack
+</code></pre>
+<p>Written the other way it is <code>fromRows rows = map unpack rows</code>, and the two definitions are the same definition.
+The rule is mechanical: if the same name is the last thing on both sides of the <code>=</code>, delete it from both.
+It is legal because <code>map unpack</code> is already a function of one argument, so applying it to <code>rows</code> and then handing <code>rows</code> in is a round trip that says nothing.</p>
+<p>Chapter 12’s <code>life8 = life glider</code> is the same rule with four names deleted instead of one, and chapter 13’s <code>life8 = exposeClockResetEnable (life glider)</code> is the same rule again with a function wrapped around the result.
+The style has a name, point free, and the name is worth having because it is what other people’s Clash is written in and what an answer to a question you search for will use.</p>
+<p>The cost is a name.
+<code>fromRows = map unpack</code> says what the function is; <code>fromRows rows = map unpack rows</code> says what it does to something, and the second is easier for a reader who has not yet internalised the arrow rule.
+The tutorial writes both, per definition, and nothing in the type distinguishes them: chapter 3’s <code>:i fromRows</code> prints <code>Vec 8 (BitVector 8) -&gt; Board</code> either way.</p>
+<h2 id="four-names-one-signature"><a class="header" href="#four-names-one-signature">Four names, one signature</a></h2>
+<p>Chapter 4 declares four functions on one line:</p>
+<pre><code class="language-haskell">shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board
+shiftN b = rotateLeftS b d1
+shiftS b = rotateRightS b d1
+shiftW b = map (\r -&gt; rotateLeftS r d1) b
+shiftE b = map (\r -&gt; rotateRightS r d1) b
+</code></pre>
+<p>Those are four separate functions of one argument each, all of type <code>Board -&gt; Board</code>, and the comma is shorthand for writing the signature four times.
+No chain is involved and nothing is shared.
+It is here because a run of names is the other thing a signature line can carry, and reading those commas as one more way of separating arguments is an easy mistake to make once.</p>
+<h2 id="a-prime-is-part-of-the-name"><a class="header" href="#a-prime-is-part-of-the-name">A prime is part of the name</a></h2>
+<p>Chapter 8’s <code>lifeT</code> has a <code>where</code> binding called <code>st'</code> beside its argument <code>st</code>, and chapter 10 calls <code>outputVerifier'</code>.
+The <code>'</code> is an ordinary character that a name may contain after its first character.
+It is not an operator and it does nothing: <code>st'</code> is one name, three characters long.</p>
+<p>What it means is a convention, and the convention is a variant of the name without it.
+<code>st'</code> is the next state, beside <code>st</code>, the current one.
+<code>outputVerifier'</code> is a variant of a function called <code>outputVerifier</code>, and currying is how the variant is made: <code>outputVerifier</code> takes two clocks, one the test bench is synchronised to and one the circuit under test is, and <code>outputVerifier'</code> is <code>outputVerifier</code> with the same clock handed to both.
+That is why chapter 10’s <code>:i outputVerifier'</code> shows one <code>Clock dom</code> where the unprimed function has two.</p>
+<p>One thing that is not this: the <code>'life</code> in chapter 10’s annotation carries its quote in front of the name rather than after it, and that is a different device with a different job.</p>
+<h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
+<p>An argument left off is a value rather than a complaint.
+A VHDL call that names too few actuals is wrong where it is written, and the compiler says so there.
+Here it typechecks, produces a function, and the objection arrives wherever that function is finally used, which may be a different definition several lines away.
+<code>map unpack</code> and a <code>fromRows</code> that has lost its argument are the same shape, and only the types around them tell the two apart.</p>
+<p>Position is all an application has.
+Where two arguments have different types a swap is caught at once, which is what chapter 5 says about handing <code>zipWith</code> the counts before the board.
+Where two arguments have the same type a swap typechecks, and then the circuit is wrong rather than rejected.
+A port map names its ports and can therefore be written in any order; an application cannot, and nothing in the notation will help.</p>
+<p>Both costs are paid for something specific.
+Chapter 4 describes four hundred and forty-eight additions by handing functions to functions, and <code>map countBoard</code>, <code>foldl1 addCounts</code> and <code>addCounts = zipWith (zipWith (+))</code> are each a function with some of its arguments supplied and the rest left for something else to fill.
+None of those lines can be written at all without the rule this page describes.</p>
+<h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
+<ul>
+<li>Chapter 1, <a href="#the-instrument">The instrument</a>: <code>:i plus</code>, <code>:t plus 3</code>, and a type read as a port list.</li>
+<li>Chapter 3, <a href="#a-board-and-a-picture">A board, and a picture</a>: <code>fromRows = map unpack</code>, and <code>unpack</code> handed over with none of its arguments supplied.</li>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: four shift functions under one signature.</li>
+<li>Chapters 8 and 10, <a href="#more-than-valid">More than valid</a> and <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: <code>st'</code> and <code>outputVerifier'</code>.</li>
+<li>Chapter 13, <a href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a>: <code>exposeClockResetEnable (life glider)</code>, in front of the argument it already had.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
 

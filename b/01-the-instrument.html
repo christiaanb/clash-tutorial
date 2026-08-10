@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-adbd5511.js";
+            window.path_to_searchindex_js = "../searchindex-e6cc90e8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-3cb9540d.js"></script>
+        <script src="../toc-2990804e.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -258,7 +258,8 @@ We use <code>:i</code> for names and <code>:t</code> for expressions throughout,
 <p><strong><code>plus 3</code> is a legal thing to have.</strong>
 <code>plus</code> takes two arguments and we supplied one, and what came back is not an error: it is something that still wants a <code>Signed 8</code> and will give you a <code>Signed 8</code>.
 Leave that where it is.
-It comes back in chapter 4, and by then it is doing real work.</p>
+It comes back in chapter 4, and by then it is doing real work.
+Why one argument at a time is enough, and why the type has three arrows, is explained in <a href="../explanation/currying.html">Why a two-input function has three arrows</a>.</p>
 <p><strong>Nothing here has an entity, an architecture or a port map.</strong>
 <code>plus</code> is a component, its type is its port list, and <code>plus 3 5</code> is not a subroutine call: it is that component instantiated with both of its inputs driven.
 This is the first place your VHDL reflexes will mislead you, and it will not be the last.
