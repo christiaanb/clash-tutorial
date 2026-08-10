@@ -119,6 +119,12 @@ plausible.
 - **`life` takes its seed as an argument from chapter 12 on (D24)**, because
   `mealy`'s initial state cannot name an 8×8 `glider` once the board is `Board
   n` (V34).
+- **The prime on `outputVerifier'` is partial application, and that is checked
+  rather than assumed.** In `clash-prelude-1.10.0`'s
+  `Clash/Explicit/Testbench.hs`, `outputVerifier` takes a `Clock testDom` and a
+  `Clock circuitDom`, and `outputVerifier' clk = outputVerifier clk clk`. The
+  explanation page `currying.md` states this; chapter 10 shows only the primed
+  signature's single `Clock dom`. Re-read that module if the pin moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 257 and 258. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34).

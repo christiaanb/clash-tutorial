@@ -714,6 +714,20 @@ and transcripts are reused from what the chapters already captured; a page that
 wants a new demonstration takes an `UNVERIFIED` marker and a queue entry like
 anything else in `book/`.
 
+**`currying.md` shipped first, and it settled two things this entry did not
+say.** A page is not replayed: `tools/check_transcripts.py` globs
+`book/src/b/*.md` for a numeric prefix, so a transcript quoted on an
+explanation page is checked by nobody. The page therefore keeps quoted output
+to the two chapter 1 blocks that are the moment it names, byte for byte
+including the tab in `-- Defined at`, and takes every code block from a `code/`
+anchor through `{{#include}}`, which the build does check. Prefer includes over
+quotation on every later page for that reason. And the two secondary links in
+the outline's table were not added: chapter 1's link is the budget D26 sets,
+the chapter 3 row was conditional on the chapter 1 link proving too early, and
+nothing yet says it has. The page's "Where you met this" list still names
+chapters 3, 4, 8, 10 and 13, so the back-links run ahead of the forward ones by
+design.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
