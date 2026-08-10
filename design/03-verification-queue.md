@@ -125,6 +125,16 @@ plausible.
   `Clock circuitDom`, and `outputVerifier' clk = outputVerifier clk clk`. The
   explanation page `currying.md` states this; chapter 10 shows only the primed
   signature's single `Clock dom`. Re-read that module if the pin moves.
+- **The two pattern warnings, and where each of them shows.** Checked
+  2026-08-10, GHC 9.10.3. A row that cannot be reached (chapter 2's `_` moved
+  above the other two) gives `[GHC-53633] Pattern match is redundant` with no
+  flags at all, at the `clashi` prompt included. A `case` with a row missing
+  gives `[GHC-62161] Pattern match(es) are non-exhaustive`, listing the
+  unmatched values, only under `-Wall`: `common-options` supplies it and the
+  `clashi` executable stanza does not, so `stack build` reports it and `:r`
+  answers `Ok, one module reloaded.` and nothing else. The explanation page
+  `pattern-matching.md` states both, and no chapter shows either. Re-run both if
+  the resolver moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 257 and 258. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34).

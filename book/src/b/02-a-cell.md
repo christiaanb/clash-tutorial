@@ -96,6 +96,7 @@ There is no process, no sensitivity list and no clock, and there will not be one
 The second row wins because it is written first.
 This is where your VHDL will mislead you: there, the choices of a `case` must be mutually exclusive and must cover every value, and the compiler holds you to both.
 Here they need not be exclusive, and the overlap is what lets three rows say what a table of thirty-two would otherwise have to.
+What kind of construct this is, and what may stand to the left of a `->`, is explained in [A case expression is a multiplexer](../explanation/pattern-matching.md).
 
 **The width is in the type, and the range is not.**
 `Unsigned 4` is a four bit unsigned number, which is what a count that reaches eight needs, and those four bits are in the type rather than in a comment or a constant.

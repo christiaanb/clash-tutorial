@@ -728,6 +728,19 @@ nothing yet says it has. The page's "Where you met this" list still names
 chapters 3, 4, 8, 10 and 13, so the back-links run ahead of the forward ones by
 design.
 
+**`pattern-matching.md` shipped second, and it corrected its own outline.** The
+outline's cost beat said "nothing checks completeness for you by default here",
+and that is wrong for the project the reader generates: `-Wall` is in
+`common-options`, so `stack build` does report a `case` with a row missing, and
+the redundant-row check needs no flag at all. What is asymmetric is *where* each
+one shows, because the `clashi` executable stanza does not import
+`common-options`. Both were run rather than reasoned about, and the queue entry
+records what they print. The general lesson for the pages still to come: an
+outline beat that asserts compiler behaviour is a claim to check, not a claim to
+transcribe. Like `currying.md`, the page took only its primary link (chapter 2)
+and left the two secondaries in the outline's table unbuilt, and its "Where you
+met this" list names chapters 3, 4, 7 and 8 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
