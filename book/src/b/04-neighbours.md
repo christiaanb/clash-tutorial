@@ -36,6 +36,7 @@ A vector in, a vector of the same length out, and between them the amount to mov
 A length lives in the type, as chapter 3 established, and so does a distance to move by: `SNat` is how a number that has to be known at compile time is written, and the one we want is written `d1`.
 Writing `1` there instead is the one mistake this chapter invites, and the compiler answers it by saying that `SNat` is not a `Num`, which is true and no help at all.
 It is `d1`.
+Why there are two kinds of number here, and why no `1` can stand where a `d1` is wanted, is explained in [Two worlds of numbers](../explanation/type-level-numbers.md).
 
 Now the four moves.
 Add them under `Counts`:

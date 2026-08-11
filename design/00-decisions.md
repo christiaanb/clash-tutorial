@@ -798,6 +798,36 @@ before it, it took only its primary link (chapter 3, after the `unpack` beat);
 the chapter 4 secondary stays unbuilt and the "Where you met this" list names
 chapters 3, 4 and 7.
 
+**`type-level-numbers.md` shipped sixth, and it needed an instrument the book
+did not have.** The outline asks for the kind line decoded, and there was no way
+to put `Vec`'s kind on the page with the two commands the tutorial uses: `:i
+Vec` prints the kind and then forty lines of instances, which is unquotable.
+`:k` is therefore the third REPL command the book shows, introduced in one
+sentence as standing to a type as `:t` stands to an expression, and used three
+times (`Vec`, `Signed`, `Vec 8`) plus once on chapter 12's `Board`. It is worth
+the exception because it is the only way to show, rather than assert, that `Vec`
+is not a type. Everything else on the page was quotable because of a property
+worth naming for later pages: `:k` and `:t` output carries no file name, so a
+block captured against `code/` is byte-identical to what a reader sees, whereas
+`:i` on anything the reader defined prints `-- Defined at
+src/Chapters/ChNN.hs`, which is why the page's two `:i` blocks on reader names
+(`Board`, `outputVerifier'`) are cut from chapters 3 and 10 rather than
+captured. Two beats came out of running things. The width of a `Command` prints
+as a sum and not as a number, `BitVector (CLog 2 4 + 64)` at 8×8 and `BitVector
+(CLog 2 4 + 256)` at 16×16, which is a better demonstration of type-level
+arithmetic than the outline's "chapter 12's bus is `n * n + 2` wide" and pays
+chapter 8's hand count back in the same breath. And the outline's reason for
+rejecting `1` where `d1` belongs stopped at "no `Num` instance can cross that
+gap", which is the mechanism rather than the reason: an instance would have to
+turn every literal into the single value of `SNat 1`, so `fromInteger 5` would
+be one, and the page says that instead. The page also corrected a wrong number
+in `03-verification-queue.md`: a `Command 16` is 258 bits and a `Maybe (Command
+16)` 259, as chapter 12's prose has always said, and the queue's widths entry
+said 257 and 258. Like the five pages before it, this one took only its primary
+link (chapter 4, after the `SNat`/`d1` paragraph); the chapter 3, 10 and 12
+secondaries stay unbuilt and the "Where you met this" list names chapters 1, 3,
+8, 10 and 12 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:

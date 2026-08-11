@@ -26,6 +26,7 @@
 - [A Vec is not a list](./explanation/vec-and-lists.md)
 - [The thing you instantiate is an argument](./explanation/higher-order.md)
 - [How the compiler knows a type you did not write](./explanation/type-inference.md)
+- [Two worlds of numbers](./explanation/type-level-numbers.md)
 
 ---
 
