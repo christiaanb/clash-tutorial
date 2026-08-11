@@ -41,6 +41,7 @@ Now the seed itself:
 
 That shape is a glider, which is the smallest pattern in Life that moves.
 It does not move yet, and it will not until chapter 5.
+What `:>` and `Nil` are, and how the vector they build differs from the lists that Haskell resources describe, is explained in [A Vec is not a list](../explanation/vec-and-lists.md).
 
 ## Three questions and a row
 

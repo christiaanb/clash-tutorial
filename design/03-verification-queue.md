@@ -135,6 +135,27 @@ plausible.
   answers `Ok, one module reloaded.` and nothing else. The explanation page
   `pattern-matching.md` states both, and no chapter shows either. Re-run both if
   the resolver moves.
+- **What `Vec`, its constructors and the two crossings actually print.** Checked
+  2026-08-10 in `clashi` 1.10.0 started from `code/`, with names qualified where
+  `Clash.Prelude` and `Clash.Explicit.Prelude` both export them. `:i Vec` gives
+  the constructors `Nil :: Vec 0 b` and `Cons :: b -> Vec n b -> Vec (n + 1) b`;
+  `:i (:>)` gives `pattern (:>) :: a -> Vec n a -> Vec (n + 1) a` and `infixr 5
+  :>`, so `:>` is a pattern synonym for `Cons` rather than a constructor of its
+  own. `toList :: Vec n a -> [a]`, `fromList :: NFDataX a => [a] -> Signal dom
+  a`, and `Clash.Explicit.Prelude.sampleN :: (Foldable f, NFDataX a) => Int -> f
+  a -> [a]`, which is what makes `fromList` a list-to-`Signal` crossing and not
+  `toList`'s inverse. `map`, `head`, `zipWith` and `foldl1` are the `Vec` ones;
+  `unlines :: [String] -> String` comes from `GHC.Internal.Data.OldList` and
+  `:i map` reports `Clash.Sized.Vector`. `:i String` prints `type String =
+  [Char]`. The explanation page `vec-and-lists.md` states all of these, and no
+  chapter shows any of them.
+- **Two `[GHC-83865]`s the page describes, both run rather than reasoned about.**
+  Checked 2026-08-10, GHC 9.10.3. A seed with its fourth row deleted fails to
+  load with `Couldn't match type '1' with '2'`, `Expected: Vec 2 (BitVector 8)`
+  and `Actual: Vec (0 + 1) (BitVector 8)`, reported at the *last* `:>` rather
+  than at the deleted row, because the count runs out at the tail. `map` applied
+  to a list gives the same code with `Couldn't match expected type: Vec n b`
+  above `with actual type: [Int]`. Re-run both if the resolver moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 257 and 258. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34).
