@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2d13f5dd.js";
+            window.path_to_searchindex_js = "searchindex-0591e3bb.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-14c8dea2.js"></script>
+        <script src="toc-c83f8fc7.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -549,6 +549,7 @@ rotateLeftS :: KnownNat n =&gt; Vec n a -&gt; SNat d -&gt; Vec n a
   	-- Defined in ‘Clash.Sized.Vector’
 </code></pre>
 <p>A vector in, a vector of the same length out, and between them the amount to move by, which is an <code>SNat d</code> rather than a number.
+What the lowercase <code>n</code>, <code>a</code> and <code>d</code> in that signature are is explained in <a href="#what-the-lowercase-letters-in-a-type-mean">What the lowercase letters in a type mean</a>.
 A length lives in the type, as chapter 3 established, and so does a distance to move by: <code>SNat</code> is how a number that has to be known at compile time is written, and the one we want is written <code>d1</code>.
 Writing <code>1</code> there instead is the one mistake this chapter invites, and the compiler answers it by saying that <code>SNat</code> is not a <code>Num</code>, which is true and no help at all.
 It is <code>d1</code>.
@@ -3639,6 +3640,186 @@ That is a cannot rather than a not currently, and it is the same cannot <a href=
 <li>Chapter 8, <a href="#more-than-valid">More than valid</a>: <code>pack</code>, and the sixty-six bits this page’s arithmetic adds up to.</li>
 <li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: <code>1 &lt;= l</code> among <code>outputVerifier'</code>’s requirements.</li>
 <li>Chapter 12, <a href="#one-description-two-sizes">One description, two sizes</a>: <code>Board n</code>, <code>KnownNat n</code> where the compiler asked for it, and the two entities the numbers came out as.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="what-the-lowercase-letters-in-a-type-mean"><a class="header" href="#what-the-lowercase-letters-in-a-type-mean">What the lowercase letters in a type mean</a></h1>
+<p>Chapter 4 asked what <code>rotateLeftS</code> wanted before writing anything that used it:</p>
+<pre><code>clashi&gt; :i rotateLeftS
+rotateLeftS :: KnownNat n =&gt; Vec n a -&gt; SNat d -&gt; Vec n a
+  	-- Defined in ‘Clash.Sized.Vector’
+</code></pre>
+<p>Every signature the book had shown until that line was made of capitalised names and nothing else.
+<code>plus :: Signed 8 -&gt; Signed 8 -&gt; Signed 8</code> in chapter 1, <code>nextCell :: Bool -&gt; Unsigned 4 -&gt; Bool</code> in chapter 2, <code>fromRows :: Vec 8 (BitVector 8) -&gt; Board</code> in chapter 3: every name in them is a type, and each one can be looked up.
+This one has three names that nothing anywhere declares, each of them a single letter.</p>
+<p>The chapter said what to write and went on, which is what a chapter is for.
+It then wrote four functions directly underneath with no such letters in them at all, <code>shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board</code>, and the two facts sit oddly next to each other: a signature made entirely of constants, defined in terms of one made mostly of variables.
+That arrangement holds for eight more chapters, and chapter 12 ends it by taking the eight out of <code>Board</code> and having the reader write the letters.</p>
+<p>This page is what the letters are, what the compiler does with them, and what is left of them once hardware comes out.</p>
+<h2 id="the-reading-that-does-not-survive-6"><a class="header" href="#the-reading-that-does-not-survive-6">The reading that does not survive</a></h2>
+<p>VHDL parameterises, and it does it twice over.
+A generic is declared in a clause of its own above the ports, with a name and a type and often a default, and its value arrives when the entity is instantiated.
+An unconstrained array type is declared with <code>natural range &lt;&gt;</code> where its bounds would go, and the bounds arrive when an object of that type is declared.
+Both of those are declarations, both are written before anything uses them, and both are read as part of the interface.</p>
+<p>Carried over, <code>Vec n a</code> becomes an unconstrained array with a generic in it, <code>n</code> becomes the generic, and <code>a</code> becomes an oddity to be skipped.
+That reading gets one thing right, and it is the important thing: <code>n</code> is a size that is not settled here, and something settles it later.
+It gets <code>a</code> wrong, because <code>a</code> is the same kind of name as <code>n</code> and stands for a type rather than for a number, which is how <code>map :: (a -&gt; b) -&gt; Vec n a -&gt; Vec n b</code> describes changing the element type of a vector without saying which two types.
+It gets the declaration wrong, because there is no clause anywhere that introduces <code>n</code>, <code>a</code> or <code>d</code>, and the letter’s presence in the signature is the whole of its introduction.</p>
+<p>And it gets one thing wrong that stays hidden until chapter 12.
+A generic belongs to an entity: there is one entity, it carries a parameter, and each instantiation settles the parameter.
+Here there is no entity at all while a letter is still standing, and chapter 12’s generated tree has two 343-line <code>step</code> components in it rather than one with a number on it.</p>
+<h2 id="a-lowercase-name-is-a-variable"><a class="header" href="#a-lowercase-name-is-a-variable">A lowercase name is a variable</a></h2>
+<p>The case of the first letter is the whole of the rule.
+A name beginning with a capital is a constant: <code>Board</code> is one type, <code>Bool</code> is one type, <code>System</code> is one clock domain, and each means the same thing everywhere it appears.
+A name beginning with a lowercase letter is a variable, standing for something the signature does not name.
+It needs no declaration because writing it is the declaration, and it means nothing outside the signature it appears in.</p>
+<p>So <code>Vec n a</code> is not a particular type: it is the shape every vector type has, and <code>Vec 8 Bool</code> is one of the types it becomes when both letters are filled in.
+<code>Vec</code> with neither of them is not a type at all, which is <a href="#the-eight-is-in-the-type-and-the-type-is-not-a-number">what its kind says</a>.
+<code>rotateLeftS</code>’s signature is a description of every rotation of every vector, and chapter 4 used exactly one of them.
+<code>glider</code> is a <code>Board</code>, which is <code>Vec 8 (Vec 8 Bool)</code>, so <code>n</code> is eight and <code>a</code> is <code>Vec 8 Bool</code> at that use site, and <code>d</code> is one because <code>d1</code> is what was handed over.
+Not one of those three is written at the use site, and the prompt reports the result with all of them gone:</p>
+<pre><code>clashi&gt; :t rotateLeftS glider d1
+rotateLeftS glider d1 :: Vec 8 (Vec 8 Bool)
+</code></pre>
+<p>Which letter is used for what is convention and nothing more.
+<code>n</code> and <code>d</code> here are numbers, <code>a</code>, <code>b</code> and <code>c</code> are types, <code>dom</code> is a clock domain, and <code>mealy</code>’s <code>s</code>, <code>i</code> and <code>o</code> are a state, an input and an output.
+The language does not read the names: what makes <code>n</code> a number is <a href="#the-eight-is-in-the-type-and-the-type-is-not-a-number">its kind</a>, which is <code>Nat</code>, and the kind is worked out from how the letter is used rather than written down.
+A variable need not be a single letter either, and <code>dom</code> is the one the book shows most often.</p>
+<h2 id="the-same-letter-twice-is-a-promise"><a class="header" href="#the-same-letter-twice-is-a-promise">The same letter twice is a promise</a></h2>
+<p>Count the occurrences, because that is where the information is.
+In <code>Vec n a -&gt; SNat d -&gt; Vec n a</code>, <code>n</code> and <code>a</code> each appear twice, once in the argument and once in the result, and <code>d</code> appears once.
+A letter written once says only that something goes in that position.
+A letter written twice says that the two positions hold the same thing, and that is a promise the compiler holds the definition to: <code>rotateLeftS</code> returns a vector of the same length and the same element type as the one it was given, and no definition carrying that signature could do anything else.
+The distance is unrelated to either, and <code>d</code> being written once is how that is said.</p>
+<p><code>zipWith</code> is the same rule over three vectors, <code>(a -&gt; b -&gt; c) -&gt; Vec n a -&gt; Vec n b -&gt; Vec n c</code>, with one <code>n</code> in three places: two vectors of the same length in, one of that length out, and three element types free of each other.
+Chapter 4’s <code>addCounts :: Counts -&gt; Counts -&gt; Counts</code> is that signature with every letter filled in, and it is why nothing in chapter 5 has to check that a board and its table of counts are the same shape before laying one on the other.</p>
+<p>Chapter 12’s file is the only place in the book where two sizes exist at once, so it is the only place where that promise can be watched failing.
+Adding a table of counts for the 8×8 glider to one for the 16×16 board is rejected: <code>[GHC-83865]</code>, <code>Couldn't match type ‘16’ with ‘8’</code>, over <code>Expected: Board 8</code> and <code>Actual: Board 16</code>.
+Where it is rejected is the part worth reading.
+The message names <code>In the first argument of ‘countBoard’, namely ‘glider16’</code>, and <code>countBoard</code> is not where the promise was made.
+<code>addCounts :: Counts n -&gt; Counts n -&gt; Counts n</code> had its <code>n</code> settled at eight by its first argument, so its second argument has to be a <code>Counts 8</code>, so <code>countBoard</code> has to have been given a <code>Board 8</code>, and <code>glider16</code> is not one.
+The requirement travelled from one argument of <code>addCounts</code> into the inside of the other.</p>
+<h2 id="filling-a-signature-in"><a class="header" href="#filling-a-signature-in">Filling a signature in</a></h2>
+<p>Reading a signature with letters in it means doing by hand what the compiler does anyway, which is <a href="#solving-not-guessing">solving for what they have to be</a>.
+<code>mealy</code> is the one worth doing in full, because the tutorial asks about it in chapter 7 and reads it left to right rather than filling it in:</p>
+<pre><code>clashi&gt; :i mealy
+mealy ::
+  (KnownDomain dom, NFDataX s) =&gt;
+  Clock dom
+  -&gt; Reset dom
+  -&gt; Enable dom
+  -&gt; (s -&gt; i -&gt; (s, o))
+  -&gt; s
+  -&gt; Signal dom i
+  -&gt; Signal dom o
+  	-- Defined in ‘Clash.Explicit.Mealy’
+</code></pre>
+<p>Four variables, <code>dom</code>, <code>s</code>, <code>i</code> and <code>o</code>, and chapter 7’s one line of <code>life</code> settles all four.
+The clock decides <code>dom</code>: <code>life</code>’s signature declares a <code>Clock System</code>, so <code>dom</code> is <code>System</code> everywhere below it.
+<code>lifeT</code> goes in the parenthesised position, and chapter 7’s <code>lifeT :: Board -&gt; Maybe Board -&gt; (Board, Board)</code> lines up against <code>(s -&gt; i -&gt; (s, o))</code> position by position: <code>s</code> is <code>Board</code>, <code>i</code> is <code>Maybe Board</code>, and <code>(s, o)</code> against <code>(Board, Board)</code> makes <code>o</code> a <code>Board</code> too, with the first half of the pair agreeing with what <code>s</code> already had to be.
+Everything below that follows without a decision: the bare <code>s</code> is where <code>glider</code> goes, <code>Signal dom i</code> is <code>Signal System (Maybe Board)</code>, and <code>Signal dom o</code> is <code>Signal System Board</code>.</p>
+<p>That is what the prompt answers, with the seed not yet supplied:</p>
+<pre><code>clashi&gt; :t mealy systemClockGen resetGen enableGen lifeT
+mealy systemClockGen resetGen enableGen lifeT
+  :: Board -&gt; Signal System (Maybe Board) -&gt; Signal System Board
+</code></pre>
+<p>Chapter 8 replaces <code>lifeT</code> with a version over a record and a command set of its own, and the same command at the prompt answers differently:</p>
+<pre><code>clashi&gt; :t mealy systemClockGen resetGen enableGen lifeT
+mealy systemClockGen resetGen enableGen lifeT
+  :: St -&gt; Signal System (Maybe Command) -&gt; Signal System Board
+</code></pre>
+<p><code>s</code> is now <code>St</code> and <code>i</code> is <code>Maybe Command</code>, because chapter 8’s <code>lifeT :: St -&gt; Maybe Command -&gt; (St, Board)</code> filled the same three positions with its own types.
+<code>mealy</code> was not edited, copied or told anything between those two lines, and neither was the register inside it.
+That is what the letters buy: the state of chapter 8’s machine is a record that did not exist when the library was written, and the library holds it without knowing what it is.</p>
+<p>The same reading works on every library signature the book shows.
+Chapter 6’s <code>:i register</code> has <code>a</code> and <code>dom</code> in it and the chapter says in prose what this section does by substitution.
+Chapter 10’s <code>outputVerifier'</code> has <code>l</code>, <code>dom</code> and <code>a</code>, and <code>l</code> is settled at eight by the vector of expected boards it is handed.</p>
+<h2 id="a-variable-in-your-own-signature-is-a-promise-you-make"><a class="header" href="#a-variable-in-your-own-signature-is-a-promise-you-make">A variable in your own signature is a promise you make</a></h2>
+<p>Chapter 12 is where the reader writes the letters rather than reading them, and it is where the direction of the promise reverses.
+Its central line is one signature:</p>
+<pre><code>clashi&gt; :i step
+step :: KnownNat n =&gt; Board n -&gt; Board n
+  	-- Defined at src/Example/Project.hs:111:1
+</code></pre>
+<p>Read as a generic, that says <code>step</code> may be used at any size, and it does say that.
+What it adds is when the claim is settled: a definition of that type has to work for every <code>n</code>, so its body may only do things that work for every <code>n</code>, and the compiler checks it against the claim once rather than checking it again at each size somebody uses.</p>
+<p>The claim is strict, and it is easy to see how strict by making it falsely.
+<code>glider</code> is a <code>Board 8</code>, and annotating it as a <code>Board n</code> says it is a board of every size at once:
+<code>[GHC-25897]</code>, <code>Couldn't match type ‘n’ with ‘8’</code>, and under it <code>‘n’ is a rigid type variable bound by an expression type signature: forall (n :: Nat). Board n</code>.
+Rigid means the compiler is not allowed to pick a value for it, because the signature said every value.
+<code>forall</code> is the quantifier that a signature always has and never has to write, and it is what the message is spelling out: <code>Board n</code> means for every <code>n</code> there is, and <code>glider</code> is one board of one size.</p>
+<p>The other half of the promise is what the body may ask.
+A body written for every <code>n</code> cannot ask what <code>n</code> is, because at the point where it is written there is no answer, and <code>KnownNat n</code> is <a href="#knownnat-is-the-way-back-down">the requirement that brings the number back down</a> for a body that needs to count.
+Chapter 12’s rule for where it goes is the compiler’s rather than a matter of style: the four shifts carry it because rotation counts and everything that calls them carries it in turn, and <code>countBoard</code> and <code>addCounts</code> do not, because <code>map</code> and <code>zipWith</code> <a href="#the-first-argument-is-a-function">never ask how many elements there are</a>.</p>
+<p>One more thing shows up as soon as the reader’s own signatures have letters in them, and it is worth knowing before it is met.
+A letter belongs to one signature, so two signatures may use the same letter for different things, and the prompt renames them apart when it has to print both:</p>
+<pre><code>clashi&gt; :t map countBoard
+map countBoard :: Vec n1 (Board n2) -&gt; Vec n1 (Counts n2)
+</code></pre>
+<p><code>map</code>’s own signature and chapter 12’s <code>countBoard</code> both use the letter <code>n</code>, and the two are not the same variable: <code>n1</code> is how many boards there are and <code>n2</code> is how wide each one is.
+Nothing in the file was renamed and nothing in it is wrong; the prompt needed two names for two things and the file only ever needed one.</p>
+<h2 id="what-synthesis-does-with-a-variable"><a class="header" href="#what-synthesis-does-with-a-variable">What synthesis does with a variable</a></h2>
+<p>Nothing at all, and chapter 12’s last section is that fact in a generated tree.
+The description at the top of that design is the one the reader wrote with a letter in it:</p>
+<pre><code class="language-haskell">life :: KnownNat n =&gt;
+  Board n -&gt;
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System (Maybe (Command n)) -&gt; Signal System (Board n)
+life seed clk rst en = mealy clk rst en lifeT (St seed False)
+</code></pre>
+<p><code>life</code> has no entity anywhere under <code>vhdl/</code>, because a <code>Synthesize</code> annotation names a port list, a port list is a fixed number of wires, and a number of wires is exactly what a letter is not.
+What reaches the VHDL are <code>life8</code> and <code>life16</code>, and both of them are that description with a seed of a definite size handed over:</p>
+<pre><code>clashi&gt; :t life glider
+life glider
+  :: Clock System
+     -&gt; Reset System
+     -&gt; Enable System
+     -&gt; Signal System (Maybe (Command 8))
+     -&gt; Signal System (Board 8)
+clashi&gt; :t life glider16
+life glider16
+  :: Clock System
+     -&gt; Reset System
+     -&gt; Enable System
+     -&gt; Signal System (Maybe (Command 16))
+     -&gt; Signal System (Board 16)
+</code></pre>
+<p>Those two answers are the signatures chapter 12 writes above <code>life8</code> and <code>life16</code>, arrived at by supplying one argument to one description.
+Every number in them came from the seed and from nowhere else: the command widened because the state holds a board, and the output widened because the output is a board.</p>
+<p>What Clash does next is specialise, and chapter 12 puts the result on the page.
+There are two <code>step</code> components in the tree rather than one, <code>Example_Project_life8_step.vhdl</code> and <code>Example_Project_life16_step.vhdl</code>, 343 lines each, and every difference between them is a number: <code>0 to 7</code> against <code>0 to 15</code>, <code>1 mod 8</code> against <code>1 mod 16</code>.
+A generic goes the other way about it, keeping one entity with the parameter in it and settling the parameter per instantiation.
+Both routes end at two circuits, because two sizes are two circuits, and what differs is which artefact carries the parameter: the entity in one case, and nothing at all in the other, because by the time there is an entity the number is a literal.</p>
+<p>Where they differ in what they promise is worth separating from that.
+A generic is checked when the instantiation is elaborated, and a size that does not fit is a message from the tool that elaborated it.
+Here <code>Board 8</code> and <code>Board 16</code> are different types, a <code>Command 16</code> cannot be handed to <code>life8</code>, and the module does not compile, so there is nothing to elaborate and nothing generated to elaborate it from.
+That is the check chapter 12 claims in its own notice-that beat, and it sits upstream of the HDL rather than in it.</p>
+<p>Chapter 13 is the last evidence for the letters costing nothing at the boundary.
+It changes how the clock, the reset and the enable reach <code>life</code>, which is a change to <code>life</code>’s type, and <code>life8</code> and <code>life16</code> keep chapter 12’s signatures byte for byte, so both generated entity declarations are byte identical across the chapter.</p>
+<h2 id="what-it-costs-6"><a class="header" href="#what-it-costs-6">What it costs</a></h2>
+<p>Two sizes cost two of everything below the description, and chapter 12 says so in its own words rather than presenting the parameter as free.
+Two entities, two <code>step</code> components, two types packages and two registers, because two sizes are two circuits.
+The source is the thing that is shared, and in the generated tree nothing is.</p>
+<p>What the 8×8 design paid for the parameter is one argument, and it is visible in the source rather than in the output.
+<code>mealy</code>’s initial state was <code>St glider False</code>, and a description that does not know its size cannot name the board it starts from, so the seed became <code>life</code>’s first argument and both wrappers supply it.
+The output paid nothing: <code>life8.vhdl</code> is 211 lines, which is chapter 9’s <code>life.vhdl</code> with the name changed and nothing else touched.
+Making a description general did not make the specific circuit worse, and that is the strongest thing this page has to say for the letters.</p>
+<p>The costs that are left are all about messages.
+A variable the reader never wrote can turn up in one, because the compiler numbers letters apart and invents names of its own where a signature had none.
+<code>n1</code> and <code>n2</code> above are the mild case, and the sharper one is the <code>d0</code> in <a href="#d1-is-a-value-whose-type-is-the-number"><code>No instance for ‘Num (SNat d0)’</code></a>, which is the compiler’s name for a distance nobody supplied.
+A message about a rigid type variable is the most ambiguous of the three, because what it reports is a disagreement between a claim and a definition and nothing in it says which of the two is wrong: <code>glider :: Board n</code> is a wrong signature over a right value, and it reads exactly like a right signature over a wrong value.</p>
+<p>The last cost is the one the tutorial put off until chapter 12, and it is why the reader met the letters in library signatures long before writing one.
+A signature with variables in it says less about the design than a signature without them, and it says nothing about the design that will actually be built.
+<code>step :: Board -&gt; Board</code> is a component with sixty-four wires in and sixty-four out.
+<code>step :: KnownNat n =&gt; Board n -&gt; Board n</code> is a description of that component and of every other size of it, and the number of wires is somewhere else entirely: in a wrapper, at the bottom of the file, where a seed of a definite size is handed over.</p>
+<h2 id="where-you-met-this-6"><a class="header" href="#where-you-met-this-6">Where you met this</a></h2>
+<ul>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: <code>:i rotateLeftS</code>, the first signature in the book with a lowercase letter in it.</li>
+<li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>:i register</code>, and <code>a</code> and <code>dom</code> settled by the value and the clock handed to it.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>:i mealy</code>, and <code>s</code>, <code>i</code> and <code>o</code> filled in by <code>lifeT</code>.</li>
+<li>Chapter 8, <a href="#more-than-valid">More than valid</a>: the same three letters filled in again, by a record and a command set of our own.</li>
+<li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: <code>outputVerifier'</code>’s <code>l</code>, settled at eight by the boards it is given.</li>
+<li>Chapter 12, <a href="#one-description-two-sizes">One description, two sizes</a>: <code>Board n</code> written by the reader, <code>KnownNat n</code> where the compiler asked for it, and the two entities the letters came out as.</li>
+<li>Chapter 13, <a href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a>: <code>life</code> changing type while <code>life8</code> and <code>life16</code> keep theirs.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>

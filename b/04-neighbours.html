@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-2d13f5dd.js";
+            window.path_to_searchindex_js = "../searchindex-0591e3bb.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-14c8dea2.js"></script>
+        <script src="../toc-c83f8fc7.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -197,6 +197,7 @@ rotateLeftS :: KnownNat n =&gt; Vec n a -&gt; SNat d -&gt; Vec n a
   	-- Defined in ‘Clash.Sized.Vector’
 </code></pre>
 <p>A vector in, a vector of the same length out, and between them the amount to move by, which is an <code>SNat d</code> rather than a number.
+What the lowercase <code>n</code>, <code>a</code> and <code>d</code> in that signature are is explained in <a href="../explanation/polymorphism.html">What the lowercase letters in a type mean</a>.
 A length lives in the type, as chapter 3 established, and so does a distance to move by: <code>SNat</code> is how a number that has to be known at compile time is written, and the one we want is written <code>d1</code>.
 Writing <code>1</code> there instead is the one mistake this chapter invites, and the compiler answers it by saying that <code>SNat</code> is not a <code>Num</code>, which is true and no help at all.
 It is <code>d1</code>.
