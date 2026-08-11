@@ -147,7 +147,7 @@ Now the test bench itself, at the bottom of the file:
 
 The annotation on the first line ties the test bench to the entity it tests, and `'life` there is a quoted name rather than a call: it is why one `:vhdl` will generate both.
 
-Below it are four bindings.
+Below it are five bindings.
 `commands` is the stimulus, one element per cycle, the same eight we sampled with.
 `expected` is the eight boards, in the order the design produces them.
 `done` is the comparison, and it is the test bench: `outputVerifier'` takes the boards it expects and the signal it gets, and hands back a signal that goes high once the last of them has been checked.

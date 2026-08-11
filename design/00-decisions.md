@@ -899,6 +899,41 @@ before it, this one took only its primary link (chapter 5, immediately after the
 "one board read in two places" sentence); the chapter 8 secondary stays unbuilt,
 and the "Where you met this" list names chapters 6, 7, 8, 9 and 13 as well.
 
+**`laziness.md` shipped ninth, and it is the first page whose central beat was
+checked by breaking the design rather than by asking the prompt a question.** The
+outline's fourth beat asserted that a self-reference with no register in the loop
+"hangs the simulation rather than erroring", which is a claim about a runtime and
+had to be run: with `register` taken out of chapter 6's line, the module loads
+with no warning, and `sampleN 1` of the result printed nothing in 152 seconds
+with the process resident set flat. It is a hang and not `<<loop>>`, not an
+`XException` and not a rejection, and the page states that as the sharpest edge
+it has. Two of the page's arguments are new. The order beat is shown rather than
+asserted, by writing chapter 10's `where` bindings in the reverse order and
+generating: `sampleN 12 testBench` is unchanged and every `.vhdl` file in both
+trees is byte for byte the same, down to the sixteen hexadecimal digits in the
+hashed package's name, which is a stronger statement about order than the prompt
+alone can make. And demand needed something visible, which the outline's
+`sampleN 5` beat is not, so the page uses a `fromList` of three `Nothing`s asked
+for four cycles: the prompt prints the first three elements and then
+`*** Exception: X: finite list` where the fourth would be, so evaluation is
+caught in the act of being driven by the question. That also explains a rule
+chapters 7, 8 and 10 obey silently, that a `fromList` is as long as the sample
+taken from it, and it turns up the reason chapter 10 is exempt, which is that
+`stimuliGenerator` holds its last element instead of running out. The page takes
+its one VHDL contrast on `s <= not s` and pays for it with a real NVC run rather
+than a recollection: 1.20.1 stops at `limit of 10000 delta cycles reached` and
+points at the driving signal, and the cost section reuses that as the comparison
+worth making, because the VHDL tool reports the loop and `clashi` reports
+nothing. Two smaller things. `purity.md`'s forward pointer at self-reference is
+now a link, which is the first time a shipped page has been edited by a later one,
+and the rule that made it a bare sentence (no stub ships) is what made the edit
+necessary rather than optional. And chapter 10 said its test bench has "four
+bindings" and then named five; the count is fixed in the chapter, in the same
+pull request, because the page's argument is about all five of them. Like the
+eight pages before it, this one took only its primary link (chapter 6, at the end
+of the feedback beat); the chapter 10 secondary stays unbuilt, and the "Where you
+met this" list names chapters 7, 10 and 11 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
