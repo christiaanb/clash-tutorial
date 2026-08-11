@@ -1,0 +1,399 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>The thing you instantiate is an argument - A Clash tutorial</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="A lesson in Clash for engineers who already design hardware.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-e520451d.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-e4d81790.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Clash tutorial</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="the-thing-you-instantiate-is-an-argument"><a class="header" href="#the-thing-you-instantiate-is-an-argument">The thing you instantiate is an argument</a></h1>
+<p>Chapter 4 described sixty-four adders and wrote one <code>+</code>:</p>
+<pre><code class="language-haskell">addCounts :: Counts -&gt; Counts -&gt; Counts
+addCounts = zipWith (zipWith (+))
+</code></pre>
+<p>The chapter said what the line does and went on.
+The inner <code>zipWith (+)</code> adds a row of eight to a row of eight, the outer one hands the rows to it in pairs, and there is one <code>+</code> in that line and no loop counter anywhere.
+What it did not say is what kind of thing <code>zipWith</code> is, or what <code>(+)</code> is doing in parentheses in a place where an argument goes.</p>
+<p>The same question was open a chapter earlier and the tutorial noticed it out loud.
+Chapter 3’s <code>fromRows</code> is <code>map unpack</code>, and the chapter’s own words for that were that <code>unpack</code> is not called there, it is passed to <code>map</code>, and <code>map</code> is what calls it, eight times.
+This page is what <code>map</code>, <code>zipWith</code> and <code>foldl1</code> are, and how far the idea they are built on goes.</p>
+<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
+<p><code>for … generate</code> is a construct.
+It may appear in an architecture and not in an expression, what it instantiates is written out inside its own body, and there is nothing you can do with it except write one where one is allowed.
+A reader carrying that over will look for the construct, find three letters that look like a function call, and settle on the reading that <code>map</code> is a keyword of some kind with a special argument position in it.</p>
+<p>That reading survives chapter 3 and then costs more with every chapter.
+<code>zipWith (zipWith (+))</code> becomes a call inside a call, when neither of them calls anything.
+<code>(+)</code> in parentheses becomes an addition with its operands left out.
+<code>foldl1 addCounts</code> becomes a function invoked on a function, and <code>map (\r -&gt; rotateLeftS r d1) b</code> becomes a construct with a fragment of syntax where its first argument belongs.
+Chapter 7 then quotes <code>(s -&gt; i -&gt; (s, o))</code> as one of <code>mealy</code>’s arguments, and under this reading that type has no reading at all.</p>
+<p>None of those is special syntax.
+<code>map</code> is an ordinary function, <code>(+)</code> is an ordinary value, and what looks like a construct is the first applied to the second.</p>
+<h2 id="the-first-argument-is-a-function"><a class="header" href="#the-first-argument-is-a-function">The first argument is a function</a></h2>
+<p>Ask the prompt about the two functions chapter 4 leans on, neither of which the chapter stopped to interrogate:</p>
+<pre><code>clashi&gt; :i map
+map :: (a -&gt; b) -&gt; Vec n a -&gt; Vec n b
+  	-- Defined in ‘Clash.Sized.Vector’
+clashi&gt; :i zipWith
+zipWith :: (a -&gt; b -&gt; c) -&gt; Vec n a -&gt; Vec n b -&gt; Vec n c
+  	-- Defined in ‘Clash.Sized.Vector’
+</code></pre>
+<p>Each of them takes something with arrows inside it, and the parentheses are the whole of what makes that an argument rather than more of the chain.
+<code>(a -&gt; b) -&gt; Vec n a -&gt; Vec n b</code> wants a function and then a vector.
+<code>a -&gt; b -&gt; Vec n a -&gt; Vec n b</code> would want two values and then a vector, and it is a different type, because <a href="currying.html#one-argument-at-a-time">the arrow groups to the right</a> and a parenthesised arrow on the left of another is the one shape that grouping never produces.
+Reading those parentheses is most of reading a signature in this book.</p>
+<p>Nothing in either type marks the function argument as unusual, and nothing needs to.
+A function is a value, in the sense that it can be named, passed and returned, and <code>map</code>’s first argument is a value of a type that happens to have an arrow in it.
+There is no second kind of function that may be passed and no annotation that permits it.</p>
+<p>What <code>map</code> does with the value it is given is instantiate it, once per element, and the type says how many times without saying which number.
+<code>Vec n a</code> and <code>Vec n b</code> have the same <code>n</code>, so eight elements in is eight instances and eight results out.
+The count never appears as a value: <code>map</code> does the same thing to every element whatever the number of elements is, which is chapter 12’s sentence for why <code>countBoard</code> and <code>addCounts</code> need nothing added to them when the board becomes sixteen by sixteen.</p>
+<h2 id="-is-the-adder-not-the-addition"><a class="header" href="#-is-the-adder-not-the-addition"><code>(+)</code> is the adder, not the addition</a></h2>
+<p>An operator is a function that is written between its two arguments rather than in front of them.
+Parenthesising it stops it being written that way and leaves the function:</p>
+<pre><code>clashi&gt; :t (+)
+(+) :: Num a =&gt; a -&gt; a -&gt; a
+</code></pre>
+<p>Two numbers in and a number out, which is exactly the shape <code>zipWith</code> wants first.
+Handing it over gives back the rest of <code>zipWith</code>’s type:</p>
+<pre><code>clashi&gt; :t zipWith (+)
+zipWith (+) :: Num c =&gt; Vec n c -&gt; Vec n c -&gt; Vec n c
+</code></pre>
+<p>That is one adder handed to something that will place a row of them, and what comes back is a function of two vectors that has not been given any yet.
+<code>addCounts = zipWith (zipWith (+))</code> is that once more, one level up: <code>zipWith (+)</code> is itself a function of two arguments, so it goes where <code>zipWith</code>’s first argument goes, and what comes back adds two vectors of vectors element by element.
+<code>addCounts</code>’s signature is what fixes the sizes: <code>Counts -&gt; Counts -&gt; Counts</code>, eight rows of eight four-bit numbers on both sides.
+The <code>Num c</code> in front of the <code>=&gt;</code> is a requirement rather than an argument, and what those are is a longer question that chapter 4 needed no part of.</p>
+<p>Chapter 9 is where handing <code>(+)</code> over is paid out.
+The generated VHDL for this design has three <code>for … generate</code> blocks nested inside each other, seven by eight by eight, and one <code>+</code> at the centre of them, which is the four hundred and forty-eight additions chapter 4 counted.
+The construct is still in the output.
+What changed is that it is no longer what we wrote: we wrote a function applied to an argument, and the construct is what that came to.</p>
+<h2 id="a-function-with-no-name"><a class="header" href="#a-function-with-no-name">A function with no name</a></h2>
+<p>Chapter 4’s four shifts contain the only function in the reader’s file that is written where it is used:</p>
+<pre><code class="language-haskell">shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board
+shiftN b = rotateLeftS b d1
+shiftS b = rotateRightS b d1
+shiftW b = map (\r -&gt; rotateLeftS r d1) b
+shiftE b = map (\r -&gt; rotateRightS r d1) b
+</code></pre>
+<p><code>\r -&gt; rotateLeftS r d1</code> is a function and nothing else.
+The backslash starts it, <code>r</code> is its argument, what follows the arrow is its result, and it has no name because nothing needs to refer to it twice.
+The prompt reports it as the kind of value the two signatures above ask for:</p>
+<pre><code>clashi&gt; :t (\r -&gt; rotateLeftS r d1)
+(\r -&gt; rotateLeftS r d1) :: KnownNat n =&gt; Vec n a -&gt; Vec n a
+</code></pre>
+<p>Why one is needed here is worth a moment, because <code>shiftN</code> did not need one.
+<code>shiftN b = rotateLeftS b d1</code> has a name for the board, so the distance can simply be written after it.
+Inside <code>shiftW</code> there is no name for the row, and supplying an argument to <code>rotateLeftS</code> supplies <a href="currying.html#what-plus-3-is">the first one</a>, which is the vector.
+The argument we want to fix is the second, partial application cannot reach past the first, and the lambda is how a function with the distance already in it and the vector still to come is built instead.</p>
+<p>The other lambda in the book is at the prompt rather than in the file, in <code>mapM_ (\b -&gt; putStr (render b))</code>, which the reader retypes in chapters 6, 7, 8 and 10.
+It is the same three parts, and <code>mapM_</code> takes it the way <code>map</code> takes <code>unpack</code>.
+<code>mapM_</code> is not <code>map</code>, and what it does with what it is handed belongs with the border between what runs and what becomes hardware rather than here.</p>
+<h2 id="the-functions-we-wrote-go-in-the-same-slot"><a class="header" href="#the-functions-we-wrote-go-in-the-same-slot">The functions we wrote go in the same slot</a></h2>
+<p>Nothing about the argument position prefers library functions.
+<code>countBoard</code> is ours, and handing it over reads exactly as <code>unpack</code> did:</p>
+<pre><code>clashi&gt; :t map countBoard
+map countBoard :: Vec n Board -&gt; Vec n Counts
+</code></pre>
+<p>The difference between calling <code>countBoard</code> and passing it is the argument after it and nothing else.
+<code>countBoard b</code> is a <code>Counts</code>, and <code>countBoard</code> on its own is the function, which is the value <code>map</code> wants.</p>
+<p><code>foldl1</code> is the third of chapter 4’s three, and it takes the way to combine two things:</p>
+<pre><code>clashi&gt; :i foldl1
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Vec (n + 1) a -&gt; a
+  	-- Defined in ‘Clash.Sized.Vector’
+</code></pre>
+<p>Two of something and one of the same something, which <code>addCounts</code> is, and a vector with at least one element in it, which is what <code>n + 1</code> says.
+<code>foldl1 addCounts</code> is therefore the whole of chapter 4’s summation with nothing to sum yet:</p>
+<pre><code>clashi&gt; :t foldl1 addCounts
+foldl1 addCounts :: Vec (n + 1) Counts -&gt; Counts
+</code></pre>
+<p>How the seven additions that reduce eight boards are arranged, in a chain or in a tree, is a question about <code>fold</code> rather than about handing a function over, and this page does not settle it.</p>
+<p>Chapter 5’s whole generation is one more of these:</p>
+<pre><code class="language-haskell">step :: Board -&gt; Board
+step b = zipWith (zipWith nextCell) b (neighbourCounts b)
+</code></pre>
+<p><code>zipWith (zipWith nextCell)</code> is <code>addCounts</code>’s shape with chapter 2’s rule in the place where <code>(+)</code> was, and it works for the same reason: <code>nextCell</code> takes a cell and a count and gives back a cell, which is what <code>zipWith</code>’s first argument has to be.
+Chapter 6’s <code>fmap step boards</code> hands <code>step</code> over in the same way, to something that applies it inside a <code>Signal</code> rather than inside a vector, and what <code>fmap</code> itself is takes an answer this page does not have.</p>
+<h2 id="mealy-takes-the-entire-loop"><a class="header" href="#mealy-takes-the-entire-loop"><code>mealy</code> takes the entire loop</a></h2>
+<p>Chapter 7 asked what <code>mealy</code> wanted before using it, and one of its arguments is a type with arrows in it:</p>
+<pre><code>clashi&gt; :i mealy
+mealy ::
+  (KnownDomain dom, NFDataX s) =&gt;
+  Clock dom
+  -&gt; Reset dom
+  -&gt; Enable dom
+  -&gt; (s -&gt; i -&gt; (s, o))
+  -&gt; s
+  -&gt; Signal dom i
+  -&gt; Signal dom o
+  	-- Defined in ‘Clash.Explicit.Mealy’
+</code></pre>
+<p><code>(s -&gt; i -&gt; (s, o))</code> is <code>zipWith</code>’s first argument again, in parentheses for the same reason and in an argument position for the same reason.
+What lands there in chapter 7 is <code>lifeT</code>, a function of a board and a <code>Maybe Board</code> that gives back <a href="pattern-matching.html#the-thing-after-the-word-case">a pair</a> of boards.
+That function is the entire path from the register’s output round to its input, handed over as one value.</p>
+<p>Chapter 6’s <code>register</code> took the signal that would arrive at its input, and the loop was closed by a binding that mentions itself.
+<code>mealy</code> takes the logic that makes that signal instead, and closes the loop itself.
+Nothing inside <code>mealy</code> knows that there is a board in it, an eight by eight board, or a <code>Maybe</code> on its input; it knows that something arrives, that a function turns it and the state into a new state and an output, and that a register goes between.
+That is <code>map</code>’s arrangement with a clock in it.</p>
+<h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
+<p>A description built this way has no fixed shape in the source to point at, and the netlist takes its shape only when the arguments land.
+<code>map</code> on its own instantiates nothing and is not a circuit.
+<code>map countBoard</code> is one <code>countBoard</code> per board, each of them sixty-four copies of an <code>if</code>, and how many boards there are is not in it at all.
+The number arrives from somewhere else entirely:</p>
+<pre><code>clashi&gt; :t map countBoard (neighbourBoards glider)
+map countBoard (neighbourBoards glider) :: Vec 8 Counts
+</code></pre>
+<p>The eight in that answer is not written in <code>map</code>, in <code>countBoard</code> or at the use site.
+It comes from <code>neighbourBoards</code>, which is where somebody decided there were eight directions, and it reaches <code>map</code> as part of the type of a value.
+A <code>for … generate</code> says how many times in its own header, where it can be read; this says it in the type of an argument, and reading it means following the argument back.</p>
+<p>The names do not survive either, and chapter 9 shows exactly how far.
+The generated VHDL is full of <code>zipWith_3</code>, <code>zipWith_0</code> and <code>fun_0</code>, all of them Clash’s names for the instances that a passed function came to, and <code>addCounts</code> is not in the file.
+That is why chapter 9 has to mark <code>step</code> before a boundary appears in the output at all: a hierarchy of higher-order descriptions is not a hierarchy of components, and nothing preserves the correspondence unless it is asked for.</p>
+<p>The sharpest edge is that a function handed over one argument short is not an error.
+Chapter 2’s rule takes a cell and a count, and handing it to <code>map</code> as though it took one thing has a perfectly good type:</p>
+<pre><code>clashi&gt; :t map nextCell
+map nextCell :: Vec n Bool -&gt; Vec n (Unsigned 4 -&gt; Bool)
+</code></pre>
+<p>A vector of functions is a type like any other, nothing about that expression is ill formed, and it is not what anybody wanted.
+What is rejected is the moment such a value meets something that wants cells, and where the whole mistake sits inside one expression the compiler is direct about it.
+Handing <code>render</code> a board built with <code>map (map nextCell)</code> is <code>[GHC-83865]</code>, <code>Couldn't match type ‘Unsigned 4 -&gt; Bool’ with ‘Bool’</code>, and under it the words <code>Probable cause: ‘nextCell’ is applied to too few arguments</code>.
+It can say that because it has three lines of context to walk out through, from <code>nextCell</code> to the inner <code>map</code> to <code>render</code>, all of them in the expression that was typed.</p>
+<p>Split the same mistake across two definitions and there is nothing to walk.
+<code>map nextCell</code> on its own is a legal definition with a legal type, so what arrives at the use site is a wrong type rather than a missing argument, and it arrives somewhere the count is never mentioned.
+A <code>for … generate</code> cannot be given a component with a port left off, so this is a mistake with no counterpart in the language the reader came from.</p>
+<p>What the whole arrangement buys is on the other side of the same coin.
+Four hundred and forty-eight four-bit additions are one <code>+</code>, sixty-four copies of the cell rule are one <code>nextCell</code>, the eight moved boards are four shifts and a lambda, and none of those lines mentions eight, sixty-four or four hundred and forty-eight.
+That is also why chapter 12 changes the size of the board without rewriting any of them.</p>
+<h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
+<ul>
+<li>Chapter 3, <a href="../b/03-a-board.html">A board, and a picture</a>: <code>map unpack</code>, the first function in the book handed to a function.</li>
+<li>Chapter 4, <a href="../b/04-neighbours.html">Neighbours, by moving the whole board</a>: <code>map</code>, <code>zipWith</code> and <code>foldl1</code>, the lambda in <code>shiftW</code>, and one <code>+</code> describing sixty-four adders.</li>
+<li>Chapter 5, <a href="../b/05-a-generation.html">A generation</a>: <code>zipWith (zipWith nextCell)</code>, the same shape with the rule in it.</li>
+<li>Chapter 6, <a href="../b/06-it-runs.html">It runs by itself</a>: <code>fmap step boards</code>, and the lambda typed at the prompt.</li>
+<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: <code>mealy</code>, and the loop handed to it as an argument.</li>
+<li>Chapter 9, <a href="../b/09-an-entity.html">An entity</a>: the <code>for … generate</code> blocks these lines became, and the names they came out under.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../explanation/vec-and-lists.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../explanation/type-inference.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../explanation/vec-and-lists.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../explanation/type-inference.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
