@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Neighbours, by moving the whole board - A Clash tutorial</title>
+        <title>Two worlds of numbers - A Clash tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -174,91 +174,122 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="neighbours-by-moving-the-whole-board"><a class="header" href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a></h1>
-<p>Chapter 2 wrote a rule that takes a count of live neighbours, and chapter 3 built the board those neighbours live on.
-This chapter computes the count: for every one of the sixty-four cells, how many of its eight neighbours are alive.</p>
-<p>The obvious way to do that is to visit each cell and look around it.
-That is five hundred and twelve neighbours to fetch, each one an index expression that can be written down wrong, and twenty-eight of the cells sit on an edge, where three of those indices point off the board, or five if the cell is in a corner.
-We write none of them.
-Nothing in the code in this chapter picks a cell out of the board by its position.
-Instead we move the whole board, once in each of the eight directions, and add the copies up.</p>
-<h2 id="a-type-for-the-answer"><a class="header" href="#a-type-for-the-answer">A type for the answer</a></h2>
-<p>The answer is a number for every cell, in the same shape as the board.
-Add this under <code>render</code>, at the bottom of the file:</p>
-<pre><code class="language-haskell">type Counts = Vec 8 (Vec 8 (Unsigned 4))
-</code></pre>
-<p><code>Unsigned 4</code> is the type chapter 2 gave <code>nextCell</code> for its count, four bits wide because the count reaches eight.
-<code>Counts</code> arranges sixty-four of them exactly as <code>Board</code> arranges its sixty-four <code>Bool</code>s, and chapter 5 will lay one on top of the other.</p>
-<h2 id="moving-the-whole-board"><a class="header" href="#moving-the-whole-board">Moving the whole board</a></h2>
-<p>Moving the elements of a <code>Vec</code> along by one is <code>rotateLeftS</code>, and moving them back is <code>rotateRightS</code>.
-Ask the prompt what <code>rotateLeftS</code> wants, before writing anything that uses it:</p>
+                        <h1 id="two-worlds-of-numbers"><a class="header" href="#two-worlds-of-numbers">Two worlds of numbers</a></h1>
+<p>Chapter 4 moved the whole board rather than indexing into it, and before writing anything that did so it asked what to move it with:</p>
 <pre><code>clashi&gt; :i rotateLeftS
 rotateLeftS :: KnownNat n =&gt; Vec n a -&gt; SNat d -&gt; Vec n a
   	-- Defined in ‘Clash.Sized.Vector’
 </code></pre>
-<p>A vector in, a vector of the same length out, and between them the amount to move by, which is an <code>SNat d</code> rather than a number.
-A length lives in the type, as chapter 3 established, and so does a distance to move by: <code>SNat</code> is how a number that has to be known at compile time is written, and the one we want is written <code>d1</code>.
-Writing <code>1</code> there instead is the one mistake this chapter invites, and the compiler answers it by saying that <code>SNat</code> is not a <code>Num</code>, which is true and no help at all.
-It is <code>d1</code>.
-Why there are two kinds of number here, and why no <code>1</code> can stand where a <code>d1</code> is wanted, is explained in <a href="../explanation/type-level-numbers.html">Two worlds of numbers</a>.</p>
-<p>Now the four moves.
-Add them under <code>Counts</code>:</p>
+<p>A vector in, a vector of the same length out, and between them the distance to move by, which is an <code>SNat d</code> rather than a number.
+The chapter said what to write there and pre-flagged the one mistake it invites: the distance of one is <code>d1</code>, and writing <code>1</code> instead is answered by the compiler saying that <code>SNat</code> is not a <code>Num</code>, which is true and no help at all.</p>
+<p>Three numbers have been on screen since chapter 1 and nothing has said that they are not the same kind of thing.
+The <code>8</code> in <code>plus :: Signed 8 -&gt; Signed 8 -&gt; Signed 8</code> is one, the <code>3</code> in <code>plus 3 5</code> is another, and the <code>1</code> that has to be written <code>d1</code> is the third.
+Two of those live in one world and one lives in the other, and the grouping is not the one a VHDL reader would pick.</p>
+<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
+<p>VHDL has one integer world.
+A generic is a <code>natural</code>, a port can be an <code>integer</code>, <code>natural range &lt;&gt;</code> is what leaves an array’s bounds to whoever instantiates it, and every one of those numbers is a value: the tool adds them, compares them, prints them in a message, and the same <code>8</code> can be a generic on one line and an index on the next.
+VHDL does draw a line near this one, between what is settled at elaboration and what arrives while the design runs, but that line is about when a number is known rather than about what kind of thing the number is.</p>
+<p>Carried over, that reading makes the <code>8</code> in <code>Vec 8</code> a parameter that happens to be written inside the type, <code>d1</code> a spelling of <code>1</code> that one library function is fussy about, and “<code>SNat</code> is not a <code>Num</code>” a missing conversion, to be fixed by finding the function that converts.
+Nothing in the library converts a value into an <code>SNat</code>, and that is not an omission: what such a function would have to do, and why nobody wants it, is the subject of the section on <code>d1</code> below.</p>
+<p>The reading survives eleven chapters, because until chapter 12 every number in a type in the reader’s file is a literal that never moves: the <code>8</code> in <code>Board</code>, the <code>4</code> in <code>Counts</code> and the <code>1</code> in <code>d1</code>.
+Chapter 12 is where it breaks.
+The eight comes out of the types and becomes an <code>n</code>, every number on a wire stays exactly where it was, and the edit each of those needed has nothing in common with the other.</p>
+<h2 id="the-eight-is-in-the-type-and-the-type-is-not-a-number"><a class="header" href="#the-eight-is-in-the-type-and-the-type-is-not-a-number">The eight is in the type, and the type is not a number</a></h2>
+<p>Chapter 3 asked what <code>Board</code> was, and the answer had a line in it above the one the chapter had written:</p>
+<pre><code>clashi&gt; :i Board
+type Board :: Type
+type Board = Vec 8 (Vec 8 Bool)
+  	-- Defined at src/Example/Project.hs:11:1
+</code></pre>
+<p><code>type Board :: Type</code> is a statement about <code>Board</code> itself rather than about any board: whatever else it is, it is a type, which is the kind of thing a value can have.
+The prompt answers that question on its own too, and <code>:k</code> is how it is asked, standing to a type as <code>:t</code> stands to an expression:</p>
+<pre><code>clashi&gt; :k Vec
+Vec :: Nat -&gt; Type -&gt; Type
+clashi&gt; :k Signed
+Signed :: Nat -&gt; Type
+</code></pre>
+<p>Neither answer is <code>Type</code>, and the gap between those two lines and the one above them is the whole of what this page is about.
+<code>Vec</code> is not a type: it is something that becomes one when it is given a number and a type, and <code>Signed</code> becomes one when it is given a number alone.
+<code>Nat</code> is what the kind of such a number is called, and every number this page calls a type-level number is one with that kind.</p>
+<p>Giving one of the two and not the other does what it does everywhere else in this language:</p>
+<pre><code>clashi&gt; :k Vec 8
+Vec 8 :: Type -&gt; Type
+</code></pre>
+<p><code>Vec 8</code> is not a type yet, and it is short of the same argument <a href="currying.html#one-argument-at-a-time">one argument at a time</a> leaves a function short of.</p>
+<p>Chapter 1 had both worlds on one line and said nothing about it, which was the right decision at the time: <code>Signed 8</code> is eight bits of wire, and the <code>3</code> and the <code>5</code> in <code>plus 3 5</code> are values those wires can carry.
+The eight is checked while the design is compiled and is not represented at run time at all.
+What remains of it is the wires it fixed the number of, and chapter 12 printed them: <code>cells : out std_logic_vector(63 downto 0)</code> in one entity and <code>255 downto 0</code> in the other, with nothing in either file that could be asked how wide a board is.</p>
+<p>Being checked is visible from the prompt.
+Annotate chapter 3’s seed as a board of seven rows and the failure is a type error whose two types are numbers: <code>[GHC-83865]</code>, <code>Couldn't match type ‘8’ with ‘7’</code>, over <code>Expected: Vec 7 (Vec 8 Bool)</code> and <code>Actual: Board</code>.
+No value took part in that, and none had to: a length is <a href="vec-and-lists.html#the-length-is-in-one-of-them-and-not-the-other">in the type</a>, so disagreeing about a length is two types disagreeing.</p>
+<h2 id="d1-is-a-value-whose-type-is-the-number"><a class="header" href="#d1-is-a-value-whose-type-is-the-number"><code>d1</code> is a value whose type is the number</a></h2>
+<p>The other world is where <code>rotateLeftS</code>’s second argument has to come from, and <code>d1</code> is how something crosses:</p>
+<pre><code>clashi&gt; :t d1
+d1 :: SNat 1
+</code></pre>
+<p>That is the bridge in one line.
+<code>d1</code> is a value, so it can be passed to a function; its type is <code>SNat 1</code>, so the number it carries is in a type where the compiler can use it.</p>
+<pre><code>clashi&gt; :i SNat
+type role SNat nominal
+type SNat :: Nat -&gt; Type
+data SNat n where
+  SNat :: KnownNat n =&gt; SNat n
+  	-- Defined in ‘Clash.Promoted.Nat’
+instance ShowX (SNat n) -- Defined in ‘Clash.Promoted.Nat’
+instance Lift (SNat n) -- Defined in ‘Clash.Promoted.Nat’
+instance Show (SNat n) -- Defined in ‘Clash.Promoted.Nat’
+</code></pre>
+<p>One constructor, and it has no fields.
+<code>SNat 1</code> is a type with exactly one value in it, the number is in the type rather than in the value, and there is nothing to inspect at run time because nothing is there.
+Three instances are listed and <code>Num</code> is not among them.</p>
+<p>Chapter 4’s four shifts are <code>d1</code> handed over four times:</p>
 <pre><code class="language-haskell">shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board
 shiftN b = rotateLeftS b d1
 shiftS b = rotateRightS b d1
 shiftW b = map (\r -&gt; rotateLeftS r d1) b
 shiftE b = map (\r -&gt; rotateRightS r d1) b
 </code></pre>
-<p><code>shiftN</code> moves the board’s eight rows along by one, so every row ends up where the row above it was, and the board has moved north.
-<code>shiftS</code> moves it back the other way.
-<code>shiftW</code> and <code>shiftE</code> do that to the eight cells within each row rather than to the eight rows, and they do it with <code>map</code>, because moving every row west by one is what moving the board west by one means.
-<code>\r -&gt; rotateLeftS r d1</code> is a function written where it is needed instead of being given a name of its own, and the backslash is there to look like a lambda.</p>
-<p>Four definitions under one signature is four functions, all of type <code>Board -&gt; Board</code>.
-Reload and ask:</p>
-<pre><code>clashi&gt; :r
-[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
-Ok, one module reloaded.
-clashi&gt; :i shiftN
-shiftN :: Board -&gt; Board 	-- Defined at src/Example/Project.hs:37:1
+<p>and until it is handed over, the distance is an argument still wanted, like any other:</p>
+<pre><code>clashi&gt; :t rotateLeftS glider
+rotateLeftS glider :: SNat d -&gt; Vec 8 (Vec 8 Bool)
 </code></pre>
-<p>Here is the seed again, and here it is moved:</p>
-<pre><code>clashi&gt; putStr (render glider)
-.#......
-..#.....
-###.....
-........
-........
-........
-........
-........
-clashi&gt; putStr (render (shiftN glider))
-..#.....
-###.....
-........
-........
-........
-........
-........
-.#......
+<p>The mistake the chapter pre-flagged now reads from the other side.
+A literal has <a href="type-inference.html#a-literal-has-no-type-of-its-own">no type of its own</a>, and <code>Num</code> is the class that turns it into a value of whatever the context asked for.
+The context here asks for an <code>SNat</code>, no instance produces one, and the message says exactly that: <code>[GHC-39999]</code>, <code>No instance for ‘Num (SNat d0)’ arising from the literal ‘1’</code>, <code>In the second argument of ‘rotateLeftS’, namely ‘1’</code>.
+The <code>d0</code> in it is the compiler’s name for the distance it never found out.</p>
+<p>What the message does not say is what such an instance would have to do.
+The number an <code>SNat</code> carries is its type, so an instance would have to turn any literal at all into the one value of <code>SNat 1</code>, and <code>1</code> and <code>5</code> would both come out as one.
+A conversion that quietly returns a different number from the one written is worse than a rejection, and this is the rejection instead.
+The same thing from the other direction: <code>d1 + d1</code> is <code>No instance for ‘Num (SNat 1)’ arising from a use of ‘+’</code>, and the <code>+</code> there is the one that describes an adder.</p>
+<h2 id="knownnat-is-the-way-back-down"><a class="header" href="#knownnat-is-the-way-back-down"><code>KnownNat</code> is the way back down</a></h2>
+<p>Chapter 4 leans on two library functions over vectors, and one of them carries a requirement the other does not:</p>
+<pre><code>clashi&gt; :i map
+map :: (a -&gt; b) -&gt; Vec n a -&gt; Vec n b
+  	-- Defined in ‘Clash.Sized.Vector’
 </code></pre>
-<p>Every row has come up by one, and the row that was at the top is now at the bottom.
-West does the same thing sideways:</p>
-<pre><code>clashi&gt; putStr (render (shiftW glider))
-#.......
-.#......
-##.....#
-........
-........
-........
-........
-........
+<p><code>map</code> never asks how many elements there are: it does <a href="higher-order.html#the-first-argument-is-a-function">the same thing to each of them</a>, so the number can stay in the type where nothing reads it.
+<code>rotateLeftS</code> has to count.
+Moving every element along by one means knowing which element falls off the end and where it comes back on, and that is arithmetic on the length rather than on the contents.</p>
+<p><code>KnownNat n</code> is the requirement that <code>n</code> is known when the design is compiled, and what it delivers is that number as a value, at the point where a description needs to count.
+Reading it as the return trip is the useful way round: <code>SNat</code>’s constructor above asks for <code>KnownNat n</code>, and <code>KnownNat n</code> is what hands the number back.
+The function that fetches it is not one the reader’s file ever calls, because the library functions that count do their counting inside:</p>
+<pre><code>clashi&gt; :i snatToNum
+snatToNum :: Num a =&gt; SNat n -&gt; a
+  	-- Defined in ‘Clash.Promoted.Nat’
+clashi&gt; snatToNum d1 :: Int
+1
 </code></pre>
-<p>The third row was <code>###.....</code> and is now <code>##.....#</code>: the cell that went off the left edge came back on the right.
-The board wraps, on all four edges, and every cell has eight neighbours whether it is in the middle or in a corner.</p>
-<h2 id="eight-boards"><a class="header" href="#eight-boards">Eight boards</a></h2>
-<p>Move the board north and every position holds what the position below it held.
-Move it in all eight directions and each position has, across the eight copies, exactly the eight cells that surround it.</p>
-<pre><code class="language-haskell">neighbourBoards :: Board -&gt; Vec 8 Board
+<p>Chapter 12 is where the two directions become an edit.
+Every function that computes over a board takes the size, and only some of them take the constraint:</p>
+<pre><code class="language-haskell">type Counts n = Vec n (Vec n (Unsigned 4))
+
+shiftN, shiftS, shiftW, shiftE :: KnownNat n =&gt; Board n -&gt; Board n
+shiftN b = rotateLeftS b d1
+shiftS b = rotateRightS b d1
+shiftW b = map (\r -&gt; rotateLeftS r d1) b
+shiftE b = map (\r -&gt; rotateRightS r d1) b
+
+neighbourBoards :: KnownNat n =&gt; Board n -&gt; Vec 8 (Board n)
 neighbourBoards b =
      shiftN b
   :&gt; shiftS b
@@ -269,114 +300,97 @@ neighbourBoards b =
   :&gt; shiftS (shiftW b)
   :&gt; shiftS (shiftE b)
   :&gt; Nil
-</code></pre>
-<p>The four diagonals are the moves already written, applied one after the other: <code>shiftN (shiftW b)</code> is the board moved north and then west.
-Nothing new is needed for them, and nothing new is needed for the corners either.</p>
-<h2 id="adding-the-copies-up"><a class="header" href="#adding-the-copies-up">Adding the copies up</a></h2>
-<p>Eight boards of <code>Bool</code> have to become numbers before they can be added, so we turn each one into a <code>Counts</code> of zeroes and ones:</p>
-<pre><code class="language-haskell">countBoard :: Board -&gt; Counts
+
+countBoard :: Board n -&gt; Counts n
 countBoard b = map (map toCount) b
   where
     toCount x = if x then 1 else 0
-</code></pre>
-<p><code>map (map toCount)</code> is two levels: the inner <code>map</code> turns a row of eight <code>Bool</code>s into a row of eight numbers, and the outer one does that to all eight rows.</p>
-<p>Adding two <code>Counts</code> together is the same two levels, with <code>zipWith</code>, which takes two vectors and combines them element by element:</p>
-<pre><code class="language-haskell">addCounts :: Counts -&gt; Counts -&gt; Counts
+
+addCounts :: Counts n -&gt; Counts n -&gt; Counts n
 addCounts = zipWith (zipWith (+))
-</code></pre>
-<p>The inner <code>zipWith (+)</code> adds a row of eight to a row of eight.
-The outer one hands the rows to it in pairs.
-There is one <code>+</code> in that line and no loop counter anywhere, and <code>addCounts</code> takes no arguments at all: it is <code>zipWith (zipWith (+))</code>, and that is the whole definition.
-What it means to hand <code>(+)</code> to <code>zipWith</code>, and why a function that takes a function is the ordinary case here, is explained in <a href="../explanation/higher-order.html">The thing you instantiate is an argument</a>.</p>
-<p>And then the count itself:</p>
-<pre><code class="language-haskell">neighbourCounts :: Board -&gt; Counts
+
+neighbourCounts :: KnownNat n =&gt; Board n -&gt; Counts n
 neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
 </code></pre>
-<p>Read it from the inside out: the eight moved boards, each turned into numbers, all added together.
-<code>foldl1</code> is what “all added together” is called: given a vector and a way to combine two of its elements, it combines them until one is left.</p>
-<p>Reload, and ask what the pieces are:</p>
-<pre><code>clashi&gt; :r
-[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
-Ok, one module reloaded.
-clashi&gt; :t neighbourBoards glider
-neighbourBoards glider :: Vec 8 Board
-clashi&gt; :i neighbourCounts
-neighbourCounts :: Board -&gt; Counts
-  	-- Defined at src/Example/Project.hs:63:1
+<p>The four shifts, <code>neighbourBoards</code> and <code>neighbourCounts</code> carry <code>KnownNat n</code> because the rotation underneath them counts; <code>countBoard</code> and <code>addCounts</code> do not, and chapter 12 says why in one sentence: <code>map</code> and <code>zipWith</code> never ask how many there are.
+Where the constraint goes was not a matter of taste, and the chapter is plain about that too: the compiler asks for it by name, at the definition that needs it.</p>
+<p>What arrives at the bottom is a constant.
+Chapter 12 put the two generated <code>step</code> components side by side, 343 lines each, and every difference between them is a number: <code>0 to 7</code> against <code>0 to 15</code>, and <code>1 mod 8</code> against <code>1 mod 16</code>.
+That <code>mod</code> is the rotation wrapping, and the eight beside it was a number in a type until something needed to count with it.</p>
+<h2 id="arithmetic-happens-up-there-too"><a class="header" href="#arithmetic-happens-up-there-too">Arithmetic happens up there too</a></h2>
+<p>Numbers in types are computed with, and the compiler is what does the computing:</p>
+<pre><code>clashi&gt; :t (5 :: Signed (4 + 4))
+(5 :: Signed (4 + 4)) :: Signed 8
 </code></pre>
-<p>Eight boards from one, and a board of counts from a board of cells.
-<code>head</code> took the first row of a board in chapter 3, so applying it twice takes the first cell of the first row, which is the cell in the top left corner:</p>
-<pre><code>clashi&gt; head (head (neighbourCounts glider))
-1
+<p><code>Signed (4 + 4)</code> and <code>Signed 8</code> are the same type, and no addition happened at run time to make them the same: the sum was done while the types were being settled.
+The same arithmetic is in a signature the reader has already met, where it does the work of a requirement: <a href="higher-order.html#the-functions-we-wrote-go-in-the-same-slot"><code>foldl1</code> takes a <code>Vec (n + 1) a</code></a>, which is how “at least one element” is said with a plus.</p>
+<p>Chapter 8 read a <code>Command</code>’s width off the bits that <code>pack</code> printed, two for the tag and sixty-four for the payload, sixty-six in all.
+With chapter 12’s file loaded, where <code>Command</code> takes its size as a number, the prompt gives that count back as the sum it is:</p>
+<pre><code>clashi&gt; :t pack (Step :: Command 8)
+pack (Step :: Command 8) :: BitVector (CLog 2 4 + 64)
+clashi&gt; pack (Step :: Command 8)
+0b01_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
 </code></pre>
-<p>Look back at the picture.
-The cell in the top left corner is dead, the cell to its right is alive, and its other seven neighbours, five of which are on the far side of an edge, are all dead.
-One.</p>
-<h2 id="all-sixty-four-at-once"><a class="header" href="#all-sixty-four-at-once">All sixty-four at once</a></h2>
-<p>Checking sixty-four counts one at a time is not checking them.
-<code>render</code> turned a board into something we could look at; this does the same for the counts, and it is the second and last thing in this tutorial that is not a circuit.</p>
-<p>It needs one function that Clash does not supply, so add a second import directly under the first:</p>
-<pre><code class="language-haskell">import Data.Char (intToDigit)
+<p><code>CLog 2 4</code> is the ceiling of the base two logarithm of four, which is the width four constructors need for a tag, and 64 is the board in the payload.
+The type is printed as a sum rather than as 66 because asking for a type does not work it out, and the line below it is where the sixty-six bits are: two of tag and sixty-four of payload, exactly as chapter 8 printed them.</p>
+<p>The same command at the other size is the same sum with one number changed:</p>
+<pre><code>clashi&gt; :t pack (Step :: Command 16)
+pack (Step :: Command 16) :: BitVector (CLog 2 4 + 256)
 </code></pre>
-<p>and put this at the bottom of the file:</p>
-<pre><code class="language-haskell">renderCounts :: Counts -&gt; String
-renderCounts cs = unlines (toList (map row cs))
-  where
-    row r = toList (map digit r)
-    digit n = intToDigit (numConvert n)
+<p>Two hundred and fifty-eight, which is chapter 12’s <code>n * n + 2</code> and the <code>subtype Command is std_logic_vector(257 downto 0)</code> it read out of the generated types package.
+Nobody wrote 258 anywhere, and nobody wrote 66 either.</p>
+<p><code>Board</code> itself changed kind between the two chapters:</p>
+<pre><code>clashi&gt; :k Board
+Board :: Nat -&gt; Type
 </code></pre>
-<p>It has the same shape as <code>render</code>, one character per cell, except that the character is the digit for the count rather than <code>#</code> or <code>.</code>.
-<a href="https://clash-lang.org/blog/2026-05-19-numconvert/"><code>numConvert</code></a> changes a number from one numeric type to another, here from the four-bit count to the plain <code>Int</code> that <code>intToDigit</code> wants, and it will only do it when it can show at compile time that nothing is lost.
-<code>intToDigit</code> itself is ordinary Haskell from the standard library, available here for the same reason <code>String</code> was: this part is a program that prints things, not a description of hardware.</p>
-<p>Reload, and look at all sixty-four:</p>
-<pre><code>clashi&gt; :r
-[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
-Ok, one module reloaded.
-clashi&gt; :i renderCounts
-renderCounts :: Counts -&gt; String
-  	-- Defined at src/Example/Project.hs:67:1
-clashi&gt; putStr (renderCounts (neighbourCounts glider))
-11210000
-35320001
-13220001
-23210001
-00000000
-00000000
-00000000
-11100000
+<p>Chapter 3’s <code>Board</code> was a type and chapter 12’s is something that becomes one when it is given a number, exactly as <code>Vec</code> is.
+The added <code>Nat -&gt;</code> is chapter 12 in one line, and it is also why the <code>Synthesize</code> annotation could not stay on <code>life</code>: the annotation names a port list, a port list is a fixed number of wires, and the number is only fixed where a <code>Nat</code> has been supplied.</p>
+<h2 id="a-requirement-about-a-number-no-wire-carries"><a class="header" href="#a-requirement-about-a-number-no-wire-carries">A requirement about a number no wire carries</a></h2>
+<p>Numbers in types are compared as well as added, and chapter 10 walked past one:</p>
+<pre><code>clashi&gt; :i outputVerifier'
+outputVerifier' ::
+  (KnownNat l, KnownDomain dom, Eq a, ShowX a, 1 &lt;= l) =&gt;
+  Clock dom
+  -&gt; Reset dom -&gt; Vec l a -&gt; Signal dom a -&gt; Signal dom Bool
+  	-- Defined in ‘Clash.Explicit.Testbench’
 </code></pre>
-<p>That is the result of the chapter, and it is worth reading against chapter 3’s picture for a moment.
-The <code>5</code> in the second row is the cell at the centre of the glider: it is dead, and all five of the glider’s live cells touch it.
-The <code>1</code>s at the right hand end of the second, third and fourth rows, and the three of them along the bottom row, are the wrap: those cells are on an edge, their neighbours are on the other one, and nothing in the code treats them differently.</p>
-<h2 id="notice-that"><a class="header" href="#notice-that">Notice that</a></h2>
-<p><strong><code>map</code> over a <code>Vec 8</code> is a <code>for … generate</code> with eight instances.</strong>
-It is not a loop that runs eight times.
-The sixty-four copies of <code>toCount</code> in <code>countBoard</code> exist at the same moment, in different places, and so do the sixty-four adders that one <code>zipWith (zipWith (+))</code> describes.
-You have written this loop many times and each time it was a construct in the language; here it is a function, taking the thing to instantiate as an argument, and that is why the same three letters do the job in <code>fromRows</code>, in <code>countBoard</code> and in <code>shiftW</code>.
-Chapter 9 generates the VHDL for this design, and these <code>map</code>s are in it as <code>for … generate</code>.</p>
-<p><strong>Every cell’s count is computed at once, and that costs what parallelism costs.</strong>
-Eight copies of the board reduced by seven additions over sixty-four cells is four hundred and forty-eight four-bit additions, described by a single <code>+</code> and laid out in space rather than repeated over time.
-Nothing here is amortised over time, because there is no time here: still no clock, still no process, still nothing that runs.</p>
-<p><strong>The edges are not a special case.</strong>
-There is no boundary condition in this chapter, no clamped index and no <code>if</code> asking whether a cell is on the border.
-The board wraps because moving a <code>Vec</code> along by one is a rotation, and a rotation has nowhere to put the element that falls off except back at the other end.</p>
-<p><strong>A <code>Board</code> and a <code>Counts</code> are the same shape, and the compiler knows it.</strong>
-<code>addCounts</code> combines two <code>Counts</code> element by element, and it can only be given two of them: eight rows of eight, checked, on both sides.
-Chapter 5 pairs a <code>Board</code> with a <code>Counts</code> the same way, and the fact that both are eight by eight is not a comment or a convention but the thing that makes it compile.</p>
-<h2 id="where-this-goes"><a class="header" href="#where-this-goes">Where this goes</a></h2>
-<p>There is a rule for one cell, from chapter 2, and now a count for every cell.
-Chapter 5 puts them together in one line and gets a generation of Life, which is still, and this is the surprising part, a single combinational block.
-Leave <code>clashi</code> running.</p>
+<p>Everything to the left of the <code>=&gt;</code> is a requirement rather than an argument, and the last of the five is a comparison: <code>1 &lt;= l</code> says that the vector of expected values has at least one element in it.
+<code>outputVerifier'</code> finishes on the last value it was given, so there has to be a last one, and a vector of none of them is refused before anything runs: <code>[GHC-64725]</code>, <code>Cannot satisfy: 1 &lt;= 0</code>.
+Chapter 10 handed it eight boards and nobody had to think about it, which is what a satisfied requirement looks like.</p>
+<p>That message is two words and a comparison.
+It names no signal, no board and no wire, because <code>l</code> is not carried anywhere: it was the number of expected boards, it was eight in chapter 10, and it was gone before NVC saw anything.</p>
+<h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
+<p>The errors talk about types, and the mistake was about a wire.
+<code>No instance for ‘Num (SNat d0)’</code> is a true statement about a missing instance and says nothing about there being two worlds of numbers.
+<code>Cannot satisfy: 1 &lt;= 0</code> is two numbers with nothing around them.
+<code>Couldn't match type ‘16’ with ‘8’</code>, which is what the prompt answers when chapter 12’s 16×16 seed is claimed to be a <code>Board 8</code>, is the friendliest of the three, and it is friendly because both of its numbers are the reader’s.</p>
+<p>The worst the tutorial meets is chapter 12’s: <code>[GHC-95822]</code>, <code>solveWanteds: too many iterations (limit = 4)</code>, from a plain <code>deriving</code> clause on a type whose width depends on <code>n</code>.
+There is no wire in that message, no type of the reader’s, no line of theirs and no number of theirs, and the number it does have is an iteration limit, which is a fact about the solver.
+What fixes it is one context written in one place, and nothing in the message points there.
+That is why chapter 12 states the fix rather than letting the reader find it, and it is the honest end of this page’s cost: the machinery is sound, and when it fails to convince itself, it says so in its own words rather than in the design’s.</p>
+<p>What the two worlds buy is that a width is a fact rather than a convention.
+A <code>Vec 7</code> cannot arrive where a <code>Vec 8</code> is expected, chapter 12’s two entities carry a 64-bit <code>cells</code> and a 256-bit one with no possibility of either being handed the other’s command, and the compiler is what says so rather than an elaboration a tool performs later.
+The cost is on the other side of the same coin: a number in a type is settled before the design runs, so the length of a <code>Vec</code> cannot depend on anything the design computes.
+That is a cannot rather than a not currently, and it is the same cannot <a href="vec-and-lists.html#what-it-costs">that keeps a list out of the hardware</a>.</p>
+<h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
+<ul>
+<li>Chapter 1, <a href="../b/01-the-instrument.html">The instrument</a>: <code>Signed 8</code>, eight bits in the type rather than in a comment, and <code>plus 3 5</code>, where the numbers are values.</li>
+<li>Chapter 3, <a href="../b/03-a-board.html">A board, and a picture</a>: <code>type Board :: Type</code>, and a length that is in the type and checked.</li>
+<li>Chapter 4, <a href="../b/04-neighbours.html">Neighbours, by moving the whole board</a>: <code>SNat d</code> in <code>rotateLeftS</code>’s signature, <code>d1</code> in the four shifts, and the <code>1</code> that will not do.</li>
+<li>Chapter 8, <a href="../b/08-more-than-valid.html">More than valid</a>: <code>pack</code>, and the sixty-six bits this page’s arithmetic adds up to.</li>
+<li>Chapter 10, <a href="../b/10-a-test-bench.html">A test bench that leaves Haskell</a>: <code>1 &lt;= l</code> among <code>outputVerifier'</code>’s requirements.</li>
+<li>Chapter 12, <a href="../b/12-two-sizes.html">One description, two sizes</a>: <code>Board n</code>, <code>KnownNat n</code> where the compiler asked for it, and the two entities the numbers came out as.</li>
+</ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../b/03-a-board.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../explanation/type-inference.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../b/05-a-generation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../next.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -386,11 +400,11 @@ Leave <code>clashi</code> running.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../b/03-a-board.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../explanation/type-inference.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../b/05-a-generation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../next.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
