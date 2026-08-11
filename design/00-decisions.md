@@ -828,6 +828,39 @@ link (chapter 4, after the `SNat`/`d1` paragraph); the chapter 3, 10 and 12
 secondaries stay unbuilt and the "Where you met this" list names chapters 1, 3,
 8, 10 and 12 as well.
 
+**`polymorphism.md` shipped seventh, and running it added a beat the outline did
+not have and sharpened two it did.** The addition is the direction of the
+promise. The outline reads library signatures, and the page has to cover chapter
+12, where the reader writes the letters, so the claim reverses: a signature with
+an `n` in it is checked against the body rather than against the sizes anybody
+uses, and `:t (glider :: Board n)` is refused with `[GHC-25897]` and `‘n’ is a
+rigid type variable bound by an expression type signature: forall (n :: Nat).
+Board n`. That is the only place in the book where the quantifier is printed, and
+it is what lets the page say what "for every `n`" means without asserting it. The
+first sharpening: the outline's "the same letter twice is a promise" needed
+somewhere the promise could be seen failing, and chapter 12's file is the only
+one in the book with two sizes in it at once. Adding an 8×8 table of counts to a
+16×16 one is the demonstration, and what it teaches is *where* the report lands —
+`In the first argument of ‘countBoard’, namely ‘glider16’`, inside `addCounts`'s
+second argument rather than on `addCounts`, because the requirement travels. The
+second: the outline's "reading a library signature by instantiating it mentally"
+is worked twice rather than once, because `:t mealy systemClockGen resetGen
+enableGen lifeT` is one command that answers `Board -> …` against chapter 7's
+file and `St -> …` against chapter 8's, which shows instantiation with no prose
+at all. The specialisation beat was also re-phrased against D24 rather than
+transcribed: the difference from a VHDL generic is not that one is checked and
+the other is not, it is when — a generic's body is checked at each elaboration
+and a polymorphic body once against its claim — and both routes end at two
+circuits, so what differs is which artefact carries the parameter. One cost the
+outline did not list is now the page's strongest sentence for the letters: the
+8×8 *output* paid nothing, because `life8.vhdl` is 211 lines and is chapter 9's
+`life.vhdl` renamed, and what the parameter cost is one argument in the source,
+which is D24's seed. Like the six pages before it, this one took only its primary
+link (chapter 4, immediately after the `:i rotateLeftS` transcript and above the
+`type-level-numbers.md` link the same paragraph already carries); the chapter 7
+and 12 secondaries stay unbuilt, and the "Where you met this" list names chapters
+6, 7, 8, 10, 12 and 13 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:

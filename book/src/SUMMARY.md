@@ -27,6 +27,7 @@
 - [The thing you instantiate is an argument](./explanation/higher-order.md)
 - [How the compiler knows a type you did not write](./explanation/type-inference.md)
 - [Two worlds of numbers](./explanation/type-level-numbers.md)
+- [What the lowercase letters in a type mean](./explanation/polymorphism.md)
 
 ---
 
