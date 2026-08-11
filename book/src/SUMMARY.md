@@ -24,6 +24,7 @@
 - [Why a two-input function has three arrows](./explanation/currying.md)
 - [A case expression is a multiplexer](./explanation/pattern-matching.md)
 - [A Vec is not a list](./explanation/vec-and-lists.md)
+- [The thing you instantiate is an argument](./explanation/higher-order.md)
 
 ---
 

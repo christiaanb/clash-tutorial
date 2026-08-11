@@ -132,6 +132,7 @@ Adding two `Counts` together is the same two levels, with `zipWith`, which takes
 The inner `zipWith (+)` adds a row of eight to a row of eight.
 The outer one hands the rows to it in pairs.
 There is one `+` in that line and no loop counter anywhere, and `addCounts` takes no arguments at all: it is `zipWith (zipWith (+))`, and that is the whole definition.
+What it means to hand `(+)` to `zipWith`, and why a function that takes a function is the ordinary case here, is explained in [The thing you instantiate is an argument](../explanation/higher-order.md).
 
 And then the count itself:
 

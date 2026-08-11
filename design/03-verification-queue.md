@@ -156,6 +156,31 @@ plausible.
   than at the deleted row, because the count runs out at the tail. `map` applied
   to a list gives the same code with `Couldn't match expected type: Vec n b`
   above `with actual type: [Int]`. Re-run both if the resolver moves.
+- **What the three vector functions, `(+)` and four partial applications
+  print.** Captured 2026-08-10 through `tools/clashi_capture.py` against
+  `code/`, with `clashi_capture.READER_FILE` set to `src/Chapters/Ch04.hs`, so
+  the session is a pty at the pinned width and locale. `:i map` gives `map ::
+  (a -> b) -> Vec n a -> Vec n b`, `:i zipWith` gives `zipWith :: (a -> b -> c)
+  -> Vec n a -> Vec n b -> Vec n c` and `:i foldl1` gives `foldl1 :: (a -> a ->
+  a) -> Vec (n + 1) a -> a`, all three from `Clash.Sized.Vector`. `:t (+)` gives
+  `Num a => a -> a -> a`; `:t zipWith (+)` gives `Num c => Vec n c -> Vec n c ->
+  Vec n c`; `:t map countBoard` gives `Vec n Board -> Vec n Counts`; `:t foldl1
+  addCounts` gives `Vec (n + 1) Counts -> Counts`; `:t map countBoard
+  (neighbourBoards glider)` gives `Vec 8 Counts`; `:t (\r -> rotateLeftS r d1)`
+  gives `KnownNat n => Vec n a -> Vec n a`. The explanation page
+  `higher-order.md` quotes all of these and no chapter shows any of them.
+- **A function handed over one argument short is not an error.** `:t map
+  nextCell` answers `Vec n Bool -> Vec n (Unsigned 4 -> Bool)` and `:t map (map
+  nextCell) glider` answers `Vec 8 (Vec 8 (Unsigned 4 -> Bool))`, both captured
+  the same way on 2026-08-10. Where it is rejected was captured too: `:t render
+  (map (map nextCell) glider)` gives `[GHC-83865]`, `Couldn't match type
+  ‘Unsigned 4 -> Bool’ with ‘Bool’`, `Probable cause: ‘nextCell’ is applied to
+  too few arguments`, and three `In the first argument of` lines naming
+  `nextCell`, `(map nextCell)` and `(map (map nextCell) glider)`.
+  `higher-order.md` quotes those three fragments inline rather than the block,
+  following `vec-and-lists.md`. What the page says about the same mistake split
+  across two definitions is a statement about the types and not a message
+  anybody printed. Re-run if the resolver moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 257 and 258. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34).
