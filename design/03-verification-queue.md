@@ -218,9 +218,47 @@ plausible.
   Board`; the page does not quote it. `type-inference.md` quotes the first two
   as inline fragments and never their line numbers, which are `code/`'s and not
   the reader's. Re-run if the resolver moves.
+- **What the two worlds print, and the one instrument that had to be added.**
+  Captured 2026-08-11 through `tools/clashi_capture.py` against `code/`, twice:
+  with `clashi_capture.READER_FILE` set to `src/Chapters/Ch04.hs` and again with
+  it set to `src/Chapters/Ch12.hs`. `:k Vec` gives `Vec :: Nat -> Type -> Type`,
+  `:k Signed` gives `Signed :: Nat -> Type`, `:k Vec 8` gives `Vec 8 :: Type ->
+  Type`, `:k Bool` and `:k Unsigned 4` give `Type`, and `:k Board` gives `Board
+  :: Type` on chapter 4's file and `Board :: Nat -> Type` on chapter 12's, as do
+  `Counts`, `Command` and `St` there. `:k` is the third REPL command the book
+  shows and `type-level-numbers.md` is the only page that uses it: `:i Vec`
+  prints the kind and then forty lines of instances, so there was no other way
+  to show what `Vec` is. `:t d1` gives `d1 :: SNat 1`; `:i SNat` is nine lines,
+  `data SNat n where SNat :: KnownNat n => SNat n` with `ShowX`, `Lift` and
+  `Show` instances and no `Num`; `:i snatToNum` gives `Num a => SNat n -> a` from
+  `Clash.Promoted.Nat` and `snatToNum d1 :: Int` is `1`. `:t rotateLeftS glider`
+  gives `SNat d -> Vec 8 (Vec 8 Bool)`. `:t (5 :: Signed (4 + 4))` gives `Signed
+  8`. `natVal d8` also answers `8` and is quoted nowhere: one way to do each
+  thing, and `snatToNum` is Clash's. Re-run if the resolver moves.
+- **The four failures `type-level-numbers.md` quotes, none of them in a
+  chapter.** Captured the same way on 2026-08-11, GHC 9.10.3. `:t rotateLeftS
+  glider 1` gives `[GHC-39999]`, `No instance for ‘Num (SNat d0)’ arising from
+  the literal ‘1’` and `In the second argument of ‘rotateLeftS’, namely ‘1’`,
+  which is the entry above under Ch. 4 confirmed a second time. `:t d1 + d1`
+  gives `No instance for ‘Num (SNat 1)’ arising from a use of ‘+’`. `:t
+  (glider :: Vec 7 (Vec 8 Bool))` gives `[GHC-83865]`, `Couldn't match type ‘8’
+  with ‘7’`, `Expected: Vec 7 (Vec 8 Bool)` and `Actual: Board`. `:t
+  outputVerifier' systemClockGen resetGen Nil` gives `[GHC-64725]` and `Cannot
+  satisfy: 1 <= 0`, which is the only place in the book where a type-level
+  predicate is shown failing. On chapter 12's file, `:t glider16 :: Board 8`
+  gives `Couldn't match type ‘16’ with ‘8’` over `Expected: Board 8` and
+  `Actual: Board 16`. The page quotes all five as inline fragments rather than as
+  blocks, following `vec-and-lists.md`.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
-  payload) and `Maybe Command` 67; at 16×16 they are 256, 257 and 258. Tags run
-  in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34).
+  payload) and `Maybe Command` 67; at 16×16 they are 256, 258 and 259. Tags run
+  in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34). This
+  entry said 257 and 258 for the 16×16 command and its `Maybe` until 2026-08-11,
+  which was the `downto` index of each rather than its width and contradicted
+  chapter 12's own prose. Re-checked with chapter 12's file loaded: `:t pack
+  (Step :: Command 8)` is `BitVector (CLog 2 4 + 64)` and the value is 66 bits,
+  `:t pack (Step :: Command 16)` is `BitVector (CLog 2 4 + 256)` and the value is
+  258 bits. A type prints as the unreduced sum in both cases, as the entry below
+  on `:t pack Step` says it does.
 
 ---
 
