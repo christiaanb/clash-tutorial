@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-6fbb7034.js";
+            window.path_to_searchindex_js = "searchindex-f52e98c8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-f902b9e6.js"></script>
+        <script src="toc-3e780c08.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -636,7 +636,8 @@ addCounts = zipWith (zipWith (+))
 </code></pre>
 <p>The inner <code>zipWith (+)</code> adds a row of eight to a row of eight.
 The outer one hands the rows to it in pairs.
-There is one <code>+</code> in that line and no loop counter anywhere, and <code>addCounts</code> takes no arguments at all: it is <code>zipWith (zipWith (+))</code>, and that is the whole definition.</p>
+There is one <code>+</code> in that line and no loop counter anywhere, and <code>addCounts</code> takes no arguments at all: it is <code>zipWith (zipWith (+))</code>, and that is the whole definition.
+What it means to hand <code>(+)</code> to <code>zipWith</code>, and why a function that takes a function is the ordinary case here, is explained in <a href="#the-thing-you-instantiate-is-an-argument">The thing you instantiate is an argument</a>.</p>
 <p>And then the count itself:</p>
 <pre><code class="language-haskell">neighbourCounts :: Board -&gt; Counts
 neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
@@ -3093,6 +3094,172 @@ The tutorial pays the price knowingly and does not pay it twice: <code>toList</c
 <li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: the same crossings in <code>renderCounts</code>, and the import list that borrows <code>intToDigit</code>.</li>
 <li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>sampleN 5</code>, and the <code>[Board]</code> it has.</li>
 <li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: seven values in square brackets, and <code>fromList</code> making a signal out of them.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="the-thing-you-instantiate-is-an-argument"><a class="header" href="#the-thing-you-instantiate-is-an-argument">The thing you instantiate is an argument</a></h1>
+<p>Chapter 4 described sixty-four adders and wrote one <code>+</code>:</p>
+<pre><code class="language-haskell">addCounts :: Counts -&gt; Counts -&gt; Counts
+addCounts = zipWith (zipWith (+))
+</code></pre>
+<p>The chapter said what the line does and went on.
+The inner <code>zipWith (+)</code> adds a row of eight to a row of eight, the outer one hands the rows to it in pairs, and there is one <code>+</code> in that line and no loop counter anywhere.
+What it did not say is what kind of thing <code>zipWith</code> is, or what <code>(+)</code> is doing in parentheses in a place where an argument goes.</p>
+<p>The same question was open a chapter earlier and the tutorial noticed it out loud.
+Chapter 3’s <code>fromRows</code> is <code>map unpack</code>, and the chapter’s own words for that were that <code>unpack</code> is not called there, it is passed to <code>map</code>, and <code>map</code> is what calls it, eight times.
+This page is what <code>map</code>, <code>zipWith</code> and <code>foldl1</code> are, and how far the idea they are built on goes.</p>
+<h2 id="the-reading-that-does-not-survive-3"><a class="header" href="#the-reading-that-does-not-survive-3">The reading that does not survive</a></h2>
+<p><code>for … generate</code> is a construct.
+It may appear in an architecture and not in an expression, what it instantiates is written out inside its own body, and there is nothing you can do with it except write one where one is allowed.
+A reader carrying that over will look for the construct, find three letters that look like a function call, and settle on the reading that <code>map</code> is a keyword of some kind with a special argument position in it.</p>
+<p>That reading survives chapter 3 and then costs more with every chapter.
+<code>zipWith (zipWith (+))</code> becomes a call inside a call, when neither of them calls anything.
+<code>(+)</code> in parentheses becomes an addition with its operands left out.
+<code>foldl1 addCounts</code> becomes a function invoked on a function, and <code>map (\r -&gt; rotateLeftS r d1) b</code> becomes a construct with a fragment of syntax where its first argument belongs.
+Chapter 7 then quotes <code>(s -&gt; i -&gt; (s, o))</code> as one of <code>mealy</code>’s arguments, and under this reading that type has no reading at all.</p>
+<p>None of those is special syntax.
+<code>map</code> is an ordinary function, <code>(+)</code> is an ordinary value, and what looks like a construct is the first applied to the second.</p>
+<h2 id="the-first-argument-is-a-function"><a class="header" href="#the-first-argument-is-a-function">The first argument is a function</a></h2>
+<p>Ask the prompt about the two functions chapter 4 leans on, neither of which the chapter stopped to interrogate:</p>
+<pre><code>clashi&gt; :i map
+map :: (a -&gt; b) -&gt; Vec n a -&gt; Vec n b
+  	-- Defined in ‘Clash.Sized.Vector’
+clashi&gt; :i zipWith
+zipWith :: (a -&gt; b -&gt; c) -&gt; Vec n a -&gt; Vec n b -&gt; Vec n c
+  	-- Defined in ‘Clash.Sized.Vector’
+</code></pre>
+<p>Each of them takes something with arrows inside it, and the parentheses are the whole of what makes that an argument rather than more of the chain.
+<code>(a -&gt; b) -&gt; Vec n a -&gt; Vec n b</code> wants a function and then a vector.
+<code>a -&gt; b -&gt; Vec n a -&gt; Vec n b</code> would want two values and then a vector, and it is a different type, because <a href="#one-argument-at-a-time">the arrow groups to the right</a> and a parenthesised arrow on the left of another is the one shape that grouping never produces.
+Reading those parentheses is most of reading a signature in this book.</p>
+<p>Nothing in either type marks the function argument as unusual, and nothing needs to.
+A function is a value, in the sense that it can be named, passed and returned, and <code>map</code>’s first argument is a value of a type that happens to have an arrow in it.
+There is no second kind of function that may be passed and no annotation that permits it.</p>
+<p>What <code>map</code> does with the value it is given is instantiate it, once per element, and the type says how many times without saying which number.
+<code>Vec n a</code> and <code>Vec n b</code> have the same <code>n</code>, so eight elements in is eight instances and eight results out.
+The count never appears as a value: <code>map</code> does the same thing to every element whatever the number of elements is, which is chapter 12’s sentence for why <code>countBoard</code> and <code>addCounts</code> need nothing added to them when the board becomes sixteen by sixteen.</p>
+<h2 id="-is-the-adder-not-the-addition"><a class="header" href="#-is-the-adder-not-the-addition"><code>(+)</code> is the adder, not the addition</a></h2>
+<p>An operator is a function that is written between its two arguments rather than in front of them.
+Parenthesising it stops it being written that way and leaves the function:</p>
+<pre><code>clashi&gt; :t (+)
+(+) :: Num a =&gt; a -&gt; a -&gt; a
+</code></pre>
+<p>Two numbers in and a number out, which is exactly the shape <code>zipWith</code> wants first.
+Handing it over gives back the rest of <code>zipWith</code>’s type:</p>
+<pre><code>clashi&gt; :t zipWith (+)
+zipWith (+) :: Num c =&gt; Vec n c -&gt; Vec n c -&gt; Vec n c
+</code></pre>
+<p>That is one adder handed to something that will place a row of them, and what comes back is a function of two vectors that has not been given any yet.
+<code>addCounts = zipWith (zipWith (+))</code> is that once more, one level up: <code>zipWith (+)</code> is itself a function of two arguments, so it goes where <code>zipWith</code>’s first argument goes, and what comes back adds two vectors of vectors element by element.
+<code>addCounts</code>’s signature is what fixes the sizes: <code>Counts -&gt; Counts -&gt; Counts</code>, eight rows of eight four-bit numbers on both sides.
+The <code>Num c</code> in front of the <code>=&gt;</code> is a requirement rather than an argument, and what those are is a longer question that chapter 4 needed no part of.</p>
+<p>Chapter 9 is where handing <code>(+)</code> over is paid out.
+The generated VHDL for this design has three <code>for … generate</code> blocks nested inside each other, seven by eight by eight, and one <code>+</code> at the centre of them, which is the four hundred and forty-eight additions chapter 4 counted.
+The construct is still in the output.
+What changed is that it is no longer what we wrote: we wrote a function applied to an argument, and the construct is what that came to.</p>
+<h2 id="a-function-with-no-name"><a class="header" href="#a-function-with-no-name">A function with no name</a></h2>
+<p>Chapter 4’s four shifts contain the only function in the reader’s file that is written where it is used:</p>
+<pre><code class="language-haskell">shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board
+shiftN b = rotateLeftS b d1
+shiftS b = rotateRightS b d1
+shiftW b = map (\r -&gt; rotateLeftS r d1) b
+shiftE b = map (\r -&gt; rotateRightS r d1) b
+</code></pre>
+<p><code>\r -&gt; rotateLeftS r d1</code> is a function and nothing else.
+The backslash starts it, <code>r</code> is its argument, what follows the arrow is its result, and it has no name because nothing needs to refer to it twice.
+The prompt reports it as the kind of value the two signatures above ask for:</p>
+<pre><code>clashi&gt; :t (\r -&gt; rotateLeftS r d1)
+(\r -&gt; rotateLeftS r d1) :: KnownNat n =&gt; Vec n a -&gt; Vec n a
+</code></pre>
+<p>Why one is needed here is worth a moment, because <code>shiftN</code> did not need one.
+<code>shiftN b = rotateLeftS b d1</code> has a name for the board, so the distance can simply be written after it.
+Inside <code>shiftW</code> there is no name for the row, and supplying an argument to <code>rotateLeftS</code> supplies <a href="#what-plus-3-is">the first one</a>, which is the vector.
+The argument we want to fix is the second, partial application cannot reach past the first, and the lambda is how a function with the distance already in it and the vector still to come is built instead.</p>
+<p>The other lambda in the book is at the prompt rather than in the file, in <code>mapM_ (\b -&gt; putStr (render b))</code>, which the reader retypes in chapters 6, 7, 8 and 10.
+It is the same three parts, and <code>mapM_</code> takes it the way <code>map</code> takes <code>unpack</code>.
+<code>mapM_</code> is not <code>map</code>, and what it does with what it is handed belongs with the border between what runs and what becomes hardware rather than here.</p>
+<h2 id="the-functions-we-wrote-go-in-the-same-slot"><a class="header" href="#the-functions-we-wrote-go-in-the-same-slot">The functions we wrote go in the same slot</a></h2>
+<p>Nothing about the argument position prefers library functions.
+<code>countBoard</code> is ours, and handing it over reads exactly as <code>unpack</code> did:</p>
+<pre><code>clashi&gt; :t map countBoard
+map countBoard :: Vec n Board -&gt; Vec n Counts
+</code></pre>
+<p>The difference between calling <code>countBoard</code> and passing it is the argument after it and nothing else.
+<code>countBoard b</code> is a <code>Counts</code>, and <code>countBoard</code> on its own is the function, which is the value <code>map</code> wants.</p>
+<p><code>foldl1</code> is the third of chapter 4’s three, and it takes the way to combine two things:</p>
+<pre><code>clashi&gt; :i foldl1
+foldl1 :: (a -&gt; a -&gt; a) -&gt; Vec (n + 1) a -&gt; a
+  	-- Defined in ‘Clash.Sized.Vector’
+</code></pre>
+<p>Two of something and one of the same something, which <code>addCounts</code> is, and a vector with at least one element in it, which is what <code>n + 1</code> says.
+<code>foldl1 addCounts</code> is therefore the whole of chapter 4’s summation with nothing to sum yet:</p>
+<pre><code>clashi&gt; :t foldl1 addCounts
+foldl1 addCounts :: Vec (n + 1) Counts -&gt; Counts
+</code></pre>
+<p>How the seven additions that reduce eight boards are arranged, in a chain or in a tree, is a question about <code>fold</code> rather than about handing a function over, and this page does not settle it.</p>
+<p>Chapter 5’s whole generation is one more of these:</p>
+<pre><code class="language-haskell">step :: Board -&gt; Board
+step b = zipWith (zipWith nextCell) b (neighbourCounts b)
+</code></pre>
+<p><code>zipWith (zipWith nextCell)</code> is <code>addCounts</code>’s shape with chapter 2’s rule in the place where <code>(+)</code> was, and it works for the same reason: <code>nextCell</code> takes a cell and a count and gives back a cell, which is what <code>zipWith</code>’s first argument has to be.
+Chapter 6’s <code>fmap step boards</code> hands <code>step</code> over in the same way, to something that applies it inside a <code>Signal</code> rather than inside a vector, and what <code>fmap</code> itself is takes an answer this page does not have.</p>
+<h2 id="mealy-takes-the-entire-loop"><a class="header" href="#mealy-takes-the-entire-loop"><code>mealy</code> takes the entire loop</a></h2>
+<p>Chapter 7 asked what <code>mealy</code> wanted before using it, and one of its arguments is a type with arrows in it:</p>
+<pre><code>clashi&gt; :i mealy
+mealy ::
+  (KnownDomain dom, NFDataX s) =&gt;
+  Clock dom
+  -&gt; Reset dom
+  -&gt; Enable dom
+  -&gt; (s -&gt; i -&gt; (s, o))
+  -&gt; s
+  -&gt; Signal dom i
+  -&gt; Signal dom o
+  	-- Defined in ‘Clash.Explicit.Mealy’
+</code></pre>
+<p><code>(s -&gt; i -&gt; (s, o))</code> is <code>zipWith</code>’s first argument again, in parentheses for the same reason and in an argument position for the same reason.
+What lands there in chapter 7 is <code>lifeT</code>, a function of a board and a <code>Maybe Board</code> that gives back <a href="#the-thing-after-the-word-case">a pair</a> of boards.
+That function is the entire path from the register’s output round to its input, handed over as one value.</p>
+<p>Chapter 6’s <code>register</code> took the signal that would arrive at its input, and the loop was closed by a binding that mentions itself.
+<code>mealy</code> takes the logic that makes that signal instead, and closes the loop itself.
+Nothing inside <code>mealy</code> knows that there is a board in it, an eight by eight board, or a <code>Maybe</code> on its input; it knows that something arrives, that a function turns it and the state into a new state and an output, and that a register goes between.
+That is <code>map</code>’s arrangement with a clock in it.</p>
+<h2 id="what-it-costs-3"><a class="header" href="#what-it-costs-3">What it costs</a></h2>
+<p>A description built this way has no fixed shape in the source to point at, and the netlist takes its shape only when the arguments land.
+<code>map</code> on its own instantiates nothing and is not a circuit.
+<code>map countBoard</code> is one <code>countBoard</code> per board, each of them sixty-four copies of an <code>if</code>, and how many boards there are is not in it at all.
+The number arrives from somewhere else entirely:</p>
+<pre><code>clashi&gt; :t map countBoard (neighbourBoards glider)
+map countBoard (neighbourBoards glider) :: Vec 8 Counts
+</code></pre>
+<p>The eight in that answer is not written in <code>map</code>, in <code>countBoard</code> or at the use site.
+It comes from <code>neighbourBoards</code>, which is where somebody decided there were eight directions, and it reaches <code>map</code> as part of the type of a value.
+A <code>for … generate</code> says how many times in its own header, where it can be read; this says it in the type of an argument, and reading it means following the argument back.</p>
+<p>The names do not survive either, and chapter 9 shows exactly how far.
+The generated VHDL is full of <code>zipWith_3</code>, <code>zipWith_0</code> and <code>fun_0</code>, all of them Clash’s names for the instances that a passed function came to, and <code>addCounts</code> is not in the file.
+That is why chapter 9 has to mark <code>step</code> before a boundary appears in the output at all: a hierarchy of higher-order descriptions is not a hierarchy of components, and nothing preserves the correspondence unless it is asked for.</p>
+<p>The sharpest edge is that a function handed over one argument short is not an error.
+Chapter 2’s rule takes a cell and a count, and handing it to <code>map</code> as though it took one thing has a perfectly good type:</p>
+<pre><code>clashi&gt; :t map nextCell
+map nextCell :: Vec n Bool -&gt; Vec n (Unsigned 4 -&gt; Bool)
+</code></pre>
+<p>A vector of functions is a type like any other, nothing about that expression is ill formed, and it is not what anybody wanted.
+What is rejected is the moment such a value meets something that wants cells, and where the whole mistake sits inside one expression the compiler is direct about it.
+Handing <code>render</code> a board built with <code>map (map nextCell)</code> is <code>[GHC-83865]</code>, <code>Couldn't match type ‘Unsigned 4 -&gt; Bool’ with ‘Bool’</code>, and under it the words <code>Probable cause: ‘nextCell’ is applied to too few arguments</code>.
+It can say that because it has three lines of context to walk out through, from <code>nextCell</code> to the inner <code>map</code> to <code>render</code>, all of them in the expression that was typed.</p>
+<p>Split the same mistake across two definitions and there is nothing to walk.
+<code>map nextCell</code> on its own is a legal definition with a legal type, so what arrives at the use site is a wrong type rather than a missing argument, and it arrives somewhere the count is never mentioned.
+A <code>for … generate</code> cannot be given a component with a port left off, so this is a mistake with no counterpart in the language the reader came from.</p>
+<p>What the whole arrangement buys is on the other side of the same coin.
+Four hundred and forty-eight four-bit additions are one <code>+</code>, sixty-four copies of the cell rule are one <code>nextCell</code>, the eight moved boards are four shifts and a lambda, and none of those lines mentions eight, sixty-four or four hundred and forty-eight.
+That is also why chapter 12 changes the size of the board without rewriting any of them.</p>
+<h2 id="where-you-met-this-3"><a class="header" href="#where-you-met-this-3">Where you met this</a></h2>
+<ul>
+<li>Chapter 3, <a href="#a-board-and-a-picture">A board, and a picture</a>: <code>map unpack</code>, the first function in the book handed to a function.</li>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: <code>map</code>, <code>zipWith</code> and <code>foldl1</code>, the lambda in <code>shiftW</code>, and one <code>+</code> describing sixty-four adders.</li>
+<li>Chapter 5, <a href="#a-generation">A generation</a>: <code>zipWith (zipWith nextCell)</code>, the same shape with the rule in it.</li>
+<li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>fmap step boards</code>, and the lambda typed at the prompt.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>mealy</code>, and the loop handed to it as an argument.</li>
+<li>Chapter 9, <a href="#an-entity">An entity</a>: the <code>for … generate</code> blocks these lines became, and the names they came out under.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>

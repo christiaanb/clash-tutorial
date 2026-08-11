@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-6fbb7034.js";
+            window.path_to_searchindex_js = "../searchindex-f52e98c8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-f902b9e6.js"></script>
+        <script src="../toc-3e780c08.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -285,7 +285,8 @@ addCounts = zipWith (zipWith (+))
 </code></pre>
 <p>The inner <code>zipWith (+)</code> adds a row of eight to a row of eight.
 The outer one hands the rows to it in pairs.
-There is one <code>+</code> in that line and no loop counter anywhere, and <code>addCounts</code> takes no arguments at all: it is <code>zipWith (zipWith (+))</code>, and that is the whole definition.</p>
+There is one <code>+</code> in that line and no loop counter anywhere, and <code>addCounts</code> takes no arguments at all: it is <code>zipWith (zipWith (+))</code>, and that is the whole definition.
+What it means to hand <code>(+)</code> to <code>zipWith</code>, and why a function that takes a function is the ordinary case here, is explained in <a href="../explanation/higher-order.html">The thing you instantiate is an argument</a>.</p>
 <p>And then the count itself:</p>
 <pre><code class="language-haskell">neighbourCounts :: Board -&gt; Counts
 neighbourCounts b = foldl1 addCounts (map countBoard (neighbourBoards b))
