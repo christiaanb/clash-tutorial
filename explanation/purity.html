@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>A generation - A Clash tutorial</title>
+        <title>One value, read in two places - A Clash tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -174,116 +174,154 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="a-generation"><a class="header" href="#a-generation">A generation</a></h1>
-<p>Chapter 2 wrote the rule for one cell: given whether that cell is alive and how many of its neighbours are, it says whether the cell is alive next.
-Chapter 4 computed that count for all sixty-four cells at once.
-A generation of Life is the one applied to the other, and it is a single line.</p>
-<h2 id="one-line"><a class="header" href="#one-line">One line</a></h2>
-<p>Add this at the bottom of the file:</p>
+                        <h1 id="one-value-read-in-two-places"><a class="header" href="#one-value-read-in-two-places">One value, read in two places</a></h1>
+<p>Chapter 5 wrote a generation of Life as one line:</p>
 <pre><code class="language-haskell">step :: Board -&gt; Board
 step b = zipWith (zipWith nextCell) b (neighbourCounts b)
 </code></pre>
-<p><code>zipWith</code> combines two vectors element by element, and chapter 4 used it at two levels in <code>addCounts</code> to add two <code>Counts</code> together.
-This is the same two levels over two different things.
-The outer <code>zipWith</code> pairs each of the board’s eight rows with the row of counts that belongs to it.
-The inner one pairs each of a row’s eight cells with that cell’s count and hands the two of them to <code>nextCell</code>, which chapter 2 wrote and nothing has used since.</p>
-<p><code>b</code> appears twice to the right of the <code>=</code>: once as the board whose cells are being paired up, and once inside <code>neighbourCounts b</code>.
-That is one board read in two places, not two boards.
-Why reading <code>b</code> twice is safe, here and everywhere, is explained in <a href="../explanation/purity.html">One value, read in two places</a>.</p>
-<p>Reload and ask what has been added:</p>
-<pre><code>clashi&gt; :r
-[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
-Ok, one module reloaded.
-clashi&gt; :i step
-step :: Board -&gt; Board 	-- Defined at src/Example/Project.hs:73:1
+<p><code>b</code> is written twice on the right of the <code>=</code>, once as the board whose cells are being paired up and once inside <code>neighbourCounts b</code>, and the chapter said one thing about that and moved on.
+That is one board read in two places, not two boards.</p>
+<p>The claim is not about this line.
+Chapter 8’s <code>lifeT</code> reads <code>board st</code> five times in a definition of eight lines, and chapter 9’s generated <code>step</code> entity has one port for the board that chapter 5’s two reads share.
+Both of those are the same rule as this one, and the rule is what this page is: what makes reading a value twice safe, what it buys once the design is hardware, and what the language gave up to have it.</p>
+<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
+<p>Inside a process, what a name gives back depends on where the read is, and on which of two kinds of object the name is.
+A variable takes its new value at the assignment, so two reads on either side of one give two different values.
+A signal does not: it keeps the value it had until the process suspends, so two reads on either side of an assignment to it give the same value, and that value is the old one.
+Neither rule is difficult, and both have to be carried to every read.</p>
+<p>Carried over to <code>step</code>, <code>b</code> twice is two reads of something that may have moved between them, and the question worth asking about the line is what happens in between.
+The answer is that nothing does.
+<code>step</code> contains no assignment, and neither does any other definition in this design: there is no statement anywhere in the file, so there is no before and after for two reads to fall on either side of.</p>
+<p>The habit that comes over with the reading is copying.
+Where a value can be changed by whatever is handed it, handing the same one to two places is a decision, and taking a copy is how the decision is avoided.
+<code>step (step glider)</code> in chapter 5 looks like exactly that, a board handed to something twice, with the first application’s effect on it left to be worked out.</p>
+<h2 id="a-name-has-one-definition-and-nothing-can-give-it-a-second"><a class="header" href="#a-name-has-one-definition-and-nothing-can-give-it-a-second">A name has one definition, and nothing can give it a second</a></h2>
+<p><code>=</code> is not assignment.
+<a href="currying.html#a-definition-is-an-equation">The right hand side is the value</a>, and it stays the value for as long as the module is loaded.</p>
+<p>What a reader will reach for at some point is a second <code>=</code> on the same name, and what happens is worth seeing once.
+Writing <code>glider = blinker</code> at the bottom of chapter 8’s file, under a <code>glider</code> that was defined at the top, does not replace the first definition and does not hide it.
+The module stops loading: <code>[GHC-29916]</code>, <code>Multiple declarations of ‘glider’</code>, and under that a <code>Declared at:</code> line naming both places.</p>
+<p>A definition written in several rows is a different thing, and the difference is worth having straight.
+Adding <code>step b = b</code> directly under <code>step</code>’s own definition is accepted, because it makes <code>step</code> a two row definition, and rows are <a href="pattern-matching.html#rows-are-tried-in-order-and-patterns-nest">tried in order</a> exactly as a <code>case</code>’s are.
+A lowercase name matches anything, so the first row answers everything and the second can never be reached.
+The compiler says so at the prompt, with no flag asked for: <code>[GHC-53633]</code>, <code>Pattern match is redundant</code>, <code>In an equation for ‘step’</code>.
+What the design does is the part worth checking:</p>
+<pre><code>clashi&gt; step glider == glider
+False
 </code></pre>
-<p>A board in, a board out, and nothing else in the type.</p>
-<h2 id="the-first-generation"><a class="header" href="#the-first-generation">The first generation</a></h2>
-<p>Here is the seed, and here is the generation after it:</p>
-<pre><code>clashi&gt; putStr (render glider)
-.#......
-..#.....
-###.....
-........
-........
-........
-........
-........
-clashi&gt; putStr (render (step glider))
-........
-#.#.....
-.##.....
-.#......
-........
-........
-........
-........
+<p><code>step</code> is still a generation of Life.
+The second row did not update the first, replace it, or run after it; it sat below a row that had already answered, which is what a row below another row is.</p>
+<p>The names bound inside a definition work the same way.
+<code>b</code> in <code>step b = ...</code> is bound once, by the application that supplied it, and chapter 8’s <code>st'</code> is bound once, by the <code>where</code> clause that defines it.
+There is nothing in the language that assigns to either of them, which is why nothing in this book ever has to say when a name was last written.</p>
+<h2 id="the-name-and-the-right-hand-side-are-interchangeable"><a class="header" href="#the-name-and-the-right-hand-side-are-interchangeable">The name and the right hand side are interchangeable</a></h2>
+<p>The rule earns its keep in the other direction.
+<code>step</code>’s definition says that wherever <code>step</code> is applied to something, the right hand side with that something in place of <code>b</code> is the same thing, and that is a claim the prompt will settle:</p>
+<pre><code>clashi&gt; step glider == zipWith (zipWith nextCell) glider (neighbourCounts glider)
+True
 </code></pre>
-<p>Read the second picture against the counts chapter 4 printed for the first.
-The cell at the top of the glider had one live neighbour and is gone, and so is the one at the bottom left, which also had one.
-The cell directly below the glider’s bottom row, in the second column, had exactly three and is now alive.
-Five cells before and five after, in a different arrangement.</p>
-<h2 id="four-generations"><a class="header" href="#four-generations">Four generations</a></h2>
-<p><code>step</code> takes a board and returns a board, so it can be handed the board it returned:</p>
-<pre><code>clashi&gt; putStr (render (step (step glider)))
-........
-..#.....
-#.#.....
-.##.....
-........
-........
-........
-........
-clashi&gt; putStr (render (step (step (step glider))))
-........
-.#......
-..##....
-.##.....
-........
-........
-........
-........
-clashi&gt; putStr (render (step (step (step (step glider)))))
-........
-..#.....
-...#....
-.###....
-........
-........
-........
-........
+<p>That is <code>step</code>’s definition written out at a use site, with <code>glider</code> put in for <code>b</code> in both of the places <code>b</code> appears.
+The answer is the board chapter 5 printed, and nothing downstream can tell which of the two spellings was written, because a definition has nothing else about it to tell.</p>
+<p>The property has a name worth knowing, referential transparency, and a function that has it is called pure.
+It is a property of the language rather than of the way this design happens to be written: no definition in the file can read or change anything except what it was handed.
+Printing is not the exception it looks like, and the reason is worth one sentence: <code>putStr (render b)</code> is a value that describes an action rather than the action taking place, and which side of that border a definition falls on is a question of its own.
+So the substitution runs both ways, and this is where the rest of the page starts: an expression that occurs twice may be given one name, a name may be written out where it is used, and neither changes what the design is.
+A compiler that is allowed both will use both.</p>
+<h2 id="fan-out-costs-nothing-to-write"><a class="header" href="#fan-out-costs-nothing-to-write">Fan out costs nothing to write</a></h2>
+<p>Chapter 9 drew a boundary around <code>step</code> and Clash generated an entity for it:</p>
+<pre><code class="language-vhdl">entity Example_Project_life_step is
+  port(b      : in life_types.array_of_array_of_8_boolean(0 to 7);
+       result : out life_types.array_of_array_of_8_boolean(0 to 7));
+end;
 </code></pre>
-<p>Compare that last picture with the seed at the top of the chapter.
-It is the same five cells in the same arrangement, one row down and one column to the right.
-That is the result of this chapter: four generations return the shape the chapter started with, displaced by one cell diagonally, and a shape that does that is what a glider is.</p>
-<h2 id="notice-that"><a class="header" href="#notice-that">Notice that</a></h2>
-<p><strong>There is no clock in this design, and there has not been one for five chapters.</strong>
-<code>:i step</code> answers <code>Board -&gt; Board</code>, and nothing in that type mentions time.
-A whole generation of a sixty-four cell automaton is combinational logic: sixty-four instances of <code>nextCell</code> behind the four hundred and forty-eight additions chapter 4 counted, settling between one board and the next the way any block of gates does.
-Writing this in VHDL you would have a process by now, with a clock in its sensitivity list and an edge to wait for, because a process is where that language puts anything that happens to a whole array at once.
-Here, being an array and being clocked are separate things, and only the first of them has appeared.</p>
-<p><strong><code>step (step glider)</code> is two blocks in series, not two cycles.</strong>
-Applying <code>step</code> four times describes four copies of the whole generation, each one’s output driving the next, which as hardware is four times the logic and four times the delay through it.
-At the prompt it is four times almost nothing, because the prompt is evaluating a function rather than building anything.
-Chapter 6 spends one register to close that gap and get one copy of <code>step</code>, used again every cycle.</p>
-<p><strong>A <code>Board</code> and a <code>Counts</code> are the same shape, and <code>zipWith</code> is what insists on it.</strong>
-Chapter 4 ended by saying this chapter would lay one on top of the other, and the line that does it mentions no sizes at all.
-Each <code>zipWith</code> takes two vectors of the same length and will take nothing else, so eight rows meet eight rows and eight cells meet eight cells, checked before anything runs.
-The order is checked too: <code>nextCell</code> wants the <code>Bool</code> first and the <code>Unsigned 4</code> second, so handing <code>zipWith</code> the counts before the board does not compile.</p>
-<h2 id="where-this-goes"><a class="header" href="#where-this-goes">Where this goes</a></h2>
-<p>There is a board, there is a rule for advancing it, and every generation so far has been asked for by hand at the prompt.
-Chapter 6 puts a register in the way: <code>step</code>’s output becomes the board it is given next, one generation per clock cycle, and the design runs by itself.
-Leave <code>clashi</code> running.</p>
+<p>One board in and one board out, and both of the reads that chapter 5’s line makes are inside it: the cell rule reads <code>b(i_10)(i_9_2)</code> and the counting reads the eight shifted copies that <code>neighbourCounts b</code> made of the same port.
+Two reads in the source, one port, sixty-four wires.</p>
+<p>Chapter 8 does it at a larger size, and over a register rather than over an argument:</p>
+<pre><code class="language-haskell">lifeT :: St -&gt; Maybe Command -&gt; (St, Board)
+lifeT st cmd = (st', board st)
+  where
+    st' = case cmd of
+      Just (Load b) -&gt; St b False
+      Just Step     -&gt; St (step (board st)) False
+      Just Run      -&gt; St (board st) True
+      Just Pause    -&gt; St (board st) False
+      Nothing       -&gt; if running st then St (step (board st)) True else st
+</code></pre>
+<p><code>board st</code> appears five times in eight lines: in four of the five rows of the <code>case</code>, and once in the pair <code>lifeT</code> returns.
+The row that does not read it is <code>Just (Load b)</code>, which is the one row that replaces the board rather than keeping or advancing it.
+Chapter 9’s generated file is where those reads land:</p>
+<pre><code class="language-vhdl">  with (\c$ds_case_alt_selection_1\(65 downto 64)) select
+    \c$ds_case_alt\ &lt;= ( St_0_sel0_board =&gt; b
+                       , St_0_sel1_running =&gt; false ) when "00",
+                       ( St_0_sel0_board =&gt; result_0
+                       , St_0_sel1_running =&gt; false ) when "01",
+                       ( St_0_sel0_board =&gt; st.St_0_sel0_board
+                       , St_0_sel1_running =&gt; true ) when "10",
+                       ( St_0_sel0_board =&gt; st.St_0_sel0_board
+                       , St_0_sel1_running =&gt; false ) when others;
+</code></pre>
+<p><code>st</code> is the register, and <code>st.St_0_sel0_board</code> is <code>board st</code>.
+The last two rows are <code>Run</code> and <code>Pause</code>, and both of them route the register’s own board back into the register’s input, which is what keeping a value for another cycle is in hardware.
+The <code>"01"</code> row is <code>Step</code>, and <code>result_0</code> arrives from the one <code>step</code> instantiation, whose input is that same field again.
+One register, five reads of the board it holds, and no board copied anywhere, because a read of a register is a wire off it and there is nothing else for it to be.</p>
+<h2 id="clash-substitutes-in-both-directions"><a class="header" href="#clash-substitutes-in-both-directions">Clash substitutes in both directions</a></h2>
+<p>Chapter 9 generated this design twice, and the first time it produced one file of 548 lines with everything in it: the register, the command decode, the four shifts, the adder tree and all sixty-four copies of the cell rule.
+Clash inlines everything unless it is told where not to, and inlining is this page’s rule used as hard as it can be used, on every name in the design at once.</p>
+<p>The second generation added <code>{-# OPAQUE step #-}</code> and produced 211 lines and 343 lines in two files instead.
+What chapter 9 says about the pair is the sentence this page needs: the entity declaration is byte for byte the same one.
+A definition substituted in and a definition left standing behind a boundary are the same design, and the only difference the pragma made is where Clash wrote the logic down.</p>
+<p>The other direction is in the same file:</p>
+<pre><code class="language-vhdl">  Example_Project_life_step_result_0 : entity Example_Project_life_step
+    port map
+      (result =&gt; result_0, b      =&gt; result_fun_arg);
+</code></pre>
+<p><code>lifeT</code> names <code>step</code> twice, in the <code>Just Step</code> row and in the running case of the <code>Nothing</code> row, and there is one instantiation here feeding both.
+Two occurrences of the same expression were replaced by one name, which is legal for the same reason the <code>==</code> above answered <code>True</code>.
+Chapter 13 checks that the pair survives a change of notation: after the switch to the hidden prelude, both <code>step</code> entities are byte for byte what chapter 12 wrote, and there is still one instantiation of each.</p>
+<p>What the rule hands out is permission, and both of these are decisions Clash took with that permission rather than promises the language makes.</p>
+<h2 id="order-stops-mattering"><a class="header" href="#order-stops-mattering">Order stops mattering</a></h2>
+<p>Chapter 5 said that <code>step (step glider)</code> is two blocks in series and never two cycles, and this is why.
+The inner application leaves nothing behind for the outer one to find, so there is nothing to sequence and no order to get wrong.
+The only thing connecting the two is that one’s result is the other’s argument, and in hardware that is a wire.</p>
+<p>The same fact is what makes a <code>where</code> clause readable in any order.
+<code>lifeT</code> above returns <code>(st', board st)</code> two lines before the clause that defines <code>st'</code>, and that is not a forward reference the compiler has to be clever about.
+A <code>where</code> clause is a set of equations rather than a list of steps, so the order they are written in is ours to choose and the order they are worked out in is decided by which of them needs which.
+Chapter 10’s test bench is the sharper case: <code>done</code> is defined in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, on two consecutive lines, and there is no order in which either could have come first.</p>
+<p>One shape this rule does not settle on its own is a definition that mentions its own name, which is what chapter 6’s <code>boards</code> does.
+That one has an answer of its own, and chapter 6 gives it where the reader meets it: the name on both sides is the wire from the register’s output back to its input.</p>
+<h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
+<p>State has to be somewhere, and it has to be written down.
+A variable in a clocked process holds its value across an edge with nothing said about it, and there is no equivalent here: nothing survives a cycle except what was handed to a register, and a design that remembers something has to carry that something as a value through the function that computes the next one.
+That is chapter 7’s <code>mealy</code> and chapter 8’s <code>St</code>, and the two halves of <code>lifeT</code>’s returned pair are the price in full, the next state and the output written separately because they are separate things.
+What is bought with it is chapter 6’s other claim: the registers in the design are exactly the ones that were written down, and no tool read the shape of anything and decided that a register is what we must have meant.</p>
+<p>Reading a value twice saves no wires.
+A fan out is a fan out in any language, and <code>b</code> reaching two places costs in VHDL what it costs here.
+What the rule removes is the question of whether the two reads agree, and every answer to that question in this book is yes, before anything is run.</p>
+<p>Sharing is a permission and not a guarantee.
+One instantiation for two named uses is a fact about the file chapter 9 generated rather than something the language undertakes, and a design that needs a boundary to exist has to ask for it.
+<code>{-# OPAQUE #-}</code> is the one instrument the tutorial uses for that, it asks about inlining rather than about sharing, and chapter 9 states its price: Clash does not optimise across the boundary it creates.</p>
+<p>The hierarchy that is written is not the hierarchy that comes out.
+548 lines with every definition of the design flattened into them is the default, and it is what a rule this strong looks like when a compiler is left to use it.
+The names in the source are still the way the design is read and changed; they are not, without a pragma, the way it is generated.</p>
+<h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
+<ul>
+<li>Chapter 5, <a href="../b/05-a-generation.html">A generation</a>: <code>b</code> twice on one line, and <code>step (step glider)</code> as two blocks in series.</li>
+<li>Chapter 6, <a href="../b/06-it-runs.html">It runs by itself</a>: the first register, asked for by name, and nothing about it inferred.</li>
+<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: <code>mealy</code>, and state as a value handed in and handed back.</li>
+<li>Chapter 8, <a href="../b/08-more-than-valid.html">More than valid</a>: <code>board st</code> five times in eight lines, and <code>st'</code> used above the clause that defines it.</li>
+<li>Chapter 9, <a href="../b/09-an-entity.html">An entity</a>: one port for two reads, one register for five, one instantiation for two uses, and 548 lines of everything inlined into one entity.</li>
+<li>Chapter 13, <a href="../b/13-hidden.html">What the rest of the world writes</a>: both <code>step</code> entities byte for byte across a change of notation.</li>
+</ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../b/04-neighbours.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../explanation/polymorphism.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../b/06-it-runs.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../next.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -293,11 +331,11 @@ Leave <code>clashi</code> running.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../b/04-neighbours.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../explanation/polymorphism.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../b/06-it-runs.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../next.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
