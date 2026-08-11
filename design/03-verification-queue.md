@@ -181,6 +181,43 @@ plausible.
   following `vec-and-lists.md`. What the page says about the same mistake split
   across two definitions is a statement about the types and not a message
   anybody printed. Re-run if the resolver moves.
+- **What inference leaves open, and what closes it.** Captured 2026-08-11 the
+  same way as the two entries above, `tools/clashi_capture.py` against `code/`
+  with `clashi_capture.READER_FILE` set to `src/Chapters/Ch04.hs`. `:t map
+  unpack` gives `BitPack b => Vec n (BitVector (BitSize b)) -> Vec n b` and `:t
+  unpack 0b1110_0000` gives `BitPack a => a`. Annotated, the same literal gives
+  three answers: `:: Vec 8 Bool` is `True :> True :> True :> False :> False :>
+  False :> False :> False :> Nil`, `:: Unsigned 8` is `224` and `:: Signed 8` is
+  `-32`. `:t 1` gives `Num a => a`, `:t (\x -> if x then 1 else 0)` gives `Num a
+  => Bool -> a`, `:t map (map (\x -> if x then 1 else 0)) glider` gives `Num b
+  => Vec 8 (Vec 8 b)` and `:t countBoard glider` gives `Counts`. `:i numConvert`
+  gives `NumConvert a b => a -> b` from
+  `Clash.Class.NumConvert.Internal.NumConvert` and `:i intToDigit` gives `Int ->
+  Char` from `GHC.Internal.Show`. `intToDigit (numConvert (head (head
+  (neighbourCounts glider))))` evaluates to `'1'`, which is chapter 4's top left
+  count. `type-inference.md` quotes all of these. Two commands were run and are
+  quoted nowhere, deliberately: `:i unpack` prints the whole `BitPack` class
+  including its `default` method and its `Generic` constraints, which is
+  unquotable at this point in the book, and bare `unpack 0b1110_0000` prints
+  `()`, because the prompt's extended defaulting picks a type where the page's
+  point is that nothing does. The page uses `:t map unpack` and `:t unpack
+  0b1110_0000` instead, which are expressions rather than bare names and so keep
+  the `:i`-for-names rule.
+- **Where a missing signature moves the error to.** Captured 2026-08-11, GHC
+  9.10.3, by editing `renderCounts`'s `digit` to `digit n = intToDigit n` and
+  reloading. As the book writes it, with no local signature, the failure is
+  `[GHC-83865]` reported at `renderCounts cs = unlines (toList (map row cs))`,
+  three lines above the edit, with the caret under `cs`, `Couldn't match type
+  ‘Unsigned 4’ with ‘Int’`, `Expected: Vec 8 (Vec 8 Int)` and `Actual: Counts`.
+  Adding `digit :: Unsigned 4 -> Char` above the same wrong line moves it onto
+  that line: `Couldn't match expected type ‘Int’ with actual type ‘Unsigned 4’`,
+  `In the first argument of ‘intToDigit’, namely ‘n’`, `In an equation for
+  ‘digit’: digit n = intToDigit n`. The same shape was confirmed a third time in
+  `render`, with `row r = toList r`, which reports at `render b = unlines (toList
+  (map row b))` with `Couldn't match type ‘Bool’ with ‘Char’` and `Actual:
+  Board`; the page does not quote it. `type-inference.md` quotes the first two
+  as inline fragments and never their line numbers, which are `code/`'s and not
+  the reader's. Re-run if the resolver moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 257 and 258. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34).

@@ -776,6 +776,28 @@ one took only its primary link (chapter 4, after the "one `+` in that line"
 sentence); the chapter 3 and 7 secondaries stay unbuilt and the "Where you met
 this" list names chapters 3, 5, 6, 7 and 9 as well.
 
+**`type-inference.md` shipped fifth, and running it turned the outline's last
+beat into its argument for signatures.** The outline listed the cost as "a wrong
+definition with no signature produces a correctly inferred wrong type, and the
+error appears at the use site instead of the mistake", which is true and was
+worth more than a sentence once it had been run. Dropping `numConvert` from
+chapter 4's `digit` was captured twice, once as the book writes it and once with
+a local signature added, and the report moves from `renderCounts`'s own line
+onto `digit`'s. That pair is now the whole of the page's second reason for
+writing signatures, and the first reason (a signature is the port list) is
+argued in three sentences rather than asserted. Two other things came out of the
+capture. `:t map unpack` gives `BitPack b => Vec n (BitVector (BitSize b)) ->
+Vec n b`, so `fromRows`'s two type variables can be solved on the page, by hand,
+against the `:i fromRows` chapter 3 already shows, which is a better opening than
+restating the chapter's claim. And `unpack 0b1110_0000` under three annotations
+gives a `Vec 8 Bool`, 224 and -32, the third row of the glider read three ways,
+which is the beat the outline wanted and had no evidence for. The page takes the
+one VHDL contrast every page is allowed on the conversion functions, which name
+their own target where `unpack` is named by its target. Like the four pages
+before it, it took only its primary link (chapter 3, after the `unpack` beat);
+the chapter 4 secondary stays unbuilt and the "Where you met this" list names
+chapters 3, 4 and 7.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:

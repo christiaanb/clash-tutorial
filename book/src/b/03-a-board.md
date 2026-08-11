@@ -151,6 +151,7 @@ The only new part is that here it is one function applied to a whole row rather 
 Nothing at the point where `unpack` is written says that the answer should be eight `Bool`s.
 `fromRows`'s signature says that the result is a `Board`, `Board` is eight rows of eight `Bool`s, and that is enough for the compiler to know which unpacking is meant.
 This is worth knowing now, because it is the first of many places where a signature you wrote once decides something a long way away from where you wrote it.
+How a signature written on `fromRows` can decide what `unpack` does is explained in [How the compiler knows a type you did not write](../explanation/type-inference.md).
 
 **A length is in the type, and it is checked.**
 `Vec 8` is not a list that happens to hold eight things at the moment.
