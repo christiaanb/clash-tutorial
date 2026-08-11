@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-f52e98c8.js";
+            window.path_to_searchindex_js = "../searchindex-0b567135.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-3e780c08.js"></script>
+        <script src="../toc-eda34566.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -287,7 +287,8 @@ The only new part is that here it is one function applied to a whole row rather 
 <p><strong>Which reinterpretation <code>unpack</code> performs is settled by the type around it.</strong>
 Nothing at the point where <code>unpack</code> is written says that the answer should be eight <code>Bool</code>s.
 <code>fromRows</code>’s signature says that the result is a <code>Board</code>, <code>Board</code> is eight rows of eight <code>Bool</code>s, and that is enough for the compiler to know which unpacking is meant.
-This is worth knowing now, because it is the first of many places where a signature you wrote once decides something a long way away from where you wrote it.</p>
+This is worth knowing now, because it is the first of many places where a signature you wrote once decides something a long way away from where you wrote it.
+How a signature written on <code>fromRows</code> can decide what <code>unpack</code> does is explained in <a href="../explanation/type-inference.html">How the compiler knows a type you did not write</a>.</p>
 <p><strong>A length is in the type, and it is checked.</strong>
 <code>Vec 8</code> is not a list that happens to hold eight things at the moment.
 The eight is fixed when the program is compiled, a function that wants a <code>Vec 8</code> cannot be handed a <code>Vec 7</code>, and the compiler is the one enforcing it rather than a comment, an assertion or a simulation that happens to notice.

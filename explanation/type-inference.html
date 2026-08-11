@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>A Vec is not a list - A Clash tutorial</title>
+        <title>How the compiler knows a type you did not write - A Clash tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -174,139 +174,184 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="a-vec-is-not-a-list"><a class="header" href="#a-vec-is-not-a-list">A Vec is not a list</a></h1>
-<p>Chapter 3 wrote the seed as a picture of itself:</p>
-<pre><code class="language-haskell">glider :: Board
-glider = fromRows
-  (  0b0100_0000
-  :&gt; 0b0010_0000
-  :&gt; 0b1110_0000
-  :&gt; 0b0000_0000
-  :&gt; 0b0000_0000
-  :&gt; 0b0000_0000
-  :&gt; 0b0000_0000
-  :&gt; 0b0000_0000
-  :&gt; Nil )
+                        <h1 id="how-the-compiler-knows-a-type-you-did-not-write"><a class="header" href="#how-the-compiler-knows-a-type-you-did-not-write">How the compiler knows a type you did not write</a></h1>
+<p>Chapter 3’s <code>fromRows</code> is one line, and the chapter said in as many words that one of the two names in it is settled from somewhere else:</p>
+<pre><code class="language-haskell">fromRows :: Vec 8 (BitVector 8) -&gt; Board
+fromRows = map unpack
 </code></pre>
-<p>Eight numbers, eight <code>:&gt;</code> and a <code>Nil</code>, and the chapter explained only the numbers.
-Then it asked for the first row, and the other two came back:</p>
-<pre><code>clashi&gt; head glider
-False :&gt; True :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; Nil
-</code></pre>
-<p>Chapter 6 printed a collection of a different shape.
-<code>sampleN 5</code> gave five boards, and what the prompt said about them was this:</p>
-<pre><code>clashi&gt; :t sampleN 5 (life systemClockGen resetGen enableGen)
-sampleN 5 (life systemClockGen resetGen enableGen) :: [Board]
-</code></pre>
-<p>Square brackets, no <code>:&gt;</code> anywhere, and chapter 7 typed seven values inside brackets of its own and handed them to something called <code>fromList</code>.
-Two notations have been in use since chapter 3, and this page is what each of them is.</p>
-<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
-<p>The economical assumption is that there is one sequence type here with two ways of writing it down, and the reason it is wrong is not that it costs an error message.
-It is that the reader who holds it will go looking for <code>map</code> and find the wrong <code>map</code>.
-Every Haskell resource written outside Clash describes <code>map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code>, over the square bracket type, and the <code>map</code> in chapter 3’s <code>fromRows</code> is a different function with the same name.
-The answer found by searching will look right, will be right about the language, and will not compile in the file the reader has open.
-Keeping self study from quietly contradicting the tutorial is most of what this page is for.</p>
-<p>The VHDL habit that transfers is the array, and it transfers well.
-<code>array (0 to 7) of bit</code> is a length fixed where it is written and <code>array (natural range &lt;&gt;) of bit</code> is a length fixed at elaboration, and there is no synthesisable array in VHDL whose length is settled while the circuit runs.
-<code>Vec 8 Bool</code> is the first of those and <code>Vec n Bool</code> is the second, so the vector is the familiar thing.
-The square bracket type is the unfamiliar one, and its distinguishing property is that it never becomes hardware at all.</p>
-<h2 id="-and-nil-are-data"><a class="header" href="#-and-nil-are-data"><code>:&gt;</code> and <code>Nil</code> are data</a></h2>
-<p>Ask the compiler what a <code>Vec</code> is, and among what it prints are the two ways of making one:</p>
-<pre><code>data Vec a b where
-  Nil :: Vec 0 b
-  Cons :: b -&gt; Vec n b -&gt; Vec (n + 1) b
-</code></pre>
-<p><code>Nil</code> is a vector of nothing, of length zero.
-<code>Cons</code> takes one element and a vector, and gives back a vector one longer.
-<code>:&gt;</code> is a second name for <code>Cons</code>, declared so that it may be written between its two arguments rather than in front of them, and <code>:i (:&gt;)</code> reports its type as <code>a -&gt; Vec n a -&gt; Vec (n + 1) a</code>.</p>
-<p>Those are constructors, which makes them the same kind of thing as <code>Just</code>: data, not syntax, usable to build a value and usable as <a href="pattern-matching.html#a-pattern-is-a-shape-with-holes">a pattern</a> to take one apart.
-Nothing in the language knows that eight of them in a row is a special shape.</p>
-<p><code>:i (:&gt;)</code> also reports <code>infixr 5 :&gt;</code>, and that is what keeps the seed readable.
-Associating to the right means <code>glider</code>’s chain groups as one number and then everything after it:</p>
-<pre><code>0b0100_0000 :&gt; (0b0010_0000 :&gt; ( ... :&gt; (0b0000_0000 :&gt; Nil)))
-</code></pre>
-<p>which is the only grouping that could typecheck, because <code>:&gt;</code> wants a vector on its right and never on its left.
-Eight of them therefore need no parentheses at all, and the parentheses that are in <code>glider</code> are doing something else: application binds tighter than any operator, so without them <code>fromRows 0b0100_0000 :&gt; ...</code> would apply <code>fromRows</code> to the first row alone.</p>
-<p>Counting the <code>:&gt;</code> is counting the length, and the compiler does that counting.
-Deleting one row from the seed is rejected before anything runs, with <code>[GHC-83865]</code> and a complaint that it could not match 1 with 2.
-Those small numbers are worth a moment, because the row deleted to get them was the fourth of eight.
-The mismatch is found at the tail, where the last <code>:&gt;</code> needed two elements after it and had one, so the message points at the bottom of the chain rather than at the row that went missing.</p>
-<h2 id="the-length-is-in-one-of-them-and-not-the-other"><a class="header" href="#the-length-is-in-one-of-them-and-not-the-other">The length is in one of them and not the other</a></h2>
-<p>Chapter 3 said that a length is in the type and it is checked, and the two types are where that difference lives.
-<code>Vec 8 Bool</code> has the eight in it, and <code>[Bool]</code> has nothing in the corresponding position, because there is no corresponding position.
-A <code>[Bool]</code> is some number of booleans, and its type is the same type whether it holds three of them or three thousand.</p>
-<p>The case of that worth knowing is <code>String</code>, because the reader has been holding a list since chapter 3 without seeing a bracket: <code>:i String</code> prints <code>type String = [Char]</code>.
-A string is a list of characters, which is why <code>render</code>’s type is <code>Board -&gt; String</code> and why that signature has a vector on one side and a list on the other.</p>
-<p>The reason the hardware side gets the checked one is that a wire count is not allowed to be a surprise.
-A <code>Vec 8 Bool</code> is eight wires, and it is eight wires while the program is still being compiled, which is what lets chapter 4 describe four hundred and forty-eight additions without anything in the source counting them.
-The cost runs in the other direction, and it is absolute: a <code>Vec</code>’s length can never depend on data the circuit computes while it runs.
-That is a cannot rather than a not currently, and it is the same cannot as a VHDL port whose width is decided by a signal.</p>
-<p>Telling the two apart in what the prompt prints needs nothing beyond this.
-Square brackets are a list, whatever is between them: chapter 6’s <code>[Board]</code>, and the seven values chapter 7 typed for <code>fromList</code>.
-A <code>Vec</code> prints as the constructors it is made of, a chain of <code>:&gt;</code> ending in <code>Nil</code>, which is why one row of a board costs seventy-four characters at the prompt and why chapter 3 wrote <code>render</code> before it wrote anything that moves.</p>
-<h2 id="the-bridges-and-the-one-that-is-not-one"><a class="header" href="#the-bridges-and-the-one-that-is-not-one">The bridges, and the one that is not one</a></h2>
-<p><code>toList</code> is the crossing the book uses most, and it is in the one block chapter 3 said had nothing in it to learn:</p>
-<pre><code class="language-haskell">render :: Board -&gt; String
-render b = unlines (toList (map row b))
+<p>Nothing at the point where <code>unpack</code> is written says that the answer should be eight <code>Bool</code>s.
+<code>fromRows</code>’s signature says that the result is a <code>Board</code>, and the chapter’s claim was that this is enough for the compiler to know which unpacking is meant.</p>
+<p>A chapter later there is a definition with no signature anywhere in it at all:</p>
+<pre><code class="language-haskell">renderCounts :: Counts -&gt; String
+renderCounts cs = unlines (toList (map row cs))
   where
-    row r = toList (map cell r)
-    cell x = if x then '#' else '.'
+    row r = toList (map digit r)
+    digit n = intToDigit (numConvert n)
 </code></pre>
-<p><code>toList :: Vec n a -&gt; [a]</code> keeps the elements and drops the length from the type.
-<code>render</code> crosses nine times for every board it prints: once per row, turning eight characters into a <code>String</code>, and once for the eight rows themselves, so that <code>unlines</code> has a list to put newlines between.
-<code>unlines</code> is why the crossing has to happen at all, and chapter 4’s <code>renderCounts</code> does the same nine crossings for the same reason.</p>
-<p>Sampling is a crossing of the same direction with a different reason.
-<code>sampleN</code> takes an ordinary <code>Int</code> and gives back a list, and neither of those is careless: how many cycles are looked at is a question about the simulation rather than about the circuit, and a number the circuit never sees has no reason to be in a type.
-Chapter 6’s <code>[Board]</code> is that decision showing, and it is why a signal has to be cut to a length before a board can be printed.</p>
-<p><code>fromList</code> looks like the return trip, and it is not one:</p>
+<p><code>row</code> and <code>digit</code> are the fourth and fifth definitions in the reader’s file with no type written on them, after the two inside <code>render</code> and the one inside <code>countBoard</code>, and every chapter from here adds more.
+They have types all the same, as fixed and as checked as <code>renderCounts</code>’s.
+This page is what works them out, and why the tutorial goes on writing top-level signatures that the same machinery would supply for nothing.</p>
+<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
+<p>In VHDL nothing is used before it is declared.
+A signal has a type because a line near the top of the architecture gave it one, and the compiler’s job is to check the uses against that line rather than to have an opinion of its own.
+A reader carrying that habit over has two ways to account for a definition with no declaration, and both are wrong in a way that costs something later.</p>
+<p>The first is that what is left out gets a default.
+Every language that has allowed a declaration to be omitted has had one, and it is always a general-purpose type: an integer of the machine’s width, or a real.
+Under that reading the <code>1</code> in chapter 4’s <code>toCount</code> is a machine integer.
+It is four bits wide, and no default produces four.</p>
+<p>The second is that there is no type until something runs.
+That reading lasts about a minute at the prompt, because a <code>Vec 7</code> handed to something that wants a <code>Vec 8</code> is rejected before anything runs, and <a href="vec-and-lists.html#the-length-is-in-one-of-them-and-not-the-other">the length is part of the type</a> rather than a property of a value in memory.</p>
+<p>The idea neither reading has is that a type can be worked out after the fact, from the uses, with the information travelling in whichever direction it happens to be travelling.
+Including backwards: out of a signature written on the line above, and into an expression that has no opinion of its own.</p>
+<h2 id="solving-not-guessing"><a class="header" href="#solving-not-guessing">Solving, not guessing</a></h2>
+<p><code>map unpack</code> is the whole of <code>fromRows</code>’s right hand side.
+Ask what it is on its own, with no signature over it:</p>
+<pre><code>clashi&gt; :t map unpack
+map unpack :: BitPack b =&gt; Vec n (BitVector (BitSize b)) -&gt; Vec n b
+</code></pre>
+<p>Two lowercase names in that answer, <code>n</code> and <code>b</code>, and nothing has decided either.
+Chapter 3 then wrote a line above it:</p>
+<pre><code>clashi&gt; :i fromRows
+fromRows :: Vec 8 (BitVector 8) -&gt; Board
+  	-- Defined at src/Example/Project.hs:14:1
+</code></pre>
+<p>Matching those two types against each other is the whole of what the compiler did.
+<code>Vec n (BitVector (BitSize b))</code> has to be <code>Vec 8 (BitVector 8)</code>, so <code>n</code> is 8.
+<code>Vec n b</code> has to be <code>Board</code>, and <code>Board</code> is <code>Vec 8 (Vec 8 Bool)</code>, so <code>b</code> is <code>Vec 8 Bool</code>.
+Those two conclusions then have to agree with each other: <code>BitSize (Vec 8 Bool)</code> is 8, which is the width the argument side asked for, so they do.</p>
+<p>Naming that as a procedure is worth the sentence it takes, because the rest of this page is consequences of it.
+The compiler walks the definition and writes down an equation wherever two types have to be the same, then solves the set of them.
+One solution and the definition is accepted.
+No solution and it is rejected, quoting the equation that failed.
+A variable that no equation constrains is left standing as a variable, which is a case with a section of its own below.
+Nothing in that is a guess, and nothing in it is a default.</p>
+<h2 id="the-information-runs-backwards"><a class="header" href="#the-information-runs-backwards">The information runs backwards</a></h2>
+<p><code>unpack</code> is the sharpest case in the book, because its argument says nothing about its answer:</p>
+<pre><code>clashi&gt; :t unpack 0b1110_0000
+unpack 0b1110_0000 :: BitPack a =&gt; a
+</code></pre>
+<p>Eight bits in hand and the result is still a variable.
+Say what the result is and the same eight bits come back as three unrelated values:</p>
+<pre><code>clashi&gt; unpack 0b1110_0000 :: Vec 8 Bool
+True :&gt; True :&gt; True :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; Nil
+clashi&gt; unpack 0b1110_0000 :: Unsigned 8
+224
+clashi&gt; unpack 0b1110_0000 :: Signed 8
+-32
+</code></pre>
+<p>That is the third row of the glider, <code>###.....</code>, read three ways.
+The bits are identical in all three; what differs is what was asked for, and <code>unpack</code> did as it was told each time.</p>
+<p>This is the one place where the VHDL habit is not merely absent but inverted.
+There, a conversion names its own target: <code>to_integer(x)</code>, <code>signed(x)</code>, <code>unsigned(x)</code>, one function per destination, chosen at the point of use, and the type of the result follows from the function that was picked.
+Here there is one function and the destination picks it.
+<code>unpack</code> in <code>fromRows</code> is the eight-<code>Bool</code> one because the line above ends in <code>-&gt; Board</code>, and the same three letters would be the <code>Unsigned 8</code> conversion under a signature that ended differently, with nothing inside <code>fromRows</code> changed.</p>
+<h2 id="a-literal-has-no-type-of-its-own"><a class="header" href="#a-literal-has-no-type-of-its-own">A literal has no type of its own</a></h2>
+<p>Chapter 4 turns booleans into numbers, and writes the numbers as <code>1</code> and <code>0</code>:</p>
+<pre><code class="language-haskell">countBoard :: Board -&gt; Counts
+countBoard b = map (map toCount) b
+  where
+    toCount x = if x then 1 else 0
+</code></pre>
+<p>Nothing in <code>toCount</code> says how wide those are, and no literal anywhere says how wide it is:</p>
+<pre><code>clashi&gt; :t 1
+1 :: Num a =&gt; a
+</code></pre>
+<p><code>toCount</code> itself, typed at the prompt as <a href="higher-order.html#a-function-with-no-name">a function with no name</a> so that it has nothing above it to serve, is the same variable with a <code>Bool</code> put in front of it:</p>
+<pre><code>clashi&gt; :t (\x -&gt; if x then 1 else 0)
+(\x -&gt; if x then 1 else 0) :: Num a =&gt; Bool -&gt; a
+</code></pre>
+<p>and the whole of <code>countBoard</code>’s body still has not settled it, two <code>map</code>s and a board later:</p>
+<pre><code>clashi&gt; :t map (map (\x -&gt; if x then 1 else 0)) glider
+map (map (\x -&gt; if x then 1 else 0)) glider
+  :: Num b =&gt; Vec 8 (Vec 8 b)
+</code></pre>
+<p>Eight rows of eight of something numeric, and the signature is what says which:</p>
+<pre><code>clashi&gt; :t countBoard glider
+countBoard glider :: Counts
+</code></pre>
+<p><code>Counts</code> is <code>Vec 8 (Vec 8 (Unsigned 4))</code>, so <code>b</code> is <code>Unsigned 4</code>, and the two literals in <code>toCount</code> are four bits wide.
+Neither literal mentions a width and <code>countBoard</code>’s signature does not mention one either.
+The four is in <code>Counts</code>, which chapter 4 wrote at the top of the chapter before anything used it, and it reaches those literals through <code>countBoard</code>’s signature and two <code>map</code>s, none of which say four.
+The four hundred and forty-eight additions chapter 4 counted take their width from the same place.</p>
+<p><code>digit</code> is the case where the information arrives from both ends at once.
+<code>row</code> maps it across a row of <code>Counts</code>, so its argument is an <code>Unsigned 4</code>; <code>renderCounts</code> promises a <code>String</code>, which is a list of <code>Char</code>, so its result is a <code>Char</code>.
+Between those two ends is a conversion that names neither:</p>
+<pre><code>clashi&gt; :i numConvert
+numConvert :: NumConvert a b =&gt; a -&gt; b
+  	-- Defined in ‘Clash.Class.NumConvert.Internal.NumConvert’
+</code></pre>
+<p><code>a</code> and <code>b</code>, both variables, and nothing inside <code>numConvert n</code> to fix <code>b</code>.
+What fixes it is the next thing out:</p>
+<pre><code>clashi&gt; :i intToDigit
+intToDigit :: Int -&gt; Char 	-- Defined in ‘GHC.Internal.Show’
+</code></pre>
+<p><code>intToDigit</code> wants an <code>Int</code>, so <code>numConvert</code>’s target is <code>Int</code>, so the conversion in question is the one from a four-bit number to an <code>Int</code>, and that is the conversion Clash checks at compile time for anything lost.
+Chapter 4 worked out the count in the top left corner by hand and got one.
+Here is <code>digit</code> doing it, with each of the types in it settled and not one of them written down:</p>
+<pre><code>clashi&gt; intToDigit (numConvert (head (head (neighbourCounts glider))))
+'1'
+</code></pre>
+<h2 id="when-nothing-forces-a-choice"><a class="header" href="#when-nothing-forces-a-choice">When nothing forces a choice</a></h2>
+<p>Sometimes nothing decides, and nothing has to.
+Chapter 7 made a signal out of seven values and the prompt answered with a variable still in it:</p>
 <pre><code>clashi&gt; :t fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
 fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
   :: Signal dom (Maybe Board)
 </code></pre>
-<p>Its type carries a requirement of the kind chapter 6 said the compiler settles on its own, and what is left after it is <code>[a] -&gt; Signal dom a</code>: the list becomes a signal, and never becomes a vector.
-The two names cross two different borders: <code>toList</code> leaves the vector, and <code>fromList</code> enters the signal, with the list sitting outside both of them as the notation the prompt is comfortable in.
-Nothing in this tutorial goes from a list to a <code>Vec</code>, and the length is the reason: a list’s length is found by walking it, and a <code>Vec</code>’s has to be known before anything walks anywhere.
-A crossing in that direction has to be told how long the result is, and no design in the book has a use for one.</p>
-<h2 id="which-map-is-this"><a class="header" href="#which-map-is-this">Which <code>map</code> is this</a></h2>
-<p>One import line settles it.
-The project chapter 1 generates asks for <code>NoImplicitPrelude</code>, which turns off the standard prelude that Haskell would otherwise supply on its own, so every name in the file arrives from something written at the top of it.
-The line that brings in almost all of them is <code>import Clash.Explicit.Prelude</code>, the file’s first import from chapter 1 until chapter 13 changes it.</p>
-<p>What that module does with the names it shares with the standard prelude is to keep them for the vector functions.
-<code>map</code>, <code>head</code>, <code>zipWith</code> and <code>foldl1</code> are the vector ones, all four of which the reader has used, and the list functions of those names are not in scope under them.
-Names the vector library does not want are passed through untouched, and <code>unlines</code> is one: <code>:i unlines</code> reports it as coming from the standard library, in the same session where <code>:i map</code> reports <code>Clash.Sized.Vector</code>.
-So <code>render</code> calls two libraries in one expression and nothing in the source says which is which.</p>
-<p>Handing <code>map</code> a list is therefore an error rather than a different overload, and it is <code>[GHC-83865]</code> again, the code the seed with a row missing produced: <code>Couldn't match expected type: Vec n b</code>, with the list named underneath it as the actual one.</p>
-<p>A name is borrowed one at a time when the prelude does not have it, which is chapter 4’s second import:</p>
-<pre><code class="language-haskell">import Data.Char (intToDigit)
+<p><code>Maybe Board</code> is settled, because <code>Just blinker</code> is in the list and <code>blinker</code> is a board.
+<code>dom</code> is not, because nothing in that expression is about a clock, and the prompt reports the variable rather than choosing a domain.
+It is right to: the expression really is every domain’s version of that signal, and one of the three outcomes of solving a set of equations is that a variable survives it.
+That one was closed on the next line of the chapter, where the signal was handed to <code>life systemClockGen resetGen enableGen</code> and <code>systemClockGen</code>’s <code>System</code> filled it in.</p>
+<p>An open variable in the middle of a design is not something this tutorial produces, and the reason is the subject of the next section.
+A signature with no variables in it closes everything underneath it, and no signature in this book has a variable in it until chapter 12.</p>
+<h2 id="why-the-signatures-are-written-anyway"><a class="header" href="#why-the-signatures-are-written-anyway">Why the signatures are written anyway</a></h2>
+<p>Not one definition on this page needed the signature it has, and every top-level definition in the reader’s file has one, on the tutorial’s instruction, from chapter 1 onwards.
+Two things are bought with that line, and the second is the one that shows up within an afternoon.</p>
+<p>The first is that a signature is the port list.
+<code>neighbourCounts :: Board -&gt; Counts</code> is a statement about the design, made in one place, that can be read without reading anything else.
+An inferred type is a conclusion drawn from a body, and a design whose interfaces can only be read off its implementations has no interfaces, only implementations.</p>
+<p>The second is that a signature decides where a mistake is reported.
+Make a real slip in <code>digit</code> and leave out <code>numConvert</code>, so that the line reads <code>digit n = intToDigit n</code>.
+The compiler rejects the file, and the line it points at is this one:</p>
+<pre><code class="language-haskell">renderCounts cs = unlines (toList (map row cs))
 </code></pre>
-<p>The parenthesised list says which names to take from <code>Data.Char</code>, and taking one leaves everything else in that module alone.
-<code>intToDigit</code> is not in the standard prelude either, so a Haskell program with no Clash in it would need the same line, in the same shape.</p>
+<p>three lines above the mistake, with the caret under <code>cs</code>, <code>Couldn't match type ‘Unsigned 4’ with ‘Int’</code>, and <code>Expected: Vec 8 (Vec 8 Int)</code> over <code>Actual: Counts</code>.</p>
+<p>Every word of that is correct, which is the problem.
+With no signature on <code>digit</code> its body is what defines it, its body says <code>Int -&gt; Char</code>, and <code>row</code> and <code>renderCounts</code> are then obliged to agree with that.
+The first place they cannot is the board of counts arriving at <code>renderCounts</code>, so <code>Counts</code> is named as the type that is wrong and a board of <code>Int</code> is named as the type that was wanted.
+The reader wrote <code>Counts</code>, believes in <code>Counts</code>, and is being told it does not fit.</p>
+<p>Write one line above the definition, <code>digit :: Unsigned 4 -&gt; Char</code>, make the same mistake, and the report lands on the mistake: <code>Couldn't match expected type ‘Int’ with actual type ‘Unsigned 4’</code>, under <code>In the first argument of ‘intToDigit’, namely ‘n’</code>, under <code>In an equation for ‘digit’</code>.</p>
+<p>A signature is a claim, and a claim gives the compiler something to check the body against, so a disagreement is found in the body.
+Without one there is no claim, the body is the truth, and the disagreement surfaces at the first place that truth fails to fit something else.</p>
+<p>The <code>where</code> bindings are where the tutorial takes the other side of the same trade, and it is a trade rather than an oversight.
+<code>row</code>, <code>digit</code>, <code>toCount</code> and <code>cell</code> are each within four lines of the signature that forces them, none of them can be called from anywhere else, and a signature on one would repeat what the line above it has already decided.
+A top-level signature is worth its line because the distance it covers is unbounded; a local one usually is not.</p>
 <h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
-<p>The vector functions arriving under the list functions’ names is a decision with a price, and the price is not paid while writing the tutorial.
-It is paid the first time the reader searches for something.
-An answer about <code>zipWith</code> will be about the list one, will not say so, and will differ from the vector one in the place that matters most.
-The list function takes two lengths that need not agree and produces the shorter of them; <code>zipWith</code> on vectors has <code>Vec n a</code> and <code>Vec n b</code> in its type, one length written twice, and two vectors of different lengths are rejected rather than shortened.
-Reading <code>[a]</code> as the vector is the habit to unlearn, and it is worth unlearning early, because the two libraries agree about so much else that a disagreement is easy to miss.</p>
-<p>What is bought with it is that there is one vocabulary rather than two.
-<code>map</code> over a board and <code>map</code> over a row are the same word, <code>foldl1</code> over eight boards of counts reads the way the standard function of that name reads, and a reader coming the other way, from Haskell to Clash, has almost nothing to relearn.
-The tutorial pays the price knowingly and does not pay it twice: <code>toList</code> appears in two definitions in the reader’s file, both of them printing, and everything the design is made of is vectors from end to end.</p>
+<p>The cost is the distance, and in the reader’s file the distance was three lines because <code>renderCounts</code> is five lines long.
+Nothing bounds it in general.
+Split the same mistake across two top-level definitions with no signatures and the wrong type is inferred, correctly, in one file and reported in another, at a use site that has nothing wrong with it.
+The error will name a type the reader wrote deliberately as the thing that does not fit, because from where the compiler is standing it is.
+This is the counterpart of what <a href="higher-order.html#what-it-costs">a function handed over one argument short</a> does, and it has the same root: an expression can be well typed, and wrong, and there is nothing at the site of the mistake for a compiler to object to.</p>
+<p>What is bought is that a width is stated in one place and reaches everywhere it is needed.
+The four in <code>Counts</code> settles two literals, four hundred and forty-eight adders and the argument type of <code>digit</code>, none of which mention it.
+The eight in <code>Board</code> settles which <code>unpack</code> runs, in a definition that names no type at all.
+Chapter 12 then takes the eight out of both of those types and leaves the four where it is, and <code>countBoard</code>’s body, <code>toCount</code> and its two literals included, does not change a character: it never said what it was, so there was nothing in it to change.</p>
 <h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
 <ul>
-<li>Chapter 3, <a href="../b/03-a-board.html">A board, and a picture</a>: <code>:&gt;</code> and <code>Nil</code> in the seed, <code>head glider</code> printing a chain, and <code>toList</code> in <code>render</code>.</li>
-<li>Chapter 4, <a href="../b/04-neighbours.html">Neighbours, by moving the whole board</a>: the same crossings in <code>renderCounts</code>, and the import list that borrows <code>intToDigit</code>.</li>
-<li>Chapter 6, <a href="../b/06-it-runs.html">It runs by itself</a>: <code>sampleN 5</code>, and the <code>[Board]</code> it has.</li>
-<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: seven values in square brackets, and <code>fromList</code> making a signal out of them.</li>
+<li>Chapter 3, <a href="../b/03-a-board.html">A board, and a picture</a>: <code>unpack</code> in <code>fromRows</code>, decided by a signature one line above, and the two bindings inside <code>render</code> with no signature on them.</li>
+<li>Chapter 4, <a href="../b/04-neighbours.html">Neighbours, by moving the whole board</a>: the literals in <code>toCount</code>, the width they take from <code>Counts</code>, and <code>numConvert</code>’s target chosen by <code>intToDigit</code>.</li>
+<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: <code>fromList</code> reported with <code>dom</code> still open, and closed a line later.</li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../explanation/pattern-matching.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../explanation/higher-order.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../explanation/higher-order.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../next.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -316,11 +361,11 @@ The tutorial pays the price knowingly and does not pay it twice: <code>toList</c
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../explanation/pattern-matching.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../explanation/higher-order.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../explanation/higher-order.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../next.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-f52e98c8.js";
+            window.path_to_searchindex_js = "searchindex-0b567135.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-3e780c08.js"></script>
+        <script src="toc-eda34566.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -507,7 +507,8 @@ The only new part is that here it is one function applied to a whole row rather 
 <p><strong>Which reinterpretation <code>unpack</code> performs is settled by the type around it.</strong>
 Nothing at the point where <code>unpack</code> is written says that the answer should be eight <code>Bool</code>s.
 <code>fromRows</code>’s signature says that the result is a <code>Board</code>, <code>Board</code> is eight rows of eight <code>Bool</code>s, and that is enough for the compiler to know which unpacking is meant.
-This is worth knowing now, because it is the first of many places where a signature you wrote once decides something a long way away from where you wrote it.</p>
+This is worth knowing now, because it is the first of many places where a signature you wrote once decides something a long way away from where you wrote it.
+How a signature written on <code>fromRows</code> can decide what <code>unpack</code> does is explained in <a href="#how-the-compiler-knows-a-type-you-did-not-write">How the compiler knows a type you did not write</a>.</p>
 <p><strong>A length is in the type, and it is checked.</strong>
 <code>Vec 8</code> is not a list that happens to hold eight things at the moment.
 The eight is fixed when the program is compiled, a function that wants a <code>Vec 8</code> cannot be handed a <code>Vec 7</code>, and the compiler is the one enforcing it rather than a comment, an assertion or a simulation that happens to notice.
@@ -3260,6 +3261,175 @@ That is also why chapter 12 changes the size of the board without rewriting any 
 <li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>fmap step boards</code>, and the lambda typed at the prompt.</li>
 <li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>mealy</code>, and the loop handed to it as an argument.</li>
 <li>Chapter 9, <a href="#an-entity">An entity</a>: the <code>for … generate</code> blocks these lines became, and the names they came out under.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="how-the-compiler-knows-a-type-you-did-not-write"><a class="header" href="#how-the-compiler-knows-a-type-you-did-not-write">How the compiler knows a type you did not write</a></h1>
+<p>Chapter 3’s <code>fromRows</code> is one line, and the chapter said in as many words that one of the two names in it is settled from somewhere else:</p>
+<pre><code class="language-haskell">fromRows :: Vec 8 (BitVector 8) -&gt; Board
+fromRows = map unpack
+</code></pre>
+<p>Nothing at the point where <code>unpack</code> is written says that the answer should be eight <code>Bool</code>s.
+<code>fromRows</code>’s signature says that the result is a <code>Board</code>, and the chapter’s claim was that this is enough for the compiler to know which unpacking is meant.</p>
+<p>A chapter later there is a definition with no signature anywhere in it at all:</p>
+<pre><code class="language-haskell">renderCounts :: Counts -&gt; String
+renderCounts cs = unlines (toList (map row cs))
+  where
+    row r = toList (map digit r)
+    digit n = intToDigit (numConvert n)
+</code></pre>
+<p><code>row</code> and <code>digit</code> are the fourth and fifth definitions in the reader’s file with no type written on them, after the two inside <code>render</code> and the one inside <code>countBoard</code>, and every chapter from here adds more.
+They have types all the same, as fixed and as checked as <code>renderCounts</code>’s.
+This page is what works them out, and why the tutorial goes on writing top-level signatures that the same machinery would supply for nothing.</p>
+<h2 id="the-reading-that-does-not-survive-4"><a class="header" href="#the-reading-that-does-not-survive-4">The reading that does not survive</a></h2>
+<p>In VHDL nothing is used before it is declared.
+A signal has a type because a line near the top of the architecture gave it one, and the compiler’s job is to check the uses against that line rather than to have an opinion of its own.
+A reader carrying that habit over has two ways to account for a definition with no declaration, and both are wrong in a way that costs something later.</p>
+<p>The first is that what is left out gets a default.
+Every language that has allowed a declaration to be omitted has had one, and it is always a general-purpose type: an integer of the machine’s width, or a real.
+Under that reading the <code>1</code> in chapter 4’s <code>toCount</code> is a machine integer.
+It is four bits wide, and no default produces four.</p>
+<p>The second is that there is no type until something runs.
+That reading lasts about a minute at the prompt, because a <code>Vec 7</code> handed to something that wants a <code>Vec 8</code> is rejected before anything runs, and <a href="#the-length-is-in-one-of-them-and-not-the-other">the length is part of the type</a> rather than a property of a value in memory.</p>
+<p>The idea neither reading has is that a type can be worked out after the fact, from the uses, with the information travelling in whichever direction it happens to be travelling.
+Including backwards: out of a signature written on the line above, and into an expression that has no opinion of its own.</p>
+<h2 id="solving-not-guessing"><a class="header" href="#solving-not-guessing">Solving, not guessing</a></h2>
+<p><code>map unpack</code> is the whole of <code>fromRows</code>’s right hand side.
+Ask what it is on its own, with no signature over it:</p>
+<pre><code>clashi&gt; :t map unpack
+map unpack :: BitPack b =&gt; Vec n (BitVector (BitSize b)) -&gt; Vec n b
+</code></pre>
+<p>Two lowercase names in that answer, <code>n</code> and <code>b</code>, and nothing has decided either.
+Chapter 3 then wrote a line above it:</p>
+<pre><code>clashi&gt; :i fromRows
+fromRows :: Vec 8 (BitVector 8) -&gt; Board
+  	-- Defined at src/Example/Project.hs:14:1
+</code></pre>
+<p>Matching those two types against each other is the whole of what the compiler did.
+<code>Vec n (BitVector (BitSize b))</code> has to be <code>Vec 8 (BitVector 8)</code>, so <code>n</code> is 8.
+<code>Vec n b</code> has to be <code>Board</code>, and <code>Board</code> is <code>Vec 8 (Vec 8 Bool)</code>, so <code>b</code> is <code>Vec 8 Bool</code>.
+Those two conclusions then have to agree with each other: <code>BitSize (Vec 8 Bool)</code> is 8, which is the width the argument side asked for, so they do.</p>
+<p>Naming that as a procedure is worth the sentence it takes, because the rest of this page is consequences of it.
+The compiler walks the definition and writes down an equation wherever two types have to be the same, then solves the set of them.
+One solution and the definition is accepted.
+No solution and it is rejected, quoting the equation that failed.
+A variable that no equation constrains is left standing as a variable, which is a case with a section of its own below.
+Nothing in that is a guess, and nothing in it is a default.</p>
+<h2 id="the-information-runs-backwards"><a class="header" href="#the-information-runs-backwards">The information runs backwards</a></h2>
+<p><code>unpack</code> is the sharpest case in the book, because its argument says nothing about its answer:</p>
+<pre><code>clashi&gt; :t unpack 0b1110_0000
+unpack 0b1110_0000 :: BitPack a =&gt; a
+</code></pre>
+<p>Eight bits in hand and the result is still a variable.
+Say what the result is and the same eight bits come back as three unrelated values:</p>
+<pre><code>clashi&gt; unpack 0b1110_0000 :: Vec 8 Bool
+True :&gt; True :&gt; True :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; Nil
+clashi&gt; unpack 0b1110_0000 :: Unsigned 8
+224
+clashi&gt; unpack 0b1110_0000 :: Signed 8
+-32
+</code></pre>
+<p>That is the third row of the glider, <code>###.....</code>, read three ways.
+The bits are identical in all three; what differs is what was asked for, and <code>unpack</code> did as it was told each time.</p>
+<p>This is the one place where the VHDL habit is not merely absent but inverted.
+There, a conversion names its own target: <code>to_integer(x)</code>, <code>signed(x)</code>, <code>unsigned(x)</code>, one function per destination, chosen at the point of use, and the type of the result follows from the function that was picked.
+Here there is one function and the destination picks it.
+<code>unpack</code> in <code>fromRows</code> is the eight-<code>Bool</code> one because the line above ends in <code>-&gt; Board</code>, and the same three letters would be the <code>Unsigned 8</code> conversion under a signature that ended differently, with nothing inside <code>fromRows</code> changed.</p>
+<h2 id="a-literal-has-no-type-of-its-own"><a class="header" href="#a-literal-has-no-type-of-its-own">A literal has no type of its own</a></h2>
+<p>Chapter 4 turns booleans into numbers, and writes the numbers as <code>1</code> and <code>0</code>:</p>
+<pre><code class="language-haskell">countBoard :: Board -&gt; Counts
+countBoard b = map (map toCount) b
+  where
+    toCount x = if x then 1 else 0
+</code></pre>
+<p>Nothing in <code>toCount</code> says how wide those are, and no literal anywhere says how wide it is:</p>
+<pre><code>clashi&gt; :t 1
+1 :: Num a =&gt; a
+</code></pre>
+<p><code>toCount</code> itself, typed at the prompt as <a href="#a-function-with-no-name">a function with no name</a> so that it has nothing above it to serve, is the same variable with a <code>Bool</code> put in front of it:</p>
+<pre><code>clashi&gt; :t (\x -&gt; if x then 1 else 0)
+(\x -&gt; if x then 1 else 0) :: Num a =&gt; Bool -&gt; a
+</code></pre>
+<p>and the whole of <code>countBoard</code>’s body still has not settled it, two <code>map</code>s and a board later:</p>
+<pre><code>clashi&gt; :t map (map (\x -&gt; if x then 1 else 0)) glider
+map (map (\x -&gt; if x then 1 else 0)) glider
+  :: Num b =&gt; Vec 8 (Vec 8 b)
+</code></pre>
+<p>Eight rows of eight of something numeric, and the signature is what says which:</p>
+<pre><code>clashi&gt; :t countBoard glider
+countBoard glider :: Counts
+</code></pre>
+<p><code>Counts</code> is <code>Vec 8 (Vec 8 (Unsigned 4))</code>, so <code>b</code> is <code>Unsigned 4</code>, and the two literals in <code>toCount</code> are four bits wide.
+Neither literal mentions a width and <code>countBoard</code>’s signature does not mention one either.
+The four is in <code>Counts</code>, which chapter 4 wrote at the top of the chapter before anything used it, and it reaches those literals through <code>countBoard</code>’s signature and two <code>map</code>s, none of which say four.
+The four hundred and forty-eight additions chapter 4 counted take their width from the same place.</p>
+<p><code>digit</code> is the case where the information arrives from both ends at once.
+<code>row</code> maps it across a row of <code>Counts</code>, so its argument is an <code>Unsigned 4</code>; <code>renderCounts</code> promises a <code>String</code>, which is a list of <code>Char</code>, so its result is a <code>Char</code>.
+Between those two ends is a conversion that names neither:</p>
+<pre><code>clashi&gt; :i numConvert
+numConvert :: NumConvert a b =&gt; a -&gt; b
+  	-- Defined in ‘Clash.Class.NumConvert.Internal.NumConvert’
+</code></pre>
+<p><code>a</code> and <code>b</code>, both variables, and nothing inside <code>numConvert n</code> to fix <code>b</code>.
+What fixes it is the next thing out:</p>
+<pre><code>clashi&gt; :i intToDigit
+intToDigit :: Int -&gt; Char 	-- Defined in ‘GHC.Internal.Show’
+</code></pre>
+<p><code>intToDigit</code> wants an <code>Int</code>, so <code>numConvert</code>’s target is <code>Int</code>, so the conversion in question is the one from a four-bit number to an <code>Int</code>, and that is the conversion Clash checks at compile time for anything lost.
+Chapter 4 worked out the count in the top left corner by hand and got one.
+Here is <code>digit</code> doing it, with each of the types in it settled and not one of them written down:</p>
+<pre><code>clashi&gt; intToDigit (numConvert (head (head (neighbourCounts glider))))
+'1'
+</code></pre>
+<h2 id="when-nothing-forces-a-choice"><a class="header" href="#when-nothing-forces-a-choice">When nothing forces a choice</a></h2>
+<p>Sometimes nothing decides, and nothing has to.
+Chapter 7 made a signal out of seven values and the prompt answered with a variable still in it:</p>
+<pre><code>clashi&gt; :t fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
+fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
+  :: Signal dom (Maybe Board)
+</code></pre>
+<p><code>Maybe Board</code> is settled, because <code>Just blinker</code> is in the list and <code>blinker</code> is a board.
+<code>dom</code> is not, because nothing in that expression is about a clock, and the prompt reports the variable rather than choosing a domain.
+It is right to: the expression really is every domain’s version of that signal, and one of the three outcomes of solving a set of equations is that a variable survives it.
+That one was closed on the next line of the chapter, where the signal was handed to <code>life systemClockGen resetGen enableGen</code> and <code>systemClockGen</code>’s <code>System</code> filled it in.</p>
+<p>An open variable in the middle of a design is not something this tutorial produces, and the reason is the subject of the next section.
+A signature with no variables in it closes everything underneath it, and no signature in this book has a variable in it until chapter 12.</p>
+<h2 id="why-the-signatures-are-written-anyway"><a class="header" href="#why-the-signatures-are-written-anyway">Why the signatures are written anyway</a></h2>
+<p>Not one definition on this page needed the signature it has, and every top-level definition in the reader’s file has one, on the tutorial’s instruction, from chapter 1 onwards.
+Two things are bought with that line, and the second is the one that shows up within an afternoon.</p>
+<p>The first is that a signature is the port list.
+<code>neighbourCounts :: Board -&gt; Counts</code> is a statement about the design, made in one place, that can be read without reading anything else.
+An inferred type is a conclusion drawn from a body, and a design whose interfaces can only be read off its implementations has no interfaces, only implementations.</p>
+<p>The second is that a signature decides where a mistake is reported.
+Make a real slip in <code>digit</code> and leave out <code>numConvert</code>, so that the line reads <code>digit n = intToDigit n</code>.
+The compiler rejects the file, and the line it points at is this one:</p>
+<pre><code class="language-haskell">renderCounts cs = unlines (toList (map row cs))
+</code></pre>
+<p>three lines above the mistake, with the caret under <code>cs</code>, <code>Couldn't match type ‘Unsigned 4’ with ‘Int’</code>, and <code>Expected: Vec 8 (Vec 8 Int)</code> over <code>Actual: Counts</code>.</p>
+<p>Every word of that is correct, which is the problem.
+With no signature on <code>digit</code> its body is what defines it, its body says <code>Int -&gt; Char</code>, and <code>row</code> and <code>renderCounts</code> are then obliged to agree with that.
+The first place they cannot is the board of counts arriving at <code>renderCounts</code>, so <code>Counts</code> is named as the type that is wrong and a board of <code>Int</code> is named as the type that was wanted.
+The reader wrote <code>Counts</code>, believes in <code>Counts</code>, and is being told it does not fit.</p>
+<p>Write one line above the definition, <code>digit :: Unsigned 4 -&gt; Char</code>, make the same mistake, and the report lands on the mistake: <code>Couldn't match expected type ‘Int’ with actual type ‘Unsigned 4’</code>, under <code>In the first argument of ‘intToDigit’, namely ‘n’</code>, under <code>In an equation for ‘digit’</code>.</p>
+<p>A signature is a claim, and a claim gives the compiler something to check the body against, so a disagreement is found in the body.
+Without one there is no claim, the body is the truth, and the disagreement surfaces at the first place that truth fails to fit something else.</p>
+<p>The <code>where</code> bindings are where the tutorial takes the other side of the same trade, and it is a trade rather than an oversight.
+<code>row</code>, <code>digit</code>, <code>toCount</code> and <code>cell</code> are each within four lines of the signature that forces them, none of them can be called from anywhere else, and a signature on one would repeat what the line above it has already decided.
+A top-level signature is worth its line because the distance it covers is unbounded; a local one usually is not.</p>
+<h2 id="what-it-costs-4"><a class="header" href="#what-it-costs-4">What it costs</a></h2>
+<p>The cost is the distance, and in the reader’s file the distance was three lines because <code>renderCounts</code> is five lines long.
+Nothing bounds it in general.
+Split the same mistake across two top-level definitions with no signatures and the wrong type is inferred, correctly, in one file and reported in another, at a use site that has nothing wrong with it.
+The error will name a type the reader wrote deliberately as the thing that does not fit, because from where the compiler is standing it is.
+This is the counterpart of what <a href="#what-it-costs-3">a function handed over one argument short</a> does, and it has the same root: an expression can be well typed, and wrong, and there is nothing at the site of the mistake for a compiler to object to.</p>
+<p>What is bought is that a width is stated in one place and reaches everywhere it is needed.
+The four in <code>Counts</code> settles two literals, four hundred and forty-eight adders and the argument type of <code>digit</code>, none of which mention it.
+The eight in <code>Board</code> settles which <code>unpack</code> runs, in a definition that names no type at all.
+Chapter 12 then takes the eight out of both of those types and leaves the four where it is, and <code>countBoard</code>’s body, <code>toCount</code> and its two literals included, does not change a character: it never said what it was, so there was nothing in it to change.</p>
+<h2 id="where-you-met-this-4"><a class="header" href="#where-you-met-this-4">Where you met this</a></h2>
+<ul>
+<li>Chapter 3, <a href="#a-board-and-a-picture">A board, and a picture</a>: <code>unpack</code> in <code>fromRows</code>, decided by a signature one line above, and the two bindings inside <code>render</code> with no signature on them.</li>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: the literals in <code>toCount</code>, the width they take from <code>Counts</code>, and <code>numConvert</code>’s target chosen by <code>intToDigit</code>.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>fromList</code> reported with <code>dom</code> still open, and closed a line later.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
