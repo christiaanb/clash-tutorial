@@ -19,6 +19,7 @@ The inner one pairs each of a row's eight cells with that cell's count and hands
 
 `b` appears twice to the right of the `=`: once as the board whose cells are being paired up, and once inside `neighbourCounts b`.
 That is one board read in two places, not two boards.
+Why reading `b` twice is safe, here and everywhere, is explained in [One value, read in two places](../explanation/purity.md).
 
 Reload and ask what has been added:
 
