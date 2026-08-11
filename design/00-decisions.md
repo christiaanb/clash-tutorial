@@ -756,6 +756,26 @@ than one observation. Like the two pages before it, this one took only its
 primary link (chapter 3, after the `glider` block); the chapter 6 and 7
 secondaries stay unbuilt, and the "Where you met this" list names both anyway.
 
+**`higher-order.md` shipped fourth, and it took its evidence from a real
+capture rather than from the chapters.** Chapters 3, 4 and 5 use `map`,
+`zipWith` and `foldl1` without ever asking the prompt what they are, so unlike
+the three pages before it this one had no chapter transcript to reuse for its
+central claim. It was captured instead, through `tools/clashi_capture.py`
+against `code/` with `READER_FILE` pointed at `Chapters/Ch04.hs`, which is a pty
+session under the same pinned locale and width the chapters use and is the
+cheapest way to get bytes worth quoting when no reader project is to hand. The
+two queue entries list every line. Two beats moved as a result of running things:
+`map nextCell` typechecks and gives `Vec n (Unsigned 4 -> Bool)`, which is a
+better cost beat than the outline's general "the netlist only takes shape when
+the arguments land" and is now the page's sharpest edge, and the outline's
+lambda beat gained the reason a lambda is needed at all in `shiftW`, which is
+that `rotateLeftS` wants the distance second and partial application cannot
+reach past the first argument. The `fold` depth question is named and refused in
+one sentence, per the deferred list below. Like the three pages before it, this
+one took only its primary link (chapter 4, after the "one `+` in that line"
+sentence); the chapter 3 and 7 secondaries stay unbuilt and the "Where you met
+this" list names chapters 3, 5, 6, 7 and 9 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
