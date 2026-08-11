@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-69313275.js";
+            window.path_to_searchindex_js = "searchindex-6fbb7034.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-6006584b.js"></script>
+        <script src="toc-f902b9e6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -431,7 +431,8 @@ glider = fromRows
   :&gt; Nil )
 </code></pre>
 <p>That shape is a glider, which is the smallest pattern in Life that moves.
-It does not move yet, and it will not until chapter 5.</p>
+It does not move yet, and it will not until chapter 5.
+What <code>:&gt;</code> and <code>Nil</code> are, and how the vector they build differs from the lists that Haskell resources describe, is explained in <a href="#a-vec-is-not-a-list">A Vec is not a list</a>.</p>
 <h2 id="three-questions-and-a-row"><a class="header" href="#three-questions-and-a-row">Three questions and a row</a></h2>
 <p>Edit, <code>:r</code>, evaluate.
 The prompt is the one still open from chapter 2:</p>
@@ -2968,6 +2969,130 @@ It is worth saying on a page that has spent its length on what the construct doe
 <li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: the same <code>if</code> in <code>toCount</code>, between two numbers.</li>
 <li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>Just seed</code>, a pattern that names what it matched, and a pair returned.</li>
 <li>Chapter 8, <a href="#more-than-valid">More than valid</a>: <code>Just (Load b)</code>, five rows that do not overlap, and <code>else st</code>.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="a-vec-is-not-a-list"><a class="header" href="#a-vec-is-not-a-list">A Vec is not a list</a></h1>
+<p>Chapter 3 wrote the seed as a picture of itself:</p>
+<pre><code class="language-haskell">glider :: Board
+glider = fromRows
+  (  0b0100_0000
+  :&gt; 0b0010_0000
+  :&gt; 0b1110_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; 0b0000_0000
+  :&gt; Nil )
+</code></pre>
+<p>Eight numbers, eight <code>:&gt;</code> and a <code>Nil</code>, and the chapter explained only the numbers.
+Then it asked for the first row, and the other two came back:</p>
+<pre><code>clashi&gt; head glider
+False :&gt; True :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; False :&gt; Nil
+</code></pre>
+<p>Chapter 6 printed a collection of a different shape.
+<code>sampleN 5</code> gave five boards, and what the prompt said about them was this:</p>
+<pre><code>clashi&gt; :t sampleN 5 (life systemClockGen resetGen enableGen)
+sampleN 5 (life systemClockGen resetGen enableGen) :: [Board]
+</code></pre>
+<p>Square brackets, no <code>:&gt;</code> anywhere, and chapter 7 typed seven values inside brackets of its own and handed them to something called <code>fromList</code>.
+Two notations have been in use since chapter 3, and this page is what each of them is.</p>
+<h2 id="the-reading-that-does-not-survive-2"><a class="header" href="#the-reading-that-does-not-survive-2">The reading that does not survive</a></h2>
+<p>The economical assumption is that there is one sequence type here with two ways of writing it down, and the reason it is wrong is not that it costs an error message.
+It is that the reader who holds it will go looking for <code>map</code> and find the wrong <code>map</code>.
+Every Haskell resource written outside Clash describes <code>map :: (a -&gt; b) -&gt; [a] -&gt; [b]</code>, over the square bracket type, and the <code>map</code> in chapter 3’s <code>fromRows</code> is a different function with the same name.
+The answer found by searching will look right, will be right about the language, and will not compile in the file the reader has open.
+Keeping self study from quietly contradicting the tutorial is most of what this page is for.</p>
+<p>The VHDL habit that transfers is the array, and it transfers well.
+<code>array (0 to 7) of bit</code> is a length fixed where it is written and <code>array (natural range &lt;&gt;) of bit</code> is a length fixed at elaboration, and there is no synthesisable array in VHDL whose length is settled while the circuit runs.
+<code>Vec 8 Bool</code> is the first of those and <code>Vec n Bool</code> is the second, so the vector is the familiar thing.
+The square bracket type is the unfamiliar one, and its distinguishing property is that it never becomes hardware at all.</p>
+<h2 id="-and-nil-are-data"><a class="header" href="#-and-nil-are-data"><code>:&gt;</code> and <code>Nil</code> are data</a></h2>
+<p>Ask the compiler what a <code>Vec</code> is, and among what it prints are the two ways of making one:</p>
+<pre><code>data Vec a b where
+  Nil :: Vec 0 b
+  Cons :: b -&gt; Vec n b -&gt; Vec (n + 1) b
+</code></pre>
+<p><code>Nil</code> is a vector of nothing, of length zero.
+<code>Cons</code> takes one element and a vector, and gives back a vector one longer.
+<code>:&gt;</code> is a second name for <code>Cons</code>, declared so that it may be written between its two arguments rather than in front of them, and <code>:i (:&gt;)</code> reports its type as <code>a -&gt; Vec n a -&gt; Vec (n + 1) a</code>.</p>
+<p>Those are constructors, which makes them the same kind of thing as <code>Just</code>: data, not syntax, usable to build a value and usable as <a href="#a-pattern-is-a-shape-with-holes">a pattern</a> to take one apart.
+Nothing in the language knows that eight of them in a row is a special shape.</p>
+<p><code>:i (:&gt;)</code> also reports <code>infixr 5 :&gt;</code>, and that is what keeps the seed readable.
+Associating to the right means <code>glider</code>’s chain groups as one number and then everything after it:</p>
+<pre><code>0b0100_0000 :&gt; (0b0010_0000 :&gt; ( ... :&gt; (0b0000_0000 :&gt; Nil)))
+</code></pre>
+<p>which is the only grouping that could typecheck, because <code>:&gt;</code> wants a vector on its right and never on its left.
+Eight of them therefore need no parentheses at all, and the parentheses that are in <code>glider</code> are doing something else: application binds tighter than any operator, so without them <code>fromRows 0b0100_0000 :&gt; ...</code> would apply <code>fromRows</code> to the first row alone.</p>
+<p>Counting the <code>:&gt;</code> is counting the length, and the compiler does that counting.
+Deleting one row from the seed is rejected before anything runs, with <code>[GHC-83865]</code> and a complaint that it could not match 1 with 2.
+Those small numbers are worth a moment, because the row deleted to get them was the fourth of eight.
+The mismatch is found at the tail, where the last <code>:&gt;</code> needed two elements after it and had one, so the message points at the bottom of the chain rather than at the row that went missing.</p>
+<h2 id="the-length-is-in-one-of-them-and-not-the-other"><a class="header" href="#the-length-is-in-one-of-them-and-not-the-other">The length is in one of them and not the other</a></h2>
+<p>Chapter 3 said that a length is in the type and it is checked, and the two types are where that difference lives.
+<code>Vec 8 Bool</code> has the eight in it, and <code>[Bool]</code> has nothing in the corresponding position, because there is no corresponding position.
+A <code>[Bool]</code> is some number of booleans, and its type is the same type whether it holds three of them or three thousand.</p>
+<p>The case of that worth knowing is <code>String</code>, because the reader has been holding a list since chapter 3 without seeing a bracket: <code>:i String</code> prints <code>type String = [Char]</code>.
+A string is a list of characters, which is why <code>render</code>’s type is <code>Board -&gt; String</code> and why that signature has a vector on one side and a list on the other.</p>
+<p>The reason the hardware side gets the checked one is that a wire count is not allowed to be a surprise.
+A <code>Vec 8 Bool</code> is eight wires, and it is eight wires while the program is still being compiled, which is what lets chapter 4 describe four hundred and forty-eight additions without anything in the source counting them.
+The cost runs in the other direction, and it is absolute: a <code>Vec</code>’s length can never depend on data the circuit computes while it runs.
+That is a cannot rather than a not currently, and it is the same cannot as a VHDL port whose width is decided by a signal.</p>
+<p>Telling the two apart in what the prompt prints needs nothing beyond this.
+Square brackets are a list, whatever is between them: chapter 6’s <code>[Board]</code>, and the seven values chapter 7 typed for <code>fromList</code>.
+A <code>Vec</code> prints as the constructors it is made of, a chain of <code>:&gt;</code> ending in <code>Nil</code>, which is why one row of a board costs seventy-four characters at the prompt and why chapter 3 wrote <code>render</code> before it wrote anything that moves.</p>
+<h2 id="the-bridges-and-the-one-that-is-not-one"><a class="header" href="#the-bridges-and-the-one-that-is-not-one">The bridges, and the one that is not one</a></h2>
+<p><code>toList</code> is the crossing the book uses most, and it is in the one block chapter 3 said had nothing in it to learn:</p>
+<pre><code class="language-haskell">render :: Board -&gt; String
+render b = unlines (toList (map row b))
+  where
+    row r = toList (map cell r)
+    cell x = if x then '#' else '.'
+</code></pre>
+<p><code>toList :: Vec n a -&gt; [a]</code> keeps the elements and drops the length from the type.
+<code>render</code> crosses nine times for every board it prints: once per row, turning eight characters into a <code>String</code>, and once for the eight rows themselves, so that <code>unlines</code> has a list to put newlines between.
+<code>unlines</code> is why the crossing has to happen at all, and chapter 4’s <code>renderCounts</code> does the same nine crossings for the same reason.</p>
+<p>Sampling is a crossing of the same direction with a different reason.
+<code>sampleN</code> takes an ordinary <code>Int</code> and gives back a list, and neither of those is careless: how many cycles are looked at is a question about the simulation rather than about the circuit, and a number the circuit never sees has no reason to be in a type.
+Chapter 6’s <code>[Board]</code> is that decision showing, and it is why a signal has to be cut to a length before a board can be printed.</p>
+<p><code>fromList</code> looks like the return trip, and it is not one:</p>
+<pre><code>clashi&gt; :t fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
+fromList [Nothing, Nothing, Nothing, Just blinker, Nothing, Nothing, Nothing]
+  :: Signal dom (Maybe Board)
+</code></pre>
+<p>Its type carries a requirement of the kind chapter 6 said the compiler settles on its own, and what is left after it is <code>[a] -&gt; Signal dom a</code>: the list becomes a signal, and never becomes a vector.
+The two names cross two different borders: <code>toList</code> leaves the vector, and <code>fromList</code> enters the signal, with the list sitting outside both of them as the notation the prompt is comfortable in.
+Nothing in this tutorial goes from a list to a <code>Vec</code>, and the length is the reason: a list’s length is found by walking it, and a <code>Vec</code>’s has to be known before anything walks anywhere.
+A crossing in that direction has to be told how long the result is, and no design in the book has a use for one.</p>
+<h2 id="which-map-is-this"><a class="header" href="#which-map-is-this">Which <code>map</code> is this</a></h2>
+<p>One import line settles it.
+The project chapter 1 generates asks for <code>NoImplicitPrelude</code>, which turns off the standard prelude that Haskell would otherwise supply on its own, so every name in the file arrives from something written at the top of it.
+The line that brings in almost all of them is <code>import Clash.Explicit.Prelude</code>, the file’s first import from chapter 1 until chapter 13 changes it.</p>
+<p>What that module does with the names it shares with the standard prelude is to keep them for the vector functions.
+<code>map</code>, <code>head</code>, <code>zipWith</code> and <code>foldl1</code> are the vector ones, all four of which the reader has used, and the list functions of those names are not in scope under them.
+Names the vector library does not want are passed through untouched, and <code>unlines</code> is one: <code>:i unlines</code> reports it as coming from the standard library, in the same session where <code>:i map</code> reports <code>Clash.Sized.Vector</code>.
+So <code>render</code> calls two libraries in one expression and nothing in the source says which is which.</p>
+<p>Handing <code>map</code> a list is therefore an error rather than a different overload, and it is <code>[GHC-83865]</code> again, the code the seed with a row missing produced: <code>Couldn't match expected type: Vec n b</code>, with the list named underneath it as the actual one.</p>
+<p>A name is borrowed one at a time when the prelude does not have it, which is chapter 4’s second import:</p>
+<pre><code class="language-haskell">import Data.Char (intToDigit)
+</code></pre>
+<p>The parenthesised list says which names to take from <code>Data.Char</code>, and taking one leaves everything else in that module alone.
+<code>intToDigit</code> is not in the standard prelude either, so a Haskell program with no Clash in it would need the same line, in the same shape.</p>
+<h2 id="what-it-costs-2"><a class="header" href="#what-it-costs-2">What it costs</a></h2>
+<p>The vector functions arriving under the list functions’ names is a decision with a price, and the price is not paid while writing the tutorial.
+It is paid the first time the reader searches for something.
+An answer about <code>zipWith</code> will be about the list one, will not say so, and will differ from the vector one in the place that matters most.
+The list function takes two lengths that need not agree and produces the shorter of them; <code>zipWith</code> on vectors has <code>Vec n a</code> and <code>Vec n b</code> in its type, one length written twice, and two vectors of different lengths are rejected rather than shortened.
+Reading <code>[a]</code> as the vector is the habit to unlearn, and it is worth unlearning early, because the two libraries agree about so much else that a disagreement is easy to miss.</p>
+<p>What is bought with it is that there is one vocabulary rather than two.
+<code>map</code> over a board and <code>map</code> over a row are the same word, <code>foldl1</code> over eight boards of counts reads the way the standard function of that name reads, and a reader coming the other way, from Haskell to Clash, has almost nothing to relearn.
+The tutorial pays the price knowingly and does not pay it twice: <code>toList</code> appears in two definitions in the reader’s file, both of them printing, and everything the design is made of is vectors from end to end.</p>
+<h2 id="where-you-met-this-2"><a class="header" href="#where-you-met-this-2">Where you met this</a></h2>
+<ul>
+<li>Chapter 3, <a href="#a-board-and-a-picture">A board, and a picture</a>: <code>:&gt;</code> and <code>Nil</code> in the seed, <code>head glider</code> printing a chain, and <code>toList</code> in <code>render</code>.</li>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: the same crossings in <code>renderCounts</code>, and the import list that borrows <code>intToDigit</code>.</li>
+<li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>sampleN 5</code>, and the <code>[Board]</code> it has.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: seven values in square brackets, and <code>fromList</code> making a signal out of them.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
