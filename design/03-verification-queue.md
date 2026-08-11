@@ -249,6 +249,38 @@ plausible.
   gives `Couldn't match type ‘16’ with ‘8’` over `Expected: Board 8` and
   `Actual: Board 16`. The page quotes all five as inline fragments rather than as
   blocks, following `vec-and-lists.md`.
+- **What one library signature answers at four use sites, and the two ways a
+  type variable is refused.** Captured 2026-08-11 through
+  `tools/clashi_capture.py` against `code/`, four times, with
+  `clashi_capture.READER_FILE` set to `src/Chapters/Ch04.hs`, `Ch07.hs`,
+  `Ch08.hs` and `Ch12.hs` in turn. On chapter 4's file, `:t rotateLeftS glider
+  d1` gives `Vec 8 (Vec 8 Bool)`. `:t mealy systemClockGen resetGen enableGen
+  lifeT` is the same command against two files and gives two answers: `Board ->
+  Signal System (Maybe Board) -> Signal System Board` on chapter 7's and `St ->
+  Signal System (Maybe Command) -> Signal System Board` on chapter 8's. On
+  chapter 12's file, `:t life glider` and `:t life glider16` print the five-line
+  types that are `life8`'s and `life16`'s signatures, `:t step glider16` gives
+  `Board 16`, `:t render glider16` gives `String`, `:t life8 systemClockGen
+  resetGen enableGen` gives `Signal System (Maybe (Command 8)) -> Signal System
+  (Board 8)`, and `:t map countBoard` gives `Vec n1 (Board n2) -> Vec n1 (Counts
+  n2)` — the same command that `higher-order.md` quotes as `Vec n Board -> Vec n
+  Counts` against chapter 4's file, renamed apart because two signatures use `n`.
+  Two failures, quoted as inline fragments: `:t addCounts (countBoard glider)
+  (countBoard glider16)` gives `[GHC-83865]`, `Couldn't match type ‘16’ with
+  ‘8’`, `Expected: Board 8`, `Actual: Board 16` and `In the first argument of
+  ‘countBoard’, namely ‘glider16’`, so the report lands inside the second
+  argument rather than on `addCounts`; and `:t (glider :: Board n)` gives
+  `[GHC-25897]`, `Couldn't match type ‘n’ with ‘8’` and `‘n’ is a rigid type
+  variable bound by an expression type signature: forall (n :: Nat). Board n`,
+  which is the only place in the book where the quantifier is printed. Two more
+  were run and are quoted nowhere: `:t (step glider16 :: Board n)` is the same
+  `[GHC-25897]` with 16 in place of 8, and `:t (glider :: Vec n (Vec 8 Bool))` on
+  chapter 4's file is the same code again with `Actual: Board`.
+  `polymorphism.md` quotes the rest, and no chapter shows any of them. Also
+  checked by reading chapters 1 to 3 rather than assumed: chapter 4's `:i
+  rotateLeftS` is the first signature in the book with a lowercase letter in it,
+  because `plus`, `nextCell`, `Board`, `fromRows`, `glider` and `render` are all
+  monomorphic. Re-run if the resolver moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 258 and 259. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34). This
