@@ -281,6 +281,25 @@ plausible.
   rotateLeftS` is the first signature in the book with a lowercase letter in it,
   because `plus`, `nextCell`, `Board`, `fromRows`, `glider` and `render` are all
   monomorphic. Re-run if the resolver moves.
+- **A second `=` is refused, a second row is not, and substituting a definition
+  changes nothing.** Captured 2026-08-11 through `tools/clashi_capture.py`
+  against `code/`, with `clashi_capture.READER_FILE` set to
+  `src/Chapters/Ch08.hs`, so the session is a pty at the pinned width and
+  locale. `step glider == zipWith (zipWith nextCell) glider (neighbourCounts
+  glider)` is `True`, so is the same equality with both sides inside another
+  `step`, and `board (St glider False) == glider` is `True`. Two edits, each
+  reloaded and each undone: appending `glider = blinker` to a file that already
+  defines `glider` fails to load with `[GHC-29916]`, `Multiple declarations of
+  ‘glider’` and a `Declared at:` naming both lines; adding `step b = b` directly
+  under `step`'s own definition *loads*, with `[GHC-53633]
+  [-Woverlapping-patterns]`, `Pattern match is redundant`, `In an equation for
+  ‘step’`, at the `clashi` prompt and with no flag asked for, which confirms the
+  redundancy half of the two pattern warnings above a second time. With that
+  second row in place `step glider == glider` is `False`: the first row answers
+  everything and the second is unreachable, so a second equation is not an
+  update of the first. `purity.md` quotes the two evaluations as blocks, which
+  is safe because neither prints a file name, and the two messages as inline
+  fragments. Re-run if the resolver moves.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 258 and 259. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34). This

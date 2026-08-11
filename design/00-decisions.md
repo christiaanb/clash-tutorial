@@ -861,6 +861,44 @@ link (chapter 4, immediately after the `:i rotateLeftS` transcript and above the
 and 12 secondaries stay unbuilt, and the "Where you met this" list names chapters
 6, 7, 8, 10, 12 and 13 as well.
 
+**`purity.md` shipped eighth, and one of its outline beats pointed at the wrong
+chapter.** The outline's fourth beat read "chapter 13 replaces a name with its
+definition and the netlist is byte-identical, which is the property doing the
+work." Chapter 13 does no such thing: it changes how a clock reaches `life`, and
+its diff is evidence about notation. The substitution evidence the book actually
+has is chapter 9's, and it is stronger — 548 lines with every definition inlined
+into one entity, against 211 plus 343 once `{-# OPAQUE step #-}` is added, with
+the entity declaration byte for byte the same across the pair — so the page
+argues from that and uses chapter 13 only as the re-check that both `step`
+entities survive a change of notation. Running things added the page's central
+beat, which the outline did not have: the outline stopped at "nothing can
+reassign", and what happens when a reader tries needed checking, because the two
+attempts do not behave alike. A second `glider = blinker` under an existing
+`glider` is `[GHC-29916] Multiple declarations of ‘glider’` and the module stops
+loading; a second `step b = b` under `step`'s own definition *loads*, because it
+is a second `case` row rather than a second assignment, and with it in place
+`step glider == glider` is `False`. That pair is now the page's argument that
+`=` is not assignment, and it needs `pattern-matching.md`'s first-match-wins
+rule to land, which is the first time an explanation page has depended on
+another one for an argument rather than for a definition. Substitution itself is
+shown rather than asserted: `step glider == zipWith (zipWith nextCell) glider
+(neighbourCounts glider)` is `True`. Two smaller corrections. The outline's fan
+out beat said "`board st` in five rows of chapter 8's `case`"; it is five
+occurrences in eight lines, in four of the five rows and once in the returned
+pair, and the row that does not read it is `Just (Load b)`, which is the one row
+that replaces the board rather than keeping it. And the page adds a cost the
+outline did not list, which is the honest limit of the whole argument: sharing
+is a permission the rule hands out and not a promise the language makes, so one
+instantiation for two named uses is a fact about the file chapter 9 generated,
+and `OPAQUE` is about inlining rather than about sharing. Two forward pointers
+were written without links, because no stub ships: the self-reference sentence
+names the shape and sends the reader to chapter 6's own answer rather than to an
+unwritten `laziness.md`, and the sentence keeping `putStr` from looking like a
+counterexample names the border without naming a page. Like the seven pages
+before it, this one took only its primary link (chapter 5, immediately after the
+"one board read in two places" sentence); the chapter 8 secondary stays unbuilt,
+and the "Where you met this" list names chapters 6, 7, 8, 9 and 13 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
