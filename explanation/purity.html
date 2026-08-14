@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e520451d.js";
+            window.path_to_searchindex_js = "../searchindex-43637822.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-e4d81790.js"></script>
+        <script src="../toc-8aeb8565.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -288,7 +288,7 @@ The only thing connecting the two is that one’s result is the other’s argume
 A <code>where</code> clause is a set of equations rather than a list of steps, so the order they are written in is ours to choose and the order they are worked out in is decided by which of them needs which.
 Chapter 10’s test bench is the sharper case: <code>done</code> is defined in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, on two consecutive lines, and there is no order in which either could have come first.</p>
 <p>One shape this rule does not settle on its own is a definition that mentions its own name, which is what chapter 6’s <code>boards</code> does.
-That one has an answer of its own, and chapter 6 gives it where the reader meets it: the name on both sides is the wire from the register’s output back to its input.</p>
+That one has an answer of its own, and it is <a href="laziness.html">A definition that refers to itself</a>: the name on both sides is the wire from the register’s output back to its input, and what decides whether such an equation says anything is a separate question.</p>
 <h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
 <p>State has to be somewhere, and it has to be written down.
 A variable in a clocked process holds its value across an edge with nothing said about it, and there is no equivalent here: nothing survives a cycle except what was handed to a register, and a design that remembers something has to carry that something as a value through the function that computes the next one.
@@ -321,7 +321,7 @@ The names in the source are still the way the design is read and changed; they a
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../next.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../explanation/laziness.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -335,7 +335,7 @@ The names in the source are still the way the design is read and changed; they a
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../next.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../explanation/laziness.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

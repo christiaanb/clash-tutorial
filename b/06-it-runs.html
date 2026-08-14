@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e520451d.js";
+            window.path_to_searchindex_js = "../searchindex-43637822.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-e4d81790.js"></script>
+        <script src="../toc-8aeb8565.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -289,7 +289,8 @@ That trade is the reason registers exist, and this chapter made it by adding one
 <p><strong><code>boards</code> is defined in terms of itself, and that is the feedback path.</strong>
 The right hand side of <code>boards</code> mentions <code>boards</code>, and that is not a definition eating itself: it is the wire running from the register’s output, through the logic, back to the register’s input.
 You have drawn this loop many times.
-The register is what puts a clock cycle into it, and a <code>where</code> clause is what makes it one line of source.</p>
+The register is what puts a clock cycle into it, and a <code>where</code> clause is what makes it one line of source.
+Why a definition may use itself, and what decides how much of it ever runs, is explained in <a href="../explanation/laziness.html">A definition that refers to itself</a>.</p>
 <p><strong>Nothing about the register is inferred.</strong>
 There is exactly one register in this design because <code>register</code> was written once, and the clock reaching it is the clock that was passed in.
 Nowhere does a tool read the shape of a process and decide that a register is what you must have meant: it was asked for by name.

@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-e520451d.js";
+            window.path_to_searchindex_js = "searchindex-43637822.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-e4d81790.js"></script>
+        <script src="toc-8aeb8565.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -937,7 +937,8 @@ That trade is the reason registers exist, and this chapter made it by adding one
 <p><strong><code>boards</code> is defined in terms of itself, and that is the feedback path.</strong>
 The right hand side of <code>boards</code> mentions <code>boards</code>, and that is not a definition eating itself: it is the wire running from the register’s output, through the logic, back to the register’s input.
 You have drawn this loop many times.
-The register is what puts a clock cycle into it, and a <code>where</code> clause is what makes it one line of source.</p>
+The register is what puts a clock cycle into it, and a <code>where</code> clause is what makes it one line of source.
+Why a definition may use itself, and what decides how much of it ever runs, is explained in <a href="#a-definition-that-refers-to-itself">A definition that refers to itself</a>.</p>
 <p><strong>Nothing about the register is inferred.</strong>
 There is exactly one register in this design because <code>register</code> was written once, and the clock reaching it is the clock that was passed in.
 Nowhere does a tool read the shape of a process and decide that a register is what you must have meant: it was asked for by name.
@@ -1859,7 +1860,7 @@ testBench = done
     rst = resetGen
 </code></pre>
 <p>The annotation on the first line ties the test bench to the entity it tests, and <code>'life</code> there is a quoted name rather than a call: it is why one <code>:vhdl</code> will generate both.</p>
-<p>Below it are four bindings.
+<p>Below it are five bindings.
 <code>commands</code> is the stimulus, one element per cycle, the same eight we sampled with.
 <code>expected</code> is the eight boards, in the order the design produces them.
 <code>done</code> is the comparison, and it is the test bench: <code>outputVerifier'</code> takes the boards it expects and the signal it gets, and hands back a signal that goes high once the last of them has been checked.
@@ -3937,7 +3938,7 @@ The only thing connecting the two is that one’s result is the other’s argume
 A <code>where</code> clause is a set of equations rather than a list of steps, so the order they are written in is ours to choose and the order they are worked out in is decided by which of them needs which.
 Chapter 10’s test bench is the sharper case: <code>done</code> is defined in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, on two consecutive lines, and there is no order in which either could have come first.</p>
 <p>One shape this rule does not settle on its own is a definition that mentions its own name, which is what chapter 6’s <code>boards</code> does.
-That one has an answer of its own, and chapter 6 gives it where the reader meets it: the name on both sides is the wire from the register’s output back to its input.</p>
+That one has an answer of its own, and it is <a href="#a-definition-that-refers-to-itself">A definition that refers to itself</a>: the name on both sides is the wire from the register’s output back to its input, and what decides whether such an equation says anything is a separate question.</p>
 <h2 id="what-it-costs-7"><a class="header" href="#what-it-costs-7">What it costs</a></h2>
 <p>State has to be somewhere, and it has to be written down.
 A variable in a clocked process holds its value across an edge with nothing said about it, and there is no equivalent here: nothing survives a cycle except what was handed to a register, and a design that remembers something has to carry that something as a value through the function that computes the next one.
@@ -3960,6 +3961,160 @@ The names in the source are still the way the design is read and changed; they a
 <li>Chapter 8, <a href="#more-than-valid">More than valid</a>: <code>board st</code> five times in eight lines, and <code>st'</code> used above the clause that defines it.</li>
 <li>Chapter 9, <a href="#an-entity">An entity</a>: one port for two reads, one register for five, one instantiation for two uses, and 548 lines of everything inlined into one entity.</li>
 <li>Chapter 13, <a href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a>: both <code>step</code> entities byte for byte across a change of notation.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="a-definition-that-refers-to-itself"><a class="header" href="#a-definition-that-refers-to-itself">A definition that refers to itself</a></h1>
+<p>Chapter 6 turned four chapters of combinational logic into a design that runs by itself, and the whole of the change was one line inside a <code>where</code> clause:</p>
+<pre><code class="language-haskell">life ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System Board
+life clk rst en = boards
+  where
+    boards = register clk rst en glider (fmap step boards)
+</code></pre>
+<p><code>boards</code> is the name being defined, and <code>boards</code> is in the expression that defines it.
+The chapter said what that is, and said it in one beat: the wire running from the register’s output, through the logic, back to the register’s input.
+Chapter 10 does something that looks harder still.
+Its test bench defines <code>done</code> in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, on two consecutive lines, and neither of the two could have been written first.</p>
+<p>Both of those load, and both of them run.
+This page is why: what a definition that mentions its own name means, what decides whether it has an answer, and what stops a value with no end in it from taking forever the first time anything looks at it.</p>
+<h2 id="the-reading-that-does-not-survive-8"><a class="header" href="#the-reading-that-does-not-survive-8">The reading that does not survive</a></h2>
+<p>A name on both sides of one line is not new to the reader, and there are two established readings of it to leave behind.
+Inside a process, <code>b := f(b)</code> reads what the variable holds at that statement and gives it something else, so the two occurrences of <code>b</code> are two values at two times, and which is which is decided by where the statement sits among the others.
+As a concurrent statement, <code>s &lt;= not s</code> is legal too and means the other thing: no statement order applies, the assignment runs again every time its input changes, and NVC gives up on it at time zero with <code>limit of 10000 delta cycles reached</code>.</p>
+<p>The second reading is close enough to be the dangerous one.
+It is order free, it is about a wire rather than a variable, and it is a loop with nothing in it, which is very nearly the right picture.
+What does not carry over is the machinery underneath: there is no assignment here, nothing is scheduled, and there is no delta cycle for a new value to arrive in.
+<code>boards</code> is one signal, its definition is a claim about the whole of it, and whether that claim says anything is decided by what producing one cycle of it needs.</p>
+<p>A third habit goes with those two.
+In VHDL an object is declared before it is used, and the declaration is above the use in the file.
+A <code>where</code> clause does not work that way, and the indentation that makes it a clause says nothing whatever about order.</p>
+<h2 id="a-where-clause-has-no-order-in-it"><a class="header" href="#a-where-clause-has-no-order-in-it">A <code>where</code> clause has no order in it</a></h2>
+<p>Chapter 10’s test bench is the case worth reading, because it has five bindings and they are written in an order that no reading by sequence survives:</p>
+<pre><code class="language-haskell">{-# ANN testBench (TestBench 'life) #-}
+testBench :: Signal System Bool
+testBench = done
+  where
+    commands = stimuliGenerator clk rst
+      (  Nothing
+      :&gt; Nothing
+      :&gt; Just Step
+      :&gt; Just Run
+      :&gt; Nothing
+      :&gt; Just Pause
+      :&gt; Just (Load blinker)
+      :&gt; Nothing
+      :&gt; Nil )
+    expected = outputVerifier' clk rst
+      (  glider
+      :&gt; glider
+      :&gt; glider
+      :&gt; glider1
+      :&gt; glider1
+      :&gt; glider2
+      :&gt; glider2
+      :&gt; blinker
+      :&gt; Nil )
+    done = expected (life clk rst enableGen commands)
+    clk = tbSystemClockGen (fmap not done)
+    rst = resetGen
+</code></pre>
+<p><code>commands</code>, on the clause’s first line, uses <code>clk</code>, which is defined twenty-one lines further down.
+<code>done</code> uses <code>expected</code> and <code>commands</code> above it and <code>clk</code> below it.
+Nothing here is a forward reference that a compiler has to be clever about, because there is no forward: five bindings are five equations about five names, and <a href="#order-stops-mattering">there is nothing for an order to be about</a>.
+What the layout does is mark which lines belong to the clause, which it does by indenting them past the <code>where</code>.
+That is the whole of its job.</p>
+<p>The claim is checkable rather than something to take on trust, and checking it costs one edit.
+Written in the reverse of that order the same five bindings load, and <code>clk</code> now asks for a <code>done</code> one line below it where before <code>commands</code> asked for a <code>clk</code> twenty-one lines below.
+Chapter 10’s question, put to the reversed file, gets chapter 10’s answer:</p>
+<pre><code>clashi&gt; sampleN 12 testBench
+[False,False,False,False,False,False,False,False,False,True,True,True]
+</code></pre>
+<p>Nine <code>False</code> and three <code>True</code>, from a test bench that now reads bottom to top.
+<code>:vhdl</code> says it more strongly than the prompt can.
+All six of the VHDL files it writes are byte for byte the ones the book’s order produces, and so is the timing constraint file beside them, down to the sixteen hexadecimal digits in the name of the one package whose name carries a hash.
+The only difference anywhere in the two trees is the <code>hash</code> field inside a manifest, which moves between two runs of one unchanged file as well.</p>
+<h2 id="a-name-is-in-scope-on-its-own-right-hand-side"><a class="header" href="#a-name-is-in-scope-on-its-own-right-hand-side">A name is in scope on its own right hand side</a></h2>
+<p>That is the rule, and nothing in the book has had occasion to state it.
+Every name a <code>where</code> clause defines is in scope in every right hand side in that clause, including its own.
+So <code>boards = register clk rst en glider (fmap step boards)</code> mentions one <code>boards</code> and not two, and there is no earlier <code>boards</code> for the inner one to have meant.</p>
+<p>What the line then says is an equation, in the sense the tutorial has used since chapter 1: <a href="#a-definition-is-an-equation">the right hand side is the value</a>, and here the value is a signal.
+It says that <code>boards</code> is the signal holding <code>glider</code> while the reset is asserted and, on every cycle after that, <code>step</code> of what it held on the cycle before.
+Exactly one signal satisfies that, and <code>boards</code> is a name for it.
+An equation whose unknown appears on both sides may have a solution and may have none, and a name for the solution of one that has it is called a fixed point.</p>
+<p>Chapter 6’s wire is not a metaphor for this: it is the same statement in the other notation.
+A wire is not computed before it is connected, and connecting a register’s output back to its input through some logic does not compute anything either: it constrains what the values on that wire can be, and one set of values satisfies the constraint.
+The recursion the word usually brings to mind, a function that calls itself, is not what is on the page.
+<code>boards</code> is a value, and it refers to itself.</p>
+<h2 id="nothing-is-worked-out-until-something-asks"><a class="header" href="#nothing-is-worked-out-until-something-asks">Nothing is worked out until something asks</a></h2>
+<p>A <code>Signal System Board</code> is one board for every cycle there will ever be, and there is no last one.
+Chapter 6 said what follows from that, and it is a surprising thing to be able to say: writing one at the prompt “typechecks, and it prints until you stop it”.
+A value with no end can be defined, named, passed to a function and asked for its type, and none of that costs anything.</p>
+<p>One rule explains that and everything else on this page.
+An expression is not worked out where it is written; it is worked out when something needs its value, and only as far as the need reaches.
+<code>sampleN 5</code> needs five cycles of <code>boards</code>, so five of them come into existence and the sixth never does.
+Printing the signal itself needs all of it, which is why chapter 6’s warning is not about a slow computation but about a demand with no end in it.</p>
+<p>Demand is easiest to see by asking for one cycle more than there is.
+<code>fromList</code> is chapter 7’s way of driving an input, and it <a href="#the-bridges-and-the-one-that-is-not-one">crosses from a list into a signal</a>, one element per cycle.
+Three elements answer three cycles:</p>
+<pre><code>clashi&gt; sampleN 3 (fromList [Nothing, Nothing, Nothing] :: Signal System (Maybe Board))
+[Nothing,Nothing,Nothing]
+</code></pre>
+<p>The same expression asked for four begins its answer before it reaches the trouble.
+The prompt prints <code>[Nothing,Nothing,Nothing</code> and then, in place of the fourth element and the closing bracket, <code>*** Exception: X: finite list</code> and a call stack naming a line in <code>clash-prelude</code>’s own source.
+Three elements were there and were printed as they were produced, and the fourth is where the list ran out.
+Nothing compared the length of the list against the number four beforehand, because until the first three had been printed nothing had asked for a fourth element at all.</p>
+<p>That is the rule chapters 7, 8 and 10 are quietly obeying every time a stimulus is typed: seven elements for seven cycles, eleven for eleven, eight for eight.
+Chapter 10’s test bench looks like the exception, and it is safe for a different reason.
+Its eight commands reach the design through <code>stimuliGenerator</code> rather than <code>fromList</code>, and that holds its last element for every cycle after the last, so asking it for twelve is an ordinary thing to do.</p>
+<h2 id="the-register-is-what-makes-the-knot-productive"><a class="header" href="#the-register-is-what-makes-the-knot-productive">The register is what makes the knot productive</a></h2>
+<p>Not every definition that mentions its own name says something, and this is where the page stops being reassuring.
+<code>register</code>’s first output is the value it was given, and nothing about it depends on the input; every output after that needs the input only as it stood one cycle earlier.
+So each cycle of <code>boards</code> needs only cycles that already exist, the reset value is what starts the chain, and the demand for the fifth cycle reaches back four cycles and stops.
+That property has a name, productive, and a hardware engineer demands it of a feedback path already, under another description: a register in the loop.</p>
+<p>Take the register out of chapter 6’s line, leaving <code>boards = fmap step boards</code>.
+The type is unchanged, the module loads, and nothing warns.
+Asking for one cycle of it prints nothing at all, and two and a half minutes later it has still printed nothing: no result, no error, and after the first few seconds no further memory taken either.
+The equation says that every cycle of <code>boards</code> is <code>step</code> of that same cycle, which is a constraint that names no cycle, so there is nothing for a first demand to reach back to.
+As hardware it is the combinational loop it looks like.
+Chapter 6 presented having to ask for a register by name as a cost, and this is the other side of that: a loop with nothing in it takes a deliberate omission to write.</p>
+<h2 id="two-equations-that-need-each-other"><a class="header" href="#two-equations-that-need-each-other">Two equations that need each other</a></h2>
+<p>Chapter 10’s <code>done</code> and <code>clk</code> are the two-equation case of the same thing.
+<code>done</code> is what the verifier says about the design’s output, and the design is clocked by <code>clk</code>; <code>clk</code> is a clock that runs until <code>done</code> says the checking is over.
+Each of them is defined in terms of the other, and as a pair they are as legal as <code>boards</code> is.</p>
+<p>What resolves them is worth seeing in the generated file, because there the loop is a piece of hardware rather than a puzzle.
+Chapter 10 quotes the process that drives the clock, and its middle is this:</p>
+<pre><code class="language-vhdl">    while (not \c$result_rec\) loop
+      \Example.Project.testBench_clk\ &lt;= not \Example.Project.testBench_clk\;
+      wait for half_periodH;
+      \Example.Project.testBench_clk\ &lt;= not \Example.Project.testBench_clk\;
+      wait for half_periodL;
+    end loop;
+</code></pre>
+<p><code>\c$result_rec\</code> is <code>done</code>.
+Every iteration reads it as it stands and then produces the next two edges, so nothing in the loop ever needs a value that does not exist yet, which is the productivity of <code>boards</code> again in another notation.</p>
+<p>At the prompt the knot never has to be untied that far, and chapter 10’s own transcript shows it.
+Twelve cycles came out of <code>sampleN 12 testBench</code>, and <code>done</code> goes high on the tenth of them.
+A clock that runs until <code>done</code> says stop did not prevent the eleventh and the twelfth: what asks for a cycle in Haskell is the sample, and stopping the clock is something the generated file does for a VHDL simulator.
+That is the stop chapter 11 is looking at when its waveform ends at 190 nanoseconds.</p>
+<h2 id="what-it-costs-8"><a class="header" href="#what-it-costs-8">What it costs</a></h2>
+<p>When a value is worked out is not written anywhere.
+A definition says what the value is, and demand decides how much of it is ever built, so how much work has happened at a given moment is a question the file does not answer.
+That has not mattered once in this tutorial, and the honest price is that it says nothing about the cases where it does: a simulation that is slower or holds more memory than it should is a job for profiling tools this book does not use, and reading the source is a poor way to guess at either.</p>
+<p>A missing register is not a compile error.
+<code>boards = fmap step boards</code> is a well typed definition of a signal, and what it buys is a prompt that does not come back, with nothing printed and nothing said.
+The comparison worth making is at the top of this page, where NVC stopped a delta cycle loop at time zero and pointed at the signal driving it: the VHDL tool reports the loop, and here nothing reports anything.</p>
+<p>Endlessness is cut by hand, every time, and nothing in the types insists on it.
+<code>sampleN</code> comes in the same breath as the signal because chapter 6 made it a habit, and not because anything would object.
+A stimulus shorter than the sample taken from it is an exception on the cycle it runs out rather than a length anybody checked.
+A <code>Signal</code> printed bare is a design that works perfectly and a terminal that has to be interrupted.</p>
+<h2 id="where-you-met-this-8"><a class="header" href="#where-you-met-this-8">Where you met this</a></h2>
+<ul>
+<li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>boards</code> on both sides of its own <code>=</code>, five cycles from <code>sampleN 5</code>, and a signal that prints until you stop it.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>fromList</code>, with seven elements for the seven cycles that are sampled from it.</li>
+<li>Chapter 8, <a href="#more-than-valid">More than valid</a>: the same rule at a larger size, eleven commands for eleven cycles.</li>
+<li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: <code>done</code> in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, twelve cycles sampled from eight commands, and the clock the test bench stops itself.</li>
+<li>Chapter 11, <a href="#the-waveform">The waveform</a>: 190 nanoseconds of dump, which is where stopping that clock leaves the run.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
