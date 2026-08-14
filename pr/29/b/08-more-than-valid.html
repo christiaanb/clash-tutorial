@@ -1,0 +1,511 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>More than valid - A Clash tutorial</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="A lesson in Clash for engineers who already design hardware.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-157a44c6.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-be3cf189.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Clash tutorial</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="more-than-valid"><a class="header" href="#more-than-valid">More than valid</a></h1>
+<p>Chapter 7’s input says one of two things: a board is arriving, or nothing is.
+That is everything a valid bit can say, and a design that can also be told to advance a single generation, to run on its own, and to stop, needs an input with more in it than a bit.
+This chapter replaces the board inside that input with four commands of our own, one of which carries a board and three of which carry nothing at all.</p>
+<h2 id="four-things-the-outside-can-say"><a class="header" href="#four-things-the-outside-can-say">Four things the outside can say</a></h2>
+<p>Every type in this design so far was assembled out of types that already existed: <code>Board</code> is a <code>Vec</code> of <code>Vec</code>s of <code>Bool</code>, and <code>Maybe Board</code> is a <code>Board</code> inside something the prelude supplies.
+A command set is not like that, because no type already in existence has load, step, run and pause as its values.
+So we declare one, directly under <code>step</code>:</p>
+<pre><code class="language-haskell">data Command
+  = Load Board
+  | Step
+  | Run
+  | Pause
+  deriving (Generic, NFDataX, BitPack, Eq, Show)
+</code></pre>
+<p><code>data</code> introduces a type and lists every value it can have.
+A <code>Command</code> is a <code>Load</code>, a <code>Step</code>, a <code>Run</code> or a <code>Pause</code>, and there is no fifth thing for one to be.
+<code>Load</code> has a <code>Board</code> written after it, so it is not a value by itself: it takes a board and becomes one.
+The other three take nothing and are values already.</p>
+<p><code>Step</code> and <code>step</code> are two different names, and the capital letter is the whole of the difference between them.
+Haskell requires a type or a constructor to begin with a capital and a function to begin with a lower case letter, which is how it always knows which of the two is meant.
+In VHDL they would be the same name.</p>
+<p>The <code>deriving</code> line asks the compiler to work five things out about the type instead of our writing them by hand.
+<code>Generic</code> is the shape of the type, which is to say how many constructors it has and what each of them carries.
+<code>NFDataX</code> and <code>BitPack</code> are worked out from that shape: <code>NFDataX</code> is what a value needs before a register will hold it, and <code>BitPack</code> is what it needs before it can be a bundle of wires.
+<code>Eq</code> and <code>Show</code> are what let one be compared and printed at the prompt.</p>
+<p>Reload, and ask about two of the four:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i Load
+type Command :: Type
+data Command = Load Board | ...
+  	-- Defined at src/Example/Project.hs:88:5
+clashi&gt; :i Step
+type Command :: Type
+data Command = ... | Step | ...
+  	-- Defined at src/Example/Project.hs:89:5
+</code></pre>
+<p>Asking about a constructor answers with the type it belongs to, that constructor in place, and the others left out.
+<code>Load</code> comes back with the <code>Board</code> it takes and <code>Step</code> comes back with nothing after it, which is the difference between the two stated by the compiler rather than by us.</p>
+<p><code>Load</code> on its own is not a command, in the way that chapter 1’s <code>plus 3</code> was not a number: it is something that still wants a board.
+Give it one, and it is a command:</p>
+<pre><code>clashi&gt; :t Load blinker
+Load blinker :: Command
+</code></pre>
+<p>What a <code>data</code> declaration is, and why nothing outside its list can ever turn up on the wires, is explained in <a href="../explanation/data-types.html">A type that lists every value it can have</a>.</p>
+<h2 id="a-tag-and-a-payload-both-there-on-every-cycle"><a class="header" href="#a-tag-and-a-payload-both-there-on-every-cycle">A tag and a payload, both there on every cycle</a></h2>
+<p>Chapter 3 used <code>unpack</code> to read eight bits as eight <code>Bool</code>s.
+<code>pack</code> is the other direction: it lays a value out as the bits that would carry it.
+Ask it about all four commands, in the order they were declared:</p>
+<pre><code>clashi&gt; pack (Load blinker)
+0b00_0000_0000_0000_0000_0000_0000_0011_1000_0000_0000_0000_0000_0000_0000_0000_0000
+clashi&gt; pack Step
+0b01_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
+clashi&gt; pack Run
+0b10_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
+clashi&gt; pack Pause
+0b11_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
+</code></pre>
+<p>Two bits at the front and sixty-four behind them, sixty-six in all.
+The two at the front are the tag, and they count the constructors in the order the declaration lists them: <code>Load</code> is <code>00</code>, <code>Step</code> is <code>01</code>, <code>Run</code> is <code>10</code>, <code>Pause</code> is <code>11</code>.
+The sixty-four behind are the payload, and on the first line they are the blinker, because <code>Load</code> is the constructor that put a board there.</p>
+<p>A <code>.</code> is a bit whose value is not known.
+<code>Step</code>, <code>Run</code> and <code>Pause</code> carry nothing, so nothing was put in the payload field, and the field is sixty-four bits wide regardless.
+That is what a union costs in any language, and declaring it this way has not made it cheaper.
+What it has made impossible is reading those sixty-four bits as a board while the tag says <code>01</code>.</p>
+<p>A command arrives on some cycles and not on others, so the input is still a <code>Maybe</code>:</p>
+<pre><code>clashi&gt; pack (Just Step)
+0b101_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
+</code></pre>
+<p>Sixty-seven bits: one for the <code>Maybe</code>’s tag, then the sixty-six of the command inside it.
+Chapter 11 finds those three fields on a waveform, and this is the line to have in mind when it does.</p>
+<h2 id="a-state-with-a-mode-in-it"><a class="header" href="#a-state-with-a-mode-in-it">A state with a mode in it</a></h2>
+<p>Chapter 7’s state was a board, and the design took a generation on every cycle that brought no input.
+Four commands need more than a board to work with.
+<code>Run</code> has to still be in force on the cycles after the one it arrived on, or it does exactly what <code>Step</code> does, so the design has to remember whether it was last told to run or to stop.</p>
+<p>Add this under <code>Command</code>:</p>
+<pre><code class="language-haskell">data St = St { board :: Board, running :: Bool }
+  deriving (Generic, NFDataX)
+</code></pre>
+<p><code>St</code> is a record with two fields, and a record is the part of this chapter you already have: VHDL has them and they behave the same way.
+<code>board</code> and <code>running</code> are the field names, and each of them is also a function from an <code>St</code> to that field, so <code>board st</code> is the board and <code>running st</code> is the flag.
+<code>St b False</code> builds one, taking the fields in the order they were declared.</p>
+<p>It derives two of the five that <code>Command</code> derived, and <code>mealy</code> is the reason for both: the state goes through a register, a register wants <code>NFDataX</code>, and <code>Generic</code> is what <code>NFDataX</code> is worked out from.
+Nothing packs an <code>St</code> into bits, because nothing sends one anywhere.</p>
+<h2 id="one-row-per-command"><a class="header" href="#one-row-per-command">One row per command</a></h2>
+<p>Replace <code>lifeT</code> and <code>life</code> with these:</p>
+<pre><code class="language-haskell">lifeT :: St -&gt; Maybe Command -&gt; (St, Board)
+lifeT st cmd = (st', board st)
+  where
+    st' = case cmd of
+      Just (Load b) -&gt; St b False
+      Just Step     -&gt; St (step (board st)) False
+      Just Run      -&gt; St (board st) True
+      Just Pause    -&gt; St (board st) False
+      Nothing       -&gt; if running st then St (step (board st)) True else st
+
+life ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System (Maybe Command) -&gt; Signal System Board
+life clk rst en = mealy clk rst en lifeT (St glider False)
+</code></pre>
+<p><code>lifeT</code> has the job it had in chapter 7: given the state the register is holding and whatever arrived this cycle, say what the register takes next and what comes out now.
+What comes out is <code>board st</code>, the board of the state as it stands, so the output side is unchanged.</p>
+<p>The <code>case</code> has one row for each thing the input can be, and every row builds the next state.
+<code>Just (Load b)</code> is two tests and a name in a single expression: that something arrived, that what arrived is a <code>Load</code>, and that the board it carries is called <code>b</code>.
+There is no VHDL construct for that.
+You would test the valid line, decode the tag, and slice the payload, in three steps, and nothing in the language would stop you doing the third without the first two.</p>
+<p><code>Just Step</code> takes one generation and leaves the flag clear, <code>Just Run</code> sets the flag and leaves the board, and <code>Just Pause</code> clears the flag and leaves the board.
+The <code>Nothing</code> row is the one that runs: with no command arriving, the design takes a generation if <code>running</code> says it is running, and holds the state exactly as it is if it does not.
+That row is chapter 6’s design with a switch on it.</p>
+<p><code>life</code> changes in two places, both of them small.
+Its input is now <code>Signal System (Maybe Command)</code>, and the state <code>mealy</code> holds while the reset is asserted is <code>St glider False</code>: the seed from chapter 3, stopped.</p>
+<p>Reload, and look at the three names that have changed:</p>
+<pre><code>clashi&gt; :r
+[1 of 1] Compiling Example.Project  ( src/Example/Project.hs, interpreted )
+Ok, one module reloaded.
+clashi&gt; :i St
+type St :: Type
+data St = St {board :: Board, running :: Bool}
+  	-- Defined at src/Example/Project.hs:94:1
+instance Generic St -- Defined at src/Example/Project.hs:95:13
+instance NFDataX St -- Defined at src/Example/Project.hs:95:22
+clashi&gt; :i lifeT
+lifeT :: St -&gt; Maybe Command -&gt; (St, Board)
+  	-- Defined at src/Example/Project.hs:98:1
+clashi&gt; :i life
+life ::
+  Clock System
+  -&gt; Reset System
+  -&gt; Enable System
+  -&gt; Signal System (Maybe Command)
+  -&gt; Signal System Board
+  	-- Defined at src/Example/Project.hs:110:1
+</code></pre>
+<p>The two lines under <code>St</code> are the two things <code>deriving</code> asked for, reported back as what they are and pointing at the line that asked.
+<code>lifeT</code> has no <code>Signal</code> in its type, exactly as in chapter 7, and is therefore a block of logic settling between one edge and the next.
+<code>life</code> has gained no arguments: the fourth one has changed type, and that is the whole of the change to the interface.</p>
+<h2 id="eleven-cycles"><a class="header" href="#eleven-cycles">Eleven cycles</a></h2>
+<p>The three generators come first, as they have since chapter 6, and what they leave behind is the input:</p>
+<pre><code>clashi&gt; :t life systemClockGen resetGen enableGen
+life systemClockGen resetGen enableGen
+  :: Signal System (Maybe Command) -&gt; Signal System Board
+</code></pre>
+<p>Eleven cycles need eleven elements, and this is the sequence to drive them with:</p>
+<pre><code>clashi&gt; :t fromList [Nothing, Nothing, Just Step, Nothing, Just Run, Nothing, Nothing, Just Pause, Just (Load blinker), Nothing, Nothing]
+fromList [Nothing, Nothing, Just Step, Nothing, Just Run, Nothing, Nothing, Just Pause, Just (Load blinker), Nothing, Nothing]
+  :: Signal dom (Maybe Command)
+</code></pre>
+<p>Read it as a schedule: nothing, nothing, step, nothing, run, nothing, nothing, pause, load the blinker, nothing, nothing.</p>
+<pre><code>clashi&gt; mapM_ (\b -&gt; putStr (render b)) (sampleN 11 (life systemClockGen resetGen enableGen (fromList [Nothing, Nothing, Just Step, Nothing, Just Run, Nothing, Nothing, Just Pause, Just (Load blinker), Nothing, Nothing])))
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+.#......
+..#.....
+###.....
+........
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+#.#.....
+.##.....
+.#......
+........
+........
+........
+........
+........
+..#.....
+#.#.....
+.##.....
+........
+........
+........
+........
+........
+.#......
+..##....
+.##.....
+........
+........
+........
+........
+........
+.#......
+..##....
+.##.....
+........
+........
+........
+........
+........
+........
+........
+..###...
+........
+........
+........
+........
+........
+........
+........
+..###...
+........
+........
+........
+........
+</code></pre>
+<p>Eighty-eight rows, which is eleven boards of eight.
+A command is read on the cycle it arrives and what it did appears on the next, because the register is between the two, so each board below is named by the command one cycle behind it.</p>
+<p>The first three boards are the seed.
+Two of them are the reset, as in every chapter since chapter 6, and the third one is new: in chapters 6 and 7 the third board was already the first generation.
+Here it is the seed, because the state starts with <code>running</code> set to <code>False</code> and nothing has yet said otherwise.
+The design is stopped, and staying stopped is something it now does.</p>
+<p>The fourth, fifth and sixth boards are the first generation, three times over.
+The fourth is <code>Just Step</code> having taken effect.
+The fifth is the cycle after it, with nothing arriving and the design still stopped, which is <code>Step</code> having advanced one generation and started nothing.
+The sixth is <code>Just Run</code> having taken effect, and the picture does not change, because <code>Run</code> sets the flag and leaves the board alone.</p>
+<p>The seventh and eighth boards are the second and third generations, produced by two cycles of nothing arriving while <code>running</code> is <code>True</code>.
+That is chapter 6 again, running this time because it was asked to.</p>
+<p>The ninth board repeats the eighth, which is <code>Just Pause</code> having taken effect.
+The tenth is the blinker, loaded by <code>Just (Load blinker)</code> on the cycle before.
+The eleventh is the blinker still, and it is the last thing worth pointing at: in chapter 7 a loaded blinker began oscillating on the spot, and here it sits, because <code>Load</code> leaves the design stopped and nothing has said <code>Run</code>.</p>
+<p>That is the result of this chapter: a design that is loaded, stepped, started and stopped from outside, over one port.</p>
+<h2 id="notice-that"><a class="header" href="#notice-that">Notice that</a></h2>
+<p><strong>The payload belongs to the tag, and nothing else can be made to reach it.</strong>
+You have built this many times as a tag field beside a payload field, and the rule that the payload means something only for certain tag values has lived in your head, or in a comment.
+<code>Just (Load b)</code> is that rule written as the only way in: <code>b</code> exists in that one row and nowhere else in the file, so the three commands that carry no board have no name for one to misuse.
+Underneath, the design still slices the payload out of the port on every cycle and discards it when the tag disagrees, which is what your hand-built version does too.</p>
+<p><strong>It is sixty-six bits whichever command it is, and sixty-seven on the port.</strong>
+<code>Step</code>, <code>Run</code> and <code>Pause</code> carry nothing and are sixty-six bits all the same, because a union is as wide as its widest member and <code>Load</code> carries a board.
+Wrapping it in <code>Maybe</code> adds the one bit that says whether anything arrived at all, and that sixty-seven-bit port is driven on every cycle whether a command is on it or not.
+The type has not saved a wire and was never going to; what it takes away is a class of mistake, and chapter 11 is where the tag and the payload are found on a waveform.</p>
+<p><strong>A record is the familiar part, and it stays a record.</strong>
+<code>St</code> is two named fields, VHDL has exactly that, and the state in the generated hardware is a record with the same two fields in it.
+There is nothing here to learn and nothing here to translate.</p>
+<p><strong>The design has a mode now, and the mode is one bit of state.</strong>
+Chapter 6’s state was a board and chapter 7’s still was; this one is a board and a flag, so the register is one bit wider than it was and nothing else about the loop has moved.
+There is still one <code>step</code>, still one register, and still one combinational function between the register’s output and its input.
+A mode is not machinery: it is state, and it cost a field.</p>
+<h2 id="where-this-goes"><a class="header" href="#where-this-goes">Where this goes</a></h2>
+<p>Eight chapters in, this design has an input, an output, a clock, a reset and an enable, and nothing outside Haskell can see any of them.
+Chapter 9 names the design and each of its ports, and turns it into VHDL you can read.
+Leave <code>clashi</code> running.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../b/07-an-input.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../b/09-an-entity.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../b/07-an-input.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../b/09-an-entity.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
