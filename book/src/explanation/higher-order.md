@@ -76,7 +76,7 @@ zipWith (+) :: Num c => Vec n c -> Vec n c -> Vec n c
 That is one adder handed to something that will place a row of them, and what comes back is a function of two vectors that has not been given any yet.
 `addCounts = zipWith (zipWith (+))` is that once more, one level up: `zipWith (+)` is itself a function of two arguments, so it goes where `zipWith`'s first argument goes, and what comes back adds two vectors of vectors element by element.
 `addCounts`'s signature is what fixes the sizes: `Counts -> Counts -> Counts`, eight rows of eight four-bit numbers on both sides.
-The `Num c` in front of the `=>` is a requirement rather than an argument, and what those are is a longer question that chapter 4 needed no part of.
+The `Num c` in front of the `=>` is a requirement rather than an argument, and chapter 4 needed no part of [what those are](type-classes.md).
 
 Chapter 9 is where handing `(+)` over is paid out.
 The generated VHDL for this design has three `for … generate` blocks nested inside each other, seven by eight by eight, and one `+` at the centre of them, which is the four hundred and forty-eight additions chapter 4 counted.
