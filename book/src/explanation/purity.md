@@ -150,7 +150,7 @@ A `where` clause is a set of equations rather than a list of steps, so the order
 Chapter 10's test bench is the sharper case: `done` is defined in terms of `clk` and `clk` in terms of `done`, on two consecutive lines, and there is no order in which either could have come first.
 
 One shape this rule does not settle on its own is a definition that mentions its own name, which is what chapter 6's `boards` does.
-That one has an answer of its own, and chapter 6 gives it where the reader meets it: the name on both sides is the wire from the register's output back to its input.
+That one has an answer of its own, and it is [A definition that refers to itself](laziness.md): the name on both sides is the wire from the register's output back to its input, and what decides whether such an equation says anything is a separate question.
 
 ## What it costs
 

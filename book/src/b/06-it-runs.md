@@ -142,6 +142,7 @@ That trade is the reason registers exist, and this chapter made it by adding one
 The right hand side of `boards` mentions `boards`, and that is not a definition eating itself: it is the wire running from the register's output, through the logic, back to the register's input.
 You have drawn this loop many times.
 The register is what puts a clock cycle into it, and a `where` clause is what makes it one line of source.
+Why a definition may use itself, and what decides how much of it ever runs, is explained in [A definition that refers to itself](../explanation/laziness.md).
 
 **Nothing about the register is inferred.**
 There is exactly one register in this design because `register` was written once, and the clock reaching it is the clock that was passed in.

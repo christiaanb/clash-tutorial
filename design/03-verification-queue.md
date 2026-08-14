@@ -300,6 +300,47 @@ plausible.
   update of the first. `purity.md` quotes the two evaluations as blocks, which
   is safe because neither prints a file name, and the two messages as inline
   fragments. Re-run if the resolver moves.
+- **What order a `where` clause has, what runs out, and what hangs.** Captured
+  2026-08-11 through `tools/clashi_capture.py` against `code/`, in three
+  sessions, with `clashi_capture.READER_FILE` set to `src/Chapters/Ch10.hs`,
+  `Ch07.hs` and `Ch06.hs` in turn. **Order.** Chapter 10's five `where` bindings
+  written in the reverse order (`rst`, `clk`, `done`, `expected`, `commands`)
+  load, `sampleN 12 testBench` is the same nine `False` and three `True`, and
+  `:vhdl` writes both entities' trees byte for byte identically: all six
+  `.vhdl` files, `life.sdc`, and the same 16 hexadecimal digits in
+  `testBench_slv2string_B426B45701B03559.vhdl`. The only difference under
+  `diff -r` is the `hash` field of each `clash-manifest.json`, which moves
+  between identical runs anyway (see "Not reproducible" below). Counted while
+  writing that: the clause has *five* bindings, and chapter 10 said four until
+  2026-08-11. **Running out.**
+  `sampleN 3 (fromList [Nothing, Nothing, Nothing] :: Signal System (Maybe
+  Board))` is `[Nothing,Nothing,Nothing]`; at `sampleN 4` the prompt prints
+  `[Nothing,Nothing,Nothing` and then `*** Exception: X: finite list` with a
+  `CallStack` naming `src/Clash/Signal/Internal.hs` inside a hashed
+  `clash-prelude-1.10.0-…` unit id, so the page quotes the first line as an
+  inline fragment and never the block. `stimuliGenerator` does not run out:
+  `sampleN 12 (stimuliGenerator systemClockGen resetGen (True :> False :> Nil))`
+  is `[True,True,False,False,…]`, holding its last element, which is why chapter
+  10 may sample twelve cycles of eight commands while every `fromList` in
+  chapters 7, 8 and 10 matches its `sampleN` exactly. Also run and quoted
+  nowhere: with `fromList []` as the input, `sampleN 2` of chapter 7's `life`
+  prints the seed once and then throws the same `finite list`, so the *first*
+  cycle demands nothing of the input and the second already does. **Hanging.**
+  With `register` removed from chapter 6's line, leaving `boards = fmap step
+  boards`, the module loads with no warning and `sampleN 1 (life systemClockGen
+  resetGen enableGen)` printed nothing in 152 seconds, with the process resident
+  set flat at 330 MB after an initial 36 MB. It is a hang and not `<<loop>>`,
+  not an `XException` and not a compile error; nothing was observed about what
+  `:vhdl` would do with it and the page says nothing about that. `laziness.md`
+  states all of the above. Re-run if the resolver moves.
+- **What NVC does with a delta cycle loop.** Checked 2026-08-11, NVC 1.20.1, on
+  a four line entity outside the book's tree whose whole architecture is
+  `s <= not s;`: `** Fatal: 0ms+10000: limit of 10000 delta cycles reached`,
+  a caret under the signal declaration reading `driver for signal S is active`,
+  a note about `--stop-delta`, and exit 1. `laziness.md` quotes the fragment
+  `limit of 10000 delta cycles reached` in its VHDL contrast and uses it again
+  in its cost section, where the point is that the VHDL simulator reports the
+  loop and `clashi` reports nothing.
 - **Widths.** `BitSize Board` is 64, `Command` 66 (two tag bits plus a 64-bit
   payload) and `Maybe Command` 67; at 16×16 they are 256, 258 and 259. Tags run
   in declaration order, `Load` `00` through `Pause` `11` (V11, V28, V34). This
