@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>The thing you instantiate is an argument - A Clash tutorial</title>
+        <title>A type that lists every value it can have - A Clash tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -174,181 +174,185 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="the-thing-you-instantiate-is-an-argument"><a class="header" href="#the-thing-you-instantiate-is-an-argument">The thing you instantiate is an argument</a></h1>
-<p>Chapter 4 described sixty-four adders and wrote one <code>+</code>:</p>
-<pre><code class="language-haskell">addCounts :: Counts -&gt; Counts -&gt; Counts
-addCounts = zipWith (zipWith (+))
+                        <h1 id="a-type-that-lists-every-value-it-can-have"><a class="header" href="#a-type-that-lists-every-value-it-can-have">A type that lists every value it can have</a></h1>
+<p>Chapter 8 needed an input that could say four things, and nothing that already existed said them, so the chapter declared a type of its own:</p>
+<pre><code class="language-haskell">data Command
+  = Load Board
+  | Step
+  | Run
+  | Pause
+  deriving (Generic, NFDataX, BitPack, Eq, Show)
 </code></pre>
-<p>The chapter said what the line does and went on.
-The inner <code>zipWith (+)</code> adds a row of eight to a row of eight, the outer one hands the rows to it in pairs, and there is one <code>+</code> in that line and no loop counter anywhere.
-What it did not say is what kind of thing <code>zipWith</code> is, or what <code>(+)</code> is doing in parentheses in a place where an argument goes.</p>
-<p>The same question was open a chapter earlier and the tutorial noticed it out loud.
-Chapter 3’s <code>fromRows</code> is <code>map unpack</code>, and the chapter’s own words for that were that <code>unpack</code> is not called there, it is passed to <code>map</code>, and <code>map</code> is what calls it, eight times.
-This page is what <code>map</code>, <code>zipWith</code> and <code>foldl1</code> are, and how far the idea they are built on goes.</p>
+<p><code>data</code> introduces a type and lists every value it can have, the chapter said, and then it said the other half: there is no fifth thing for one to be.
+Both of those were left standing, and by then the reader had been using a type of exactly this kind for a chapter already, because chapter 7’s <code>Maybe Board</code> is one and its declaration was never shown.
+One chapter later, chapter 9 writes a record whose fields are given by name, in a shape chapter 8’s record never used and the chapter never connected to it.</p>
+<p>This page is the declaration itself: what a <code>data</code> line makes, what the compiler does with the fact that the list is complete, why <code>Maybe</code> needed nothing special to be chapter 7’s input, and why the two records are built two different ways.</p>
 <h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
-<p><code>for … generate</code> is a construct.
-It may appear in an architecture and not in an expression, what it instantiates is written out inside its own body, and there is nothing you can do with it except write one where one is allowed.
-A reader carrying that over will look for the construct, find three letters that look like a function call, and settle on the reading that <code>map</code> is a keyword of some kind with a special argument position in it.</p>
-<p>That reading survives chapter 3 and then costs more with every chapter.
-<code>zipWith (zipWith (+))</code> becomes a call inside a call, when neither of them calls anything.
-<code>(+)</code> in parentheses becomes an addition with its operands left out.
-<code>foldl1 addCounts</code> becomes a function invoked on a function, and <code>map (\r -&gt; rotateLeftS r d1) b</code> becomes a construct with a fragment of syntax where its first argument belongs.
-Chapter 7 then quotes <code>(s -&gt; i -&gt; (s, o))</code> as one of <code>mealy</code>’s arguments, and under this reading that type has no reading at all.</p>
-<p>None of those is special syntax.
-<code>map</code> is an ordinary function, <code>(+)</code> is an ordinary value, and what looks like a construct is the first applied to the second.</p>
-<h2 id="the-first-argument-is-a-function"><a class="header" href="#the-first-argument-is-a-function">The first argument is a function</a></h2>
-<p>Ask the prompt about the two functions chapter 4 leans on, neither of which the chapter stopped to interrogate:</p>
-<pre><code>clashi&gt; :i map
-map :: (a -&gt; b) -&gt; Vec n a -&gt; Vec n b
-  	-- Defined in ‘Clash.Sized.Vector’
-clashi&gt; :i zipWith
-zipWith :: (a -&gt; b -&gt; c) -&gt; Vec n a -&gt; Vec n b -&gt; Vec n c
-  	-- Defined in ‘Clash.Sized.Vector’
+<p>All three pieces of a <code>Command</code> exist in VHDL, and each of them is declared separately.
+There is an enumeration type for the tag, with four values in it.
+There is something to carry the payload, a record field or a vector wide enough for a board.
+And there is the rule that the payload is a board when the tag says load and is meaningless otherwise, which lives in a comment, or in a specification, or in the head of whoever wrote it.</p>
+<p>The first two of those are enforced and the third one is not.
+Nothing in the language connects the tag to the payload, so nothing objects when the payload is read on a cycle when the tag says step, and keeping the three in step is work done by hand every time the type is used or changed.
+A reader carrying that over reads <code>data Command</code> as the enumeration, <code>Load Board</code> as the first of its values with a note attached about the payload beside it, and the <code>deriving</code> line as a request for something like an image function.
+What is on the page is one declaration where those were three, and the rule that used to be the comment is the part the compiler has taken over.</p>
+<h2 id="four-constructors-and-nothing-else"><a class="header" href="#four-constructors-and-nothing-else">Four constructors, and nothing else</a></h2>
+<p>The list after the <code>=</code> is what the type is.
+<code>Load</code>, <code>Step</code>, <code>Run</code> and <code>Pause</code> are the four values a <code>Command</code> can be, and asking the compiler about any one of them answers with the type it belongs to and the others left out, which is what chapter 8’s <code>:i Load</code> and <code>:i Step</code> do.
+A <code>data</code> declaration is closed: there is no way to add a fifth value from elsewhere in the file, from another module, or from a value that arrived on a port.</p>
+<p>That closedness is not a remark, and chapter 8 read the first consequence of it off <code>pack</code>.
+Four constructors need a two-bit tag, and <code>Load</code> is <code>00</code> through <code>Pause</code> is <code>11</code>, so each of the four codes that two bits have names a constructor and none is left over.
+The second consequence is that the compiler knows the whole list at every point where the type is used, which is what lets it check that a <code>case</code> covers it, and what makes reading sixty-six bits back as a <code>Command</code> a question with an answer for every input:</p>
+<pre><code>clashi&gt; (unpack (pack Step) :: Command) == Step
+True
 </code></pre>
-<p>Each of them takes something with arrows inside it, and the parentheses are the whole of what makes that an argument rather than more of the chain.
-<code>(a -&gt; b) -&gt; Vec n a -&gt; Vec n b</code> wants a function and then a vector.
-<code>a -&gt; b -&gt; Vec n a -&gt; Vec n b</code> would want two values and then a vector, and it is a different type, because <a href="currying.html#one-argument-at-a-time">the arrow groups to the right</a> and a parenthesised arrow on the left of another is the one shape that grouping never produces.
-Reading those parentheses is most of reading a signature in this book.</p>
-<p>Nothing in either type marks the function argument as unusual, and nothing needs to.
-A function is a value, in the sense that it can be named, passed and returned, and <code>map</code>’s first argument is a value of a type that happens to have an arrow in it.
-There is no second kind of function that may be passed and no annotation that permits it.</p>
-<p>What <code>map</code> does with the value it is given is instantiate it, once per element, and the type says how many times without saying which number.
-<code>Vec n a</code> and <code>Vec n b</code> have the same <code>n</code>, so eight elements in is eight instances and eight results out.
-The count never appears as a value: <code>map</code> does the same thing to every element whatever the number of elements is, which is chapter 12’s sentence for why <code>countBoard</code> and <code>addCounts</code> need nothing added to them when the board becomes sixteen by sixteen.</p>
-<h2 id="-is-the-adder-not-the-addition"><a class="header" href="#-is-the-adder-not-the-addition"><code>(+)</code> is the adder, not the addition</a></h2>
-<p>An operator is a function that is written between its two arguments rather than in front of them.
-Parenthesising it stops it being written that way and leaves the function:</p>
-<pre><code>clashi&gt; :t (+)
-(+) :: Num a =&gt; a -&gt; a -&gt; a
+<p><code>unpack</code> is not a hole in the closure.
+It lands on one of the four because the type holds nothing else for it to land on.
+The sixty-four payload bits that arrive with it are read as a board or discarded according to the tag, which is the rule a hand-built decode has to be given, and this one has no way of being given a different one.</p>
+<p>The five names in the <code>deriving</code> line are requests rather than part of the declaration, and chapter 8 glosses all five.
+One of them decides everything the cost section of this page counts: <code>BitPack</code> is what settles that a <code>Command</code> is sixty-six bits and which of them is the tag.
+What a request of that kind is, and what the compiler does to answer it, takes another question to answer.</p>
+<h2 id="a-constructor-is-a-function-that-has-not-been-applied-yet"><a class="header" href="#a-constructor-is-a-function-that-has-not-been-applied-yet">A constructor is a function that has not been applied yet</a></h2>
+<p><code>Load</code> has a <code>Board</code> written after it in the declaration, and chapter 8 read that as the difference between it and the other three: it is not a value by itself, it takes a board and becomes one.
+That is chapter 1’s <code>plus 3</code> again, and it is worth checking that the resemblance is not a figure of speech.
+A function is a thing that goes in the slot where functions go:</p>
+<pre><code>clashi&gt; :t map Load
+map Load :: Vec n Board -&gt; Vec n Command
 </code></pre>
-<p>Two numbers in and a number out, which is exactly the shape <code>zipWith</code> wants first.
-Handing it over gives back the rest of <code>zipWith</code>’s type:</p>
-<pre><code>clashi&gt; :t zipWith (+)
-zipWith (+) :: Num c =&gt; Vec n c -&gt; Vec n c -&gt; Vec n c
+<p><code>map</code> takes a function and a vector, and it accepted <code>Load</code> without anything being done to it first, which settles what <code>Load</code> is.
+The answer it gives is the ordinary one: a vector of boards in, a vector of commands out, and <a href="higher-order.html#the-first-argument-is-a-function"><code>map</code> knows nothing about either of those types</a>.
+<code>Step</code>, <code>Run</code> and <code>Pause</code> take nothing and so are values already, which is the whole of the difference between the two kinds of line in the declaration.</p>
+<p>Constructors are the only way in.
+There is no literal for a <code>Command</code> and no expression that produces one without naming one of the four, so every command anywhere in the design was written as one of those names applied to what it needs.
+<code>unpack</code> is the nearest thing to an exception, which is why it was worth checking above that it lands inside the list as well.
+Taking a value apart is the same fact read backwards, and that is <a href="pattern-matching.html#a-pattern-is-a-shape-with-holes">pattern matching</a>: the constructor that built the value is the pattern that opens it.</p>
+<h2 id="maybe-is-a-declaration-somebody-else-wrote"><a class="header" href="#maybe-is-a-declaration-somebody-else-wrote"><code>Maybe</code> is a declaration somebody else wrote</a></h2>
+<p>Chapter 7 introduced <code>Maybe Board</code> as a valid bit and a payload welded together, and never showed where it comes from.
+It comes from a <code>data</code> line of the same shape as ours, and the compiler will print it a constructor at a time:</p>
+<pre><code>clashi&gt; :i Just
+type Maybe :: Type -&gt; Type
+data Maybe a = ... | Just a
+  	-- Defined in ‘GHC.Internal.Maybe’
+clashi&gt; :i Nothing
+type Maybe :: Type -&gt; Type
+data Maybe a = Nothing | ...
+  	-- Defined in ‘GHC.Internal.Maybe’
 </code></pre>
-<p>That is one adder handed to something that will place a row of them, and what comes back is a function of two vectors that has not been given any yet.
-<code>addCounts = zipWith (zipWith (+))</code> is that once more, one level up: <code>zipWith (+)</code> is itself a function of two arguments, so it goes where <code>zipWith</code>’s first argument goes, and what comes back adds two vectors of vectors element by element.
-<code>addCounts</code>’s signature is what fixes the sizes: <code>Counts -&gt; Counts -&gt; Counts</code>, eight rows of eight four-bit numbers on both sides.
-The <code>Num c</code> in front of the <code>=&gt;</code> is a requirement rather than an argument, and what those are is a longer question that chapter 4 needed no part of.</p>
-<p>Chapter 9 is where handing <code>(+)</code> over is paid out.
-The generated VHDL for this design has three <code>for … generate</code> blocks nested inside each other, seven by eight by eight, and one <code>+</code> at the centre of them, which is the four hundred and forty-eight additions chapter 4 counted.
-The construct is still in the output.
-What changed is that it is no longer what we wrote: we wrote a function applied to an argument, and the construct is what that came to.</p>
-<h2 id="a-function-with-no-name"><a class="header" href="#a-function-with-no-name">A function with no name</a></h2>
-<p>Chapter 4’s four shifts contain the only function in the reader’s file that is written where it is used:</p>
-<pre><code class="language-haskell">shiftN, shiftS, shiftW, shiftE :: Board -&gt; Board
-shiftN b = rotateLeftS b d1
-shiftS b = rotateRightS b d1
-shiftW b = map (\r -&gt; rotateLeftS r d1) b
-shiftE b = map (\r -&gt; rotateRightS r d1) b
+<p>Two constructors, one carrying and one not, which is the arrangement chapter 8 built four of.
+<code>-- Defined in</code> names a module rather than the language, so <code>Maybe</code> is a declaration that somebody wrote and not a feature that had to be provided.
+The lower case <code>a</code> is <a href="polymorphism.html#a-lowercase-name-is-a-variable">a variable standing for a type</a>, which is why one declaration serves chapter 7’s <code>Maybe Board</code> and chapter 8’s <code>Maybe Command</code> without either of them being anticipated.</p>
+<p><code>Just</code> is a function in the same way <code>Load</code> is, and it goes in the same slot:</p>
+<pre><code>clashi&gt; :t map Just
+map Just :: Vec n a -&gt; Vec n (Maybe a)
 </code></pre>
-<p><code>\r -&gt; rotateLeftS r d1</code> is a function and nothing else.
-The backslash starts it, <code>r</code> is its argument, what follows the arrow is its result, and it has no name because nothing needs to refer to it twice.
-The prompt reports it as the kind of value the two signatures above ask for:</p>
-<pre><code>clashi&gt; :t (\r -&gt; rotateLeftS r d1)
-(\r -&gt; rotateLeftS r d1) :: KnownNat n =&gt; Vec n a -&gt; Vec n a
+<p>Chapter 7’s argument about it needs nothing beyond the shape.
+<code>Just</code> is the only way to build a <code>Maybe Board</code> that has a board in it, matching <code>Just</code> is the only way to reach the board again, and the <code>Nothing</code> row has no name for a board because <code>Nothing</code> carries none.
+Chapter 8’s input is <code>Maybe Command</code>, which is our declaration inside theirs, and chapter 9 finds the two tags nested in that order on the port: <code>cmd(66 downto 66)</code> for the <code>Maybe</code> and <code>cmd(65 downto 64)</code> for the <code>Command</code>.</p>
+<p>Chapter 12 puts a variable into a declaration of the reader’s own.
+<code>data Command n</code> with <code>Load (Board n)</code> in it is the same move <code>Maybe a</code> makes, and the reason chapter 12 needs it is that the board’s size has stopped being eight.</p>
+<h2 id="a-capital-letter-says-which-kind-of-name-it-is"><a class="header" href="#a-capital-letter-says-which-kind-of-name-it-is">A capital letter says which kind of name it is</a></h2>
+<p><code>Step</code> and <code>step</code> are two names, and chapter 8 said the capital is the whole of the difference.
+The rule behind that beat is worth having in full, because it is the compass for every name in the book.
+In everything this book writes, a name beginning with a capital is a type or a constructor, and the only way to make one is a <code>data</code> declaration or a synonym.
+A name beginning with a lower case letter is a value, and the way to make one is an equation.</p>
+<p>Types and constructors are counted separately, which is why <code>data St = St { board :: Board, running :: Bool }</code> names <code>St</code> twice without repeating itself.
+The <code>St</code> on the left of the <code>=</code> is the type, the <code>St</code> on the right is the one constructor that builds it, and they are as unrelated as two names that happen to be spelled alike.
+<code>st</code> in <code>lifeT</code> is a third name again, and it is an argument, so writing it where the constructor was meant is caught as a name that does not exist: <code>:t st glider False</code> gives <code>[GHC-88464]</code>, <code>Variable not in scope: st :: Board -&gt; Bool -&gt; t</code>, and a suggested fix naming the data constructor <code>St</code>.
+The compiler could say which name was meant because the capital is not a convention: it is what tells the two kinds of name apart.</p>
+<h2 id="a-record-is-a-constructor-with-names-on-its-fields"><a class="header" href="#a-record-is-a-constructor-with-names-on-its-fields">A record is a constructor with names on its fields</a></h2>
+<p>Chapter 8’s state is the second declaration in that file:</p>
+<pre><code class="language-haskell">data St = St { board :: Board, running :: Bool }
+  deriving (Generic, NFDataX)
 </code></pre>
-<p>Why one is needed here is worth a moment, because <code>shiftN</code> did not need one.
-<code>shiftN b = rotateLeftS b d1</code> has a name for the board, so the distance can simply be written after it.
-Inside <code>shiftW</code> there is no name for the row, and supplying an argument to <code>rotateLeftS</code> supplies <a href="currying.html#what-plus-3-is">the first one</a>, which is the vector.
-The argument we want to fix is the second, partial application cannot reach past the first, and the lambda is how a function with the distance already in it and the vector still to come is built instead.</p>
-<p>The other lambda in the book is at the prompt rather than in the file, in <code>mapM_ (\b -&gt; putStr (render b))</code>, which the reader retypes in chapters 6, 7, 8 and 10.
-It is the same three parts, and <code>mapM_</code> takes it the way <code>map</code> takes <code>unpack</code>.
-<code>mapM_</code> is not <code>map</code>, and what it does with what it is handed belongs with the border between what runs and what becomes hardware rather than here.</p>
-<h2 id="the-functions-we-wrote-go-in-the-same-slot"><a class="header" href="#the-functions-we-wrote-go-in-the-same-slot">The functions we wrote go in the same slot</a></h2>
-<p>Nothing about the argument position prefers library functions.
-<code>countBoard</code> is ours, and handing it over reads exactly as <code>unpack</code> did:</p>
-<pre><code>clashi&gt; :t map countBoard
-map countBoard :: Vec n Board -&gt; Vec n Counts
+<p>Chapter 8 calls a record the familiar part, and it is: VHDL has records, and the generated <code>St_0</code> in chapter 9 is one with the same two fields under the same two names.
+One thing about it is not familiar, and the chapter states it in half a sentence.
+Each field name is also a function from the record to that field, so <code>board st</code> is an application like every other application in the file, and <code>board</code> goes where a function goes:</p>
+<pre><code>clashi&gt; :t map board
+map board :: Vec n St -&gt; Vec n Board
 </code></pre>
-<p>The difference between calling <code>countBoard</code> and passing it is the argument after it and nothing else.
-<code>countBoard b</code> is a <code>Counts</code>, and <code>countBoard</code> on its own is the function, which is the value <code>map</code> wants.</p>
-<p><code>foldl1</code> is the third of chapter 4’s three, and it takes the way to combine two things:</p>
-<pre><code>clashi&gt; :i foldl1
-foldl1 :: (a -&gt; a -&gt; a) -&gt; Vec (n + 1) a -&gt; a
-  	-- Defined in ‘Clash.Sized.Vector’
+<p>There are three ways to write a value of that type down, and the book uses two of them without saying they are the same construct.
+Chapter 8 writes <code>St b False</code>, which gives the fields in the order they were declared.
+Chapter 9 writes the other way:</p>
+<pre><code class="language-haskell">{-# ANN life
+  (Synthesize
+    { t_name   = "life"
+    , t_inputs = [ PortName "clk"
+                 , PortName "rst"
+                 , PortName "en"
+                 , PortName "cmd" ]
+    , t_output = PortName "cells"
+    }) #-}
 </code></pre>
-<p>Two of something and one of the same something, which <code>addCounts</code> is, and a vector with at least one element in it, which is what <code>n + 1</code> says.
-<code>foldl1 addCounts</code> is therefore the whole of chapter 4’s summation with nothing to sum yet:</p>
-<pre><code>clashi&gt; :t foldl1 addCounts
-foldl1 addCounts :: Vec (n + 1) Counts -&gt; Counts
+<p><code>Synthesize</code> is a constructor with named fields, exactly as <code>St</code> is, and the compiler will say so:</p>
+<pre><code>clashi&gt; :i Synthesize
+type TopEntity :: Type
+data TopEntity = Synthesize {...} | ...
+  	-- Defined in ‘Clash.Annotations.TopEntity’
+clashi&gt; :i TestBench
+type TopEntity :: Type
+data TopEntity = ... | TestBench Language.Haskell.TH.Syntax.Name
+  	-- Defined in ‘Clash.Annotations.TopEntity’
 </code></pre>
-<p>How the seven additions that reduce eight boards are arranged, in a chain or in a tree, is a question about <code>fold</code> rather than about handing a function over, and this page does not settle it.</p>
-<p>Chapter 5’s whole generation is one more of these:</p>
-<pre><code class="language-haskell">step :: Board -&gt; Board
-step b = zipWith (zipWith nextCell) b (neighbourCounts b)
+<p><code>TopEntity</code> is an ordinary <code>data</code> type with two constructors, declared in a library rather than in our file, and the two <code>:i</code> answers are the two halves of one declaration: <code>Synthesize</code> with its fields elided as <code>{...}</code>, and <code>TestBench</code> carrying a name, which is the annotation chapter 10 writes.
+So chapter 9’s annotation is not a syntax for annotations.
+It is a value, built by naming three fields, and the reason to build it that way is what the positional form would have been: a string, a list and a name written in a row, with nothing on the page to say which of the three each one is.</p>
+<p>Both forms build the same value, which the prompt will confirm on the type this book declared:</p>
+<pre><code>clashi&gt; running (St { board = glider, running = False })
+False
+clashi&gt; board (St { board = glider, running = False }) == glider
+True
 </code></pre>
-<p><code>zipWith (zipWith nextCell)</code> is <code>addCounts</code>’s shape with chapter 2’s rule in the place where <code>(+)</code> was, and it works for the same reason: <code>nextCell</code> takes a cell and a count and gives back a cell, which is what <code>zipWith</code>’s first argument has to be.
-Chapter 6’s <code>fmap step boards</code> hands <code>step</code> over in the same way, to something that applies it inside a <code>Signal</code> rather than inside a vector, and what <code>fmap</code> itself is takes an answer this page does not have.</p>
-<h2 id="mealy-takes-the-entire-loop"><a class="header" href="#mealy-takes-the-entire-loop"><code>mealy</code> takes the entire loop</a></h2>
-<p>Chapter 7 asked what <code>mealy</code> wanted before using it, and one of its arguments is a type with arrows in it:</p>
-<pre><code>clashi&gt; :i mealy
-mealy ::
-  (KnownDomain dom, NFDataX s) =&gt;
-  Clock dom
-  -&gt; Reset dom
-  -&gt; Enable dom
-  -&gt; (s -&gt; i -&gt; (s, o))
-  -&gt; s
-  -&gt; Signal dom i
-  -&gt; Signal dom o
-  	-- Defined in ‘Clash.Explicit.Mealy’
+<p>That is <code>St glider False</code> written the other way.
+The third form is the one the book never uses and real code uses constantly:</p>
+<pre><code>clashi&gt; running ((St glider False) { running = True })
+True
+clashi&gt; board ((St glider False) { running = True }) == glider
+True
 </code></pre>
-<p><code>(s -&gt; i -&gt; (s, o))</code> is <code>zipWith</code>’s first argument again, in parentheses for the same reason and in an argument position for the same reason.
-What lands there in chapter 7 is <code>lifeT</code>, a function of a board and a <code>Maybe Board</code> that gives back <a href="pattern-matching.html#the-thing-after-the-word-case">a pair</a> of boards.
-That function is the entire path from the register’s output round to its input, handed over as one value.</p>
-<p>Chapter 6’s <code>register</code> took the signal that would arrive at its input, and the loop was closed by a binding that mentions itself.
-<code>mealy</code> takes the logic that makes that signal instead, and closes the loop itself.
-Nothing inside <code>mealy</code> knows that there is a board in it, an eight by eight board, or a <code>Maybe</code> on its input; it knows that something arrives, that a function turns it and the state into a new state and an output, and that a register goes between.
-That is <code>map</code>’s arrangement with a clock in it.</p>
+<p><code>st { running = True }</code> is a value with one field replaced and the rest copied from <code>st</code>.
+Nothing was updated: <a href="purity.html#a-name-has-one-definition-and-nothing-can-give-it-a-second">an equation cannot be undone</a>, so what that expression produces is a second <code>St</code> standing beside the first.
+Chapter 8’s <code>case</code> writes exactly that out by hand, and <code>St (board st) True</code> in the <code>Just Run</code> row is a copy of the state with the flag changed, spelled without the shorthand.</p>
 <h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
-<p>A description built this way has no fixed shape in the source to point at, and the netlist takes its shape only when the arguments land.
-<code>map</code> on its own instantiates nothing and is not a circuit.
-<code>map countBoard</code> is one <code>countBoard</code> per board, each of them sixty-four copies of an <code>if</code>, and how many boards there are is not in it at all.
-The number arrives from somewhere else entirely:</p>
-<pre><code>clashi&gt; :t map countBoard (neighbourBoards glider)
-map countBoard (neighbourBoards glider) :: Vec 8 Counts
+<p><strong>A tag is as wide as the number of constructors, and the payload as wide as the widest.</strong>
+Chapter 8 counted sixty-six bits for a <code>Command</code> and said what pays for them: <code>Step</code>, <code>Run</code> and <code>Pause</code> carry nothing and are sixty-six bits all the same.
+What that count is made of shows when the declaration grows.
+Adding a fifth constructor to chapter 8’s <code>Command</code>, one called <code>Clear</code> that carries nothing, and reloading, gives this:</p>
+<pre><code>clashi&gt; pack Clear
+0b100_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
 </code></pre>
-<p>The eight in that answer is not written in <code>map</code>, in <code>countBoard</code> or at the use site.
-It comes from <code>neighbourBoards</code>, which is where somebody decided there were eight directions, and it reaches <code>map</code> as part of the type of a value.
-A <code>for … generate</code> says how many times in its own header, where it can be read; this says it in the type of an argument, and reading it means following the argument back.</p>
-<p>The names do not survive either, and chapter 9 shows exactly how far.
-The generated VHDL is full of <code>zipWith_3</code>, <code>zipWith_0</code> and <code>fun_0</code>, all of them Clash’s names for the instances that a passed function came to, and <code>addCounts</code> is not in the file.
-That is why chapter 9 has to mark <code>step</code> before a boundary appears in the output at all: a hierarchy of higher-order descriptions is not a hierarchy of components, and nothing preserves the correspondence unless it is asked for.</p>
-<p>The sharpest edge is that a function handed over one argument short is not an error.
-Chapter 2’s rule takes a cell and a count, and handing it to <code>map</code> as though it took one thing has a perfectly good type:</p>
-<pre><code>clashi&gt; :t map nextCell
-map nextCell :: Vec n Bool -&gt; Vec n (Unsigned 4 -&gt; Bool)
-</code></pre>
-<p>A vector of functions is a type like any other, nothing about that expression is ill formed, and it is not what anybody wanted.
-What is rejected is the moment such a value meets something that wants cells, and where the whole mistake sits inside one expression the compiler is direct about it.
-Handing <code>render</code> a board built with <code>map (map nextCell)</code> is <code>[GHC-83865]</code>, <code>Couldn't match type ‘Unsigned 4 -&gt; Bool’ with ‘Bool’</code>, and under it the words <code>Probable cause: ‘nextCell’ is applied to too few arguments</code>.
-It can say that because it has three lines of context to walk out through, from <code>nextCell</code> to the inner <code>map</code> to <code>render</code>, all of them in the expression that was typed.</p>
-<p>Split the same mistake across two definitions and there is nothing to walk.
-<code>map nextCell</code> on its own is a legal definition with a legal type, so what arrives at the use site is a wrong type rather than a missing argument, and it arrives somewhere the count is never mentioned.
-A <code>for … generate</code> cannot be given a component with a port left off, so this is a mistake with no counterpart in the language the reader came from.</p>
-<p>What the whole arrangement buys is on the other side of the same coin.
-Four hundred and forty-eight four-bit additions are one <code>+</code>, sixty-four copies of the cell rule are one <code>nextCell</code>, the eight moved boards are four shifts and a lambda, and none of those lines mentions eight, sixty-four or four hundred and forty-eight.
-That is also why chapter 12 changes the size of the board without rewriting any of them.</p>
+<p>Sixty-seven bits, and the extra one is in the tag, because five constructors do not fit in two bits.
+Every command in the design got a bit wider, including the four that were there before and the three that carry nothing at all, and the port carrying a <code>Maybe Command</code> gets the bit too.
+Chapter 9’s generated file is where the other half of the price is visible: the payload is sliced out of the port and turned into a board on every cycle, on a line with no condition on it, and the selects above throw the board away when the tags disagree.
+This is not a way of building a union that is cheaper than the one you would build by hand, and it was never going to be.</p>
+<p><strong>Closure is a promise the compiler keeps and does not remind you about.</strong>
+That fifth constructor makes <code>lifeT</code>’s <code>case</code> incomplete, since <code>Just Clear</code> has no row.
+Reloading answers <code>Ok, one module reloaded.</code> and nothing else, and the failure waits until something reaches it, where it is <code>Non-exhaustive patterns in case</code> at run time rather than a type error at the edit.
+The project chapter 1 generates asks for the warning that would have caught it, so <code>stack build</code> reports it and the prompt does not, which is <a href="pattern-matching.html#what-it-costs">where the two of them differ</a>.
+What the closed list guarantees is that nothing outside it can ever arrive.
+What it does not do is find the places that have to change when the list grows.</p>
+<p><strong>A field name is a name in the module, not a name in the record.</strong>
+<code>board</code> and <code>running</code> are ordinary top-level functions, which is what makes <code>board st</code> an application, and the price of that is that no other record in the module may use either name.
+Declaring a second record with a <code>board</code> field in chapter 8’s file stops it loading, with <code>[GHC-29916]</code>, <code>Multiple declarations of ‘board’</code> and a <code>Declared at:</code> naming both lines.
+In VHDL a field name belongs to its record type and two records may both have a <code>board</code>, so this is a restriction that the reader will meet and did not have before.
+It is a property of the language’s defaults rather than of records: there is a way to ask GHC to relax it, and the project chapter 1 generates does not, which makes this a not currently and not a cannot.</p>
 <h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
 <ul>
-<li>Chapter 3, <a href="../b/03-a-board.html">A board, and a picture</a>: <code>map unpack</code>, the first function in the book handed to a function.</li>
-<li>Chapter 4, <a href="../b/04-neighbours.html">Neighbours, by moving the whole board</a>: <code>map</code>, <code>zipWith</code> and <code>foldl1</code>, the lambda in <code>shiftW</code>, and one <code>+</code> describing sixty-four adders.</li>
-<li>Chapter 5, <a href="../b/05-a-generation.html">A generation</a>: <code>zipWith (zipWith nextCell)</code>, the same shape with the rule in it.</li>
-<li>Chapter 6, <a href="../b/06-it-runs.html">It runs by itself</a>: <code>fmap step boards</code>, and the lambda typed at the prompt.</li>
-<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: <code>mealy</code>, and the loop handed to it as an argument.</li>
-<li>Chapter 9, <a href="../b/09-an-entity.html">An entity</a>: the <code>for … generate</code> blocks these lines became, and the names they came out under.</li>
+<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: <code>Maybe Board</code>, a tag and a payload welded together, and <code>Just blinker</code> built with the constructor.</li>
+<li>Chapter 8, <a href="../b/08-more-than-valid.html">More than valid</a>: the declaration this page is about, <code>:i Load</code> and <code>:i Step</code>, the four tags read off <code>pack</code>, and <code>St</code> with its two named fields.</li>
+<li>Chapter 9, <a href="../b/09-an-entity.html">An entity</a>: a record built by naming its fields, and the payload decoded on every cycle whatever the tag says.</li>
+<li>Chapter 10, <a href="../b/10-a-test-bench.html">A test bench that leaves Haskell</a>: the other constructor of that same annotation type.</li>
+<li>Chapter 12, <a href="../b/12-two-sizes.html">One description, two sizes</a>: the same two declarations with a size variable in them.</li>
 </ul>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../explanation/vec-and-lists.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../explanation/laziness.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../explanation/type-inference.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../next.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -358,11 +362,11 @@ That is also why chapter 12 changes the size of the board without rewriting any 
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../explanation/vec-and-lists.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../explanation/laziness.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../explanation/type-inference.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../next.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

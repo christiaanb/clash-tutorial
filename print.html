@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-43637822.js";
+            window.path_to_searchindex_js = "searchindex-64bfbd94.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-8aeb8565.js"></script>
+        <script src="toc-9b0b8f7c.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -1203,6 +1203,7 @@ Give it one, and it is a command:</p>
 <pre><code>clashi&gt; :t Load blinker
 Load blinker :: Command
 </code></pre>
+<p>What a <code>data</code> declaration is, and why nothing outside its list can ever turn up on the wires, is explained in <a href="#a-type-that-lists-every-value-it-can-have">A type that lists every value it can have</a>.</p>
 <h2 id="a-tag-and-a-payload-both-there-on-every-cycle"><a class="header" href="#a-tag-and-a-payload-both-there-on-every-cycle">A tag and a payload, both there on every cycle</a></h2>
 <p>Chapter 3 used <code>unpack</code> to read eight bits as eight <code>Bool</code>s.
 <code>pack</code> is the other direction: it lays a value out as the bits that would carry it.
@@ -4115,6 +4116,176 @@ A <code>Signal</code> printed bare is a design that works perfectly and a termin
 <li>Chapter 8, <a href="#more-than-valid">More than valid</a>: the same rule at a larger size, eleven commands for eleven cycles.</li>
 <li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: <code>done</code> in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, twelve cycles sampled from eight commands, and the clock the test bench stops itself.</li>
 <li>Chapter 11, <a href="#the-waveform">The waveform</a>: 190 nanoseconds of dump, which is where stopping that clock leaves the run.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="a-type-that-lists-every-value-it-can-have"><a class="header" href="#a-type-that-lists-every-value-it-can-have">A type that lists every value it can have</a></h1>
+<p>Chapter 8 needed an input that could say four things, and nothing that already existed said them, so the chapter declared a type of its own:</p>
+<pre><code class="language-haskell">data Command
+  = Load Board
+  | Step
+  | Run
+  | Pause
+  deriving (Generic, NFDataX, BitPack, Eq, Show)
+</code></pre>
+<p><code>data</code> introduces a type and lists every value it can have, the chapter said, and then it said the other half: there is no fifth thing for one to be.
+Both of those were left standing, and by then the reader had been using a type of exactly this kind for a chapter already, because chapter 7’s <code>Maybe Board</code> is one and its declaration was never shown.
+One chapter later, chapter 9 writes a record whose fields are given by name, in a shape chapter 8’s record never used and the chapter never connected to it.</p>
+<p>This page is the declaration itself: what a <code>data</code> line makes, what the compiler does with the fact that the list is complete, why <code>Maybe</code> needed nothing special to be chapter 7’s input, and why the two records are built two different ways.</p>
+<h2 id="the-reading-that-does-not-survive-9"><a class="header" href="#the-reading-that-does-not-survive-9">The reading that does not survive</a></h2>
+<p>All three pieces of a <code>Command</code> exist in VHDL, and each of them is declared separately.
+There is an enumeration type for the tag, with four values in it.
+There is something to carry the payload, a record field or a vector wide enough for a board.
+And there is the rule that the payload is a board when the tag says load and is meaningless otherwise, which lives in a comment, or in a specification, or in the head of whoever wrote it.</p>
+<p>The first two of those are enforced and the third one is not.
+Nothing in the language connects the tag to the payload, so nothing objects when the payload is read on a cycle when the tag says step, and keeping the three in step is work done by hand every time the type is used or changed.
+A reader carrying that over reads <code>data Command</code> as the enumeration, <code>Load Board</code> as the first of its values with a note attached about the payload beside it, and the <code>deriving</code> line as a request for something like an image function.
+What is on the page is one declaration where those were three, and the rule that used to be the comment is the part the compiler has taken over.</p>
+<h2 id="four-constructors-and-nothing-else"><a class="header" href="#four-constructors-and-nothing-else">Four constructors, and nothing else</a></h2>
+<p>The list after the <code>=</code> is what the type is.
+<code>Load</code>, <code>Step</code>, <code>Run</code> and <code>Pause</code> are the four values a <code>Command</code> can be, and asking the compiler about any one of them answers with the type it belongs to and the others left out, which is what chapter 8’s <code>:i Load</code> and <code>:i Step</code> do.
+A <code>data</code> declaration is closed: there is no way to add a fifth value from elsewhere in the file, from another module, or from a value that arrived on a port.</p>
+<p>That closedness is not a remark, and chapter 8 read the first consequence of it off <code>pack</code>.
+Four constructors need a two-bit tag, and <code>Load</code> is <code>00</code> through <code>Pause</code> is <code>11</code>, so each of the four codes that two bits have names a constructor and none is left over.
+The second consequence is that the compiler knows the whole list at every point where the type is used, which is what lets it check that a <code>case</code> covers it, and what makes reading sixty-six bits back as a <code>Command</code> a question with an answer for every input:</p>
+<pre><code>clashi&gt; (unpack (pack Step) :: Command) == Step
+True
+</code></pre>
+<p><code>unpack</code> is not a hole in the closure.
+It lands on one of the four because the type holds nothing else for it to land on.
+The sixty-four payload bits that arrive with it are read as a board or discarded according to the tag, which is the rule a hand-built decode has to be given, and this one has no way of being given a different one.</p>
+<p>The five names in the <code>deriving</code> line are requests rather than part of the declaration, and chapter 8 glosses all five.
+One of them decides everything the cost section of this page counts: <code>BitPack</code> is what settles that a <code>Command</code> is sixty-six bits and which of them is the tag.
+What a request of that kind is, and what the compiler does to answer it, takes another question to answer.</p>
+<h2 id="a-constructor-is-a-function-that-has-not-been-applied-yet"><a class="header" href="#a-constructor-is-a-function-that-has-not-been-applied-yet">A constructor is a function that has not been applied yet</a></h2>
+<p><code>Load</code> has a <code>Board</code> written after it in the declaration, and chapter 8 read that as the difference between it and the other three: it is not a value by itself, it takes a board and becomes one.
+That is chapter 1’s <code>plus 3</code> again, and it is worth checking that the resemblance is not a figure of speech.
+A function is a thing that goes in the slot where functions go:</p>
+<pre><code>clashi&gt; :t map Load
+map Load :: Vec n Board -&gt; Vec n Command
+</code></pre>
+<p><code>map</code> takes a function and a vector, and it accepted <code>Load</code> without anything being done to it first, which settles what <code>Load</code> is.
+The answer it gives is the ordinary one: a vector of boards in, a vector of commands out, and <a href="#the-first-argument-is-a-function"><code>map</code> knows nothing about either of those types</a>.
+<code>Step</code>, <code>Run</code> and <code>Pause</code> take nothing and so are values already, which is the whole of the difference between the two kinds of line in the declaration.</p>
+<p>Constructors are the only way in.
+There is no literal for a <code>Command</code> and no expression that produces one without naming one of the four, so every command anywhere in the design was written as one of those names applied to what it needs.
+<code>unpack</code> is the nearest thing to an exception, which is why it was worth checking above that it lands inside the list as well.
+Taking a value apart is the same fact read backwards, and that is <a href="#a-pattern-is-a-shape-with-holes">pattern matching</a>: the constructor that built the value is the pattern that opens it.</p>
+<h2 id="maybe-is-a-declaration-somebody-else-wrote"><a class="header" href="#maybe-is-a-declaration-somebody-else-wrote"><code>Maybe</code> is a declaration somebody else wrote</a></h2>
+<p>Chapter 7 introduced <code>Maybe Board</code> as a valid bit and a payload welded together, and never showed where it comes from.
+It comes from a <code>data</code> line of the same shape as ours, and the compiler will print it a constructor at a time:</p>
+<pre><code>clashi&gt; :i Just
+type Maybe :: Type -&gt; Type
+data Maybe a = ... | Just a
+  	-- Defined in ‘GHC.Internal.Maybe’
+clashi&gt; :i Nothing
+type Maybe :: Type -&gt; Type
+data Maybe a = Nothing | ...
+  	-- Defined in ‘GHC.Internal.Maybe’
+</code></pre>
+<p>Two constructors, one carrying and one not, which is the arrangement chapter 8 built four of.
+<code>-- Defined in</code> names a module rather than the language, so <code>Maybe</code> is a declaration that somebody wrote and not a feature that had to be provided.
+The lower case <code>a</code> is <a href="#a-lowercase-name-is-a-variable">a variable standing for a type</a>, which is why one declaration serves chapter 7’s <code>Maybe Board</code> and chapter 8’s <code>Maybe Command</code> without either of them being anticipated.</p>
+<p><code>Just</code> is a function in the same way <code>Load</code> is, and it goes in the same slot:</p>
+<pre><code>clashi&gt; :t map Just
+map Just :: Vec n a -&gt; Vec n (Maybe a)
+</code></pre>
+<p>Chapter 7’s argument about it needs nothing beyond the shape.
+<code>Just</code> is the only way to build a <code>Maybe Board</code> that has a board in it, matching <code>Just</code> is the only way to reach the board again, and the <code>Nothing</code> row has no name for a board because <code>Nothing</code> carries none.
+Chapter 8’s input is <code>Maybe Command</code>, which is our declaration inside theirs, and chapter 9 finds the two tags nested in that order on the port: <code>cmd(66 downto 66)</code> for the <code>Maybe</code> and <code>cmd(65 downto 64)</code> for the <code>Command</code>.</p>
+<p>Chapter 12 puts a variable into a declaration of the reader’s own.
+<code>data Command n</code> with <code>Load (Board n)</code> in it is the same move <code>Maybe a</code> makes, and the reason chapter 12 needs it is that the board’s size has stopped being eight.</p>
+<h2 id="a-capital-letter-says-which-kind-of-name-it-is"><a class="header" href="#a-capital-letter-says-which-kind-of-name-it-is">A capital letter says which kind of name it is</a></h2>
+<p><code>Step</code> and <code>step</code> are two names, and chapter 8 said the capital is the whole of the difference.
+The rule behind that beat is worth having in full, because it is the compass for every name in the book.
+In everything this book writes, a name beginning with a capital is a type or a constructor, and the only way to make one is a <code>data</code> declaration or a synonym.
+A name beginning with a lower case letter is a value, and the way to make one is an equation.</p>
+<p>Types and constructors are counted separately, which is why <code>data St = St { board :: Board, running :: Bool }</code> names <code>St</code> twice without repeating itself.
+The <code>St</code> on the left of the <code>=</code> is the type, the <code>St</code> on the right is the one constructor that builds it, and they are as unrelated as two names that happen to be spelled alike.
+<code>st</code> in <code>lifeT</code> is a third name again, and it is an argument, so writing it where the constructor was meant is caught as a name that does not exist: <code>:t st glider False</code> gives <code>[GHC-88464]</code>, <code>Variable not in scope: st :: Board -&gt; Bool -&gt; t</code>, and a suggested fix naming the data constructor <code>St</code>.
+The compiler could say which name was meant because the capital is not a convention: it is what tells the two kinds of name apart.</p>
+<h2 id="a-record-is-a-constructor-with-names-on-its-fields"><a class="header" href="#a-record-is-a-constructor-with-names-on-its-fields">A record is a constructor with names on its fields</a></h2>
+<p>Chapter 8’s state is the second declaration in that file:</p>
+<pre><code class="language-haskell">data St = St { board :: Board, running :: Bool }
+  deriving (Generic, NFDataX)
+</code></pre>
+<p>Chapter 8 calls a record the familiar part, and it is: VHDL has records, and the generated <code>St_0</code> in chapter 9 is one with the same two fields under the same two names.
+One thing about it is not familiar, and the chapter states it in half a sentence.
+Each field name is also a function from the record to that field, so <code>board st</code> is an application like every other application in the file, and <code>board</code> goes where a function goes:</p>
+<pre><code>clashi&gt; :t map board
+map board :: Vec n St -&gt; Vec n Board
+</code></pre>
+<p>There are three ways to write a value of that type down, and the book uses two of them without saying they are the same construct.
+Chapter 8 writes <code>St b False</code>, which gives the fields in the order they were declared.
+Chapter 9 writes the other way:</p>
+<pre><code class="language-haskell">{-# ANN life
+  (Synthesize
+    { t_name   = "life"
+    , t_inputs = [ PortName "clk"
+                 , PortName "rst"
+                 , PortName "en"
+                 , PortName "cmd" ]
+    , t_output = PortName "cells"
+    }) #-}
+</code></pre>
+<p><code>Synthesize</code> is a constructor with named fields, exactly as <code>St</code> is, and the compiler will say so:</p>
+<pre><code>clashi&gt; :i Synthesize
+type TopEntity :: Type
+data TopEntity = Synthesize {...} | ...
+  	-- Defined in ‘Clash.Annotations.TopEntity’
+clashi&gt; :i TestBench
+type TopEntity :: Type
+data TopEntity = ... | TestBench Language.Haskell.TH.Syntax.Name
+  	-- Defined in ‘Clash.Annotations.TopEntity’
+</code></pre>
+<p><code>TopEntity</code> is an ordinary <code>data</code> type with two constructors, declared in a library rather than in our file, and the two <code>:i</code> answers are the two halves of one declaration: <code>Synthesize</code> with its fields elided as <code>{...}</code>, and <code>TestBench</code> carrying a name, which is the annotation chapter 10 writes.
+So chapter 9’s annotation is not a syntax for annotations.
+It is a value, built by naming three fields, and the reason to build it that way is what the positional form would have been: a string, a list and a name written in a row, with nothing on the page to say which of the three each one is.</p>
+<p>Both forms build the same value, which the prompt will confirm on the type this book declared:</p>
+<pre><code>clashi&gt; running (St { board = glider, running = False })
+False
+clashi&gt; board (St { board = glider, running = False }) == glider
+True
+</code></pre>
+<p>That is <code>St glider False</code> written the other way.
+The third form is the one the book never uses and real code uses constantly:</p>
+<pre><code>clashi&gt; running ((St glider False) { running = True })
+True
+clashi&gt; board ((St glider False) { running = True }) == glider
+True
+</code></pre>
+<p><code>st { running = True }</code> is a value with one field replaced and the rest copied from <code>st</code>.
+Nothing was updated: <a href="#a-name-has-one-definition-and-nothing-can-give-it-a-second">an equation cannot be undone</a>, so what that expression produces is a second <code>St</code> standing beside the first.
+Chapter 8’s <code>case</code> writes exactly that out by hand, and <code>St (board st) True</code> in the <code>Just Run</code> row is a copy of the state with the flag changed, spelled without the shorthand.</p>
+<h2 id="what-it-costs-9"><a class="header" href="#what-it-costs-9">What it costs</a></h2>
+<p><strong>A tag is as wide as the number of constructors, and the payload as wide as the widest.</strong>
+Chapter 8 counted sixty-six bits for a <code>Command</code> and said what pays for them: <code>Step</code>, <code>Run</code> and <code>Pause</code> carry nothing and are sixty-six bits all the same.
+What that count is made of shows when the declaration grows.
+Adding a fifth constructor to chapter 8’s <code>Command</code>, one called <code>Clear</code> that carries nothing, and reloading, gives this:</p>
+<pre><code>clashi&gt; pack Clear
+0b100_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
+</code></pre>
+<p>Sixty-seven bits, and the extra one is in the tag, because five constructors do not fit in two bits.
+Every command in the design got a bit wider, including the four that were there before and the three that carry nothing at all, and the port carrying a <code>Maybe Command</code> gets the bit too.
+Chapter 9’s generated file is where the other half of the price is visible: the payload is sliced out of the port and turned into a board on every cycle, on a line with no condition on it, and the selects above throw the board away when the tags disagree.
+This is not a way of building a union that is cheaper than the one you would build by hand, and it was never going to be.</p>
+<p><strong>Closure is a promise the compiler keeps and does not remind you about.</strong>
+That fifth constructor makes <code>lifeT</code>’s <code>case</code> incomplete, since <code>Just Clear</code> has no row.
+Reloading answers <code>Ok, one module reloaded.</code> and nothing else, and the failure waits until something reaches it, where it is <code>Non-exhaustive patterns in case</code> at run time rather than a type error at the edit.
+The project chapter 1 generates asks for the warning that would have caught it, so <code>stack build</code> reports it and the prompt does not, which is <a href="#what-it-costs-1">where the two of them differ</a>.
+What the closed list guarantees is that nothing outside it can ever arrive.
+What it does not do is find the places that have to change when the list grows.</p>
+<p><strong>A field name is a name in the module, not a name in the record.</strong>
+<code>board</code> and <code>running</code> are ordinary top-level functions, which is what makes <code>board st</code> an application, and the price of that is that no other record in the module may use either name.
+Declaring a second record with a <code>board</code> field in chapter 8’s file stops it loading, with <code>[GHC-29916]</code>, <code>Multiple declarations of ‘board’</code> and a <code>Declared at:</code> naming both lines.
+In VHDL a field name belongs to its record type and two records may both have a <code>board</code>, so this is a restriction that the reader will meet and did not have before.
+It is a property of the language’s defaults rather than of records: there is a way to ask GHC to relax it, and the project chapter 1 generates does not, which makes this a not currently and not a cannot.</p>
+<h2 id="where-you-met-this-9"><a class="header" href="#where-you-met-this-9">Where you met this</a></h2>
+<ul>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>Maybe Board</code>, a tag and a payload welded together, and <code>Just blinker</code> built with the constructor.</li>
+<li>Chapter 8, <a href="#more-than-valid">More than valid</a>: the declaration this page is about, <code>:i Load</code> and <code>:i Step</code>, the four tags read off <code>pack</code>, and <code>St</code> with its two named fields.</li>
+<li>Chapter 9, <a href="#an-entity">An entity</a>: a record built by naming its fields, and the payload decoded on every cycle whatever the tag says.</li>
+<li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: the other constructor of that same annotation type.</li>
+<li>Chapter 12, <a href="#one-description-two-sizes">One description, two sizes</a>: the same two declarations with a size variable in them.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
