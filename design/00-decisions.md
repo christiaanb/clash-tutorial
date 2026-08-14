@@ -934,6 +934,44 @@ eight pages before it, this one took only its primary link (chapter 6, at the en
 of the feedback beat); the chapter 10 secondary stays unbuilt, and the "Where you
 met this" list names chapters 7, 10 and 11 as well.
 
+**`data-types.md` shipped tenth, and every one of its outline beats survived
+being run, which is the first time that has happened.** What running added is
+arithmetic the outline stated only for the type as it stands. The cost beat was
+"a sum is as wide as its widest constructor plus the tag", and the tag's own
+width is the part a reader cannot see from one declaration, so the page adds a
+fifth constructor to chapter 8's `Command` and asks: `pack Clear` is
+`0b100_…`, sixty-seven bits, because five constructors do not fit in two, and
+every command in the design got a bit wider including the three that carry
+nothing. That edit pays twice, because the same fifth constructor leaves
+`lifeT`'s `case` incomplete and shows what the prompt does about it, which is
+nothing: `:r` answers `Ok, one module reloaded.` and the failure waits until
+`Just Clear` is evaluated, where it is `Non-exhaustive patterns in case` at run
+time. The page states that as the honest limit of closure and sends the reader
+to `pattern-matching.md`'s cost section for the warning that would have caught
+it. Three smaller findings. `Load` being a function is shown rather than
+asserted, by handing it to `map`: `:t map Load` is `Vec n Board -> Vec n
+Command`, and `:t map Just` is the same demonstration on the library's
+constructor, which is what lets the `Maybe` beat rest on shape rather than on
+authority. `:i Just` and `:i Nothing` are three lines each and print `-- Defined
+in ‘GHC.Internal.Maybe’`, so the page can show that `Maybe` is somebody's
+declaration and not a language feature, where `:i Maybe` answers with
+forty-seven lines of instances and is unusable at this point in the book. And chapter 9's `Synthesize` block, which the
+chapters never connect to chapter 8's `St b False`, turns out to have the
+tidiest possible evidence: `:i Synthesize` and `:i TestBench` are the two halves
+of one two-constructor declaration in `Clash.Annotations.TopEntity`, so the
+annotation chapter 9 writes and the annotation chapter 10 writes are two
+constructors of one ordinary `data` type. The page adds one cost the outline did
+not list, found by trying it: a field name is a top-level function, so a second
+record with a `board` field in the same module fails to load with `[GHC-29916]
+Multiple declarations of ‘board’`, where VHDL scopes a field name inside its
+record type. That is flagged as a not currently rather than a cannot, since GHC
+has a way to relax it and the project chapter 1 generates does not ask for it.
+`deriving` is named and handed on in one sentence, unlinked, because
+`type-classes.md` owns it and no stub ships. Like the nine pages before it, this
+one took only its primary link (chapter 8, at the end of "Four things the
+outside can say"); the chapter 7 and 9 secondaries stay unbuilt, and the "Where
+you met this" list names chapters 7, 9, 10 and 12 as well.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:

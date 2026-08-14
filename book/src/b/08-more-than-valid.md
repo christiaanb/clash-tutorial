@@ -55,6 +55,8 @@ clashi> :t Load blinker
 Load blinker :: Command
 ```
 
+What a `data` declaration is, and why nothing outside its list can ever turn up on the wires, is explained in [A type that lists every value it can have](../explanation/data-types.md).
+
 ## A tag and a payload, both there on every cycle
 
 Chapter 3 used `unpack` to read eight bits as eight `Bool`s.

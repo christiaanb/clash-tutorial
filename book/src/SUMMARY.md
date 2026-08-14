@@ -30,6 +30,7 @@
 - [What the lowercase letters in a type mean](./explanation/polymorphism.md)
 - [One value, read in two places](./explanation/purity.md)
 - [A definition that refers to itself](./explanation/laziness.md)
+- [A type that lists every value it can have](./explanation/data-types.md)
 
 ---
 

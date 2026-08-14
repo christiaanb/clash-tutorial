@@ -333,6 +333,43 @@ plausible.
   not an `XException` and not a compile error; nothing was observed about what
   `:vhdl` would do with it and the page says nothing about that. `laziness.md`
   states all of the above. Re-run if the resolver moves.
+- **What a `data` declaration prints, what a fifth constructor costs, and what
+  two records may not share.** Captured 2026-08-11 through
+  `tools/clashi_capture.py` against `code/`, with `clashi_capture.READER_FILE`
+  set to `src/Chapters/Ch08.hs`. **Constructors.** `:i Just` and `:i Nothing`
+  are three lines each, `data Maybe a = ... | Just a` and `data Maybe a =
+  Nothing | ...` under `type Maybe :: Type -> Type`, both ending `-- Defined in
+  ‘GHC.Internal.Maybe’` in the two-spaces-and-a-tab form; `:i Maybe` is
+  forty-seven lines of instances and its `BitSize` type instance, so it is
+  unquotable, exactly as `:i Command` is. `:t map Load` gives `Vec n Board ->
+  Vec n Command` and `:t map Just` gives `Vec n a -> Vec n (Maybe a)`, which is
+  how `data-types.md` shows a constructor is a function without a bare `:t` on
+  a name. `(unpack (pack Step) :: Command) == Step` is `True`. `:t st glider
+  False` gives `[GHC-88464]`, `Variable not in scope: st :: Board -> Bool -> t`
+  and a `Suggested fix` naming the data constructor `St`; the page quotes the
+  first two as inline fragments and never the suggestion's line number, which
+  is `code/`'s. **Records.** `:t map board` gives `Vec n St -> Vec n Board`.
+  `running (St { board = glider, running = False })` is `False` and `board (St
+  { board = glider, running = False }) == glider` is `True`; `running ((St
+  glider False) { running = True })` is `True` and the same expression's `board`
+  still equals `glider`, which is the record update form the book never uses.
+  `:i Synthesize` and `:i TestBench` are three lines each and are the two halves
+  of one declaration, `data TopEntity = Synthesize {...} | ...` and `data
+  TopEntity = ... | TestBench Language.Haskell.TH.Syntax.Name`, both `-- Defined
+  in ‘Clash.Annotations.TopEntity’`. `:i PortName` was run and is quoted
+  nowhere: it prints the declaration and four instances, and `PortProduct` is a
+  constructor no chapter uses. **Two edits, each reloaded and each undone.**
+  Appending `data St2 = St2 { board :: Board, running :: Bool }` to chapter 8's
+  file fails to load with two `[GHC-29916]`s, `Multiple declarations of ‘board’`
+  and `Multiple declarations of ‘running’`, each with a `Declared at:` naming
+  both lines. Adding a fifth constructor `Clear` to `Command` *loads*, with `:r`
+  answering `Ok, one module reloaded.` and nothing else: `pack Clear` is then
+  `0b100_…` at sixty-seven bits, so the tag went from two bits to three and
+  every constructor of the type widened, and `board (fst (lifeT (St glider
+  False) (Just Clear))) == glider` throws `Non-exhaustive patterns in case` at
+  run time while the same expression with `Just Run` is `True`. The page quotes
+  `pack Clear` as a block and the two failures as inline fragments. Re-run if
+  the resolver moves.
 - **What NVC does with a delta cycle loop.** Checked 2026-08-11, NVC 1.20.1, on
   a four line entity outside the book's tree whose whole architecture is
   `s <= not s;`: `** Fatal: 0ms+10000: limit of 10000 delta cycles reached`,
