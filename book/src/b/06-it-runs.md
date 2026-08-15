@@ -62,6 +62,7 @@ Three arguments and a signal of boards, with `System` in place of the `dom` that
 ## Five cycles
 
 The clock, the reset and the enable have to come from somewhere, and in simulation they come from `systemClockGen`, `resetGen` and `enableGen`.
+What those three are, and where the line between what runs at the prompt and what becomes hardware falls, is explained in [What runs, and what is hardware](../explanation/simulation-and-synthesis.md).
 Those three are typed in that order every time a design is run at the prompt, from here to chapter 12, and they never vary:
 
 ```

@@ -70,7 +70,7 @@ The answer is the board chapter 5 printed, and nothing downstream can tell which
 
 The property has a name worth knowing, referential transparency, and a function that has it is called pure.
 It is a property of the language rather than of the way this design happens to be written: no definition in the file can read or change anything except what it was handed.
-Printing is not the exception it looks like, and the reason is worth one sentence: `putStr (render b)` is a value that describes an action rather than the action taking place, and which side of that border a definition falls on is a question of its own.
+Printing is not the exception it looks like, and the reason is worth one sentence: `putStr (render b)` is a value that describes an action rather than the action taking place, and which side of that border a definition falls on is [a question of its own](simulation-and-synthesis.md#putstr-does-not-print).
 So the substitution runs both ways, and this is where the rest of the page starts: an expression that occurs twice may be given one name, a name may be written out where it is used, and neither changes what the design is.
 A compiler that is allowed both will use both.
 

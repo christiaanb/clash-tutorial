@@ -107,7 +107,7 @@ The argument we want to fix is the second, partial application cannot reach past
 
 The other lambda in the book is at the prompt rather than in the file, in `mapM_ (\b -> putStr (render b))`, which the reader retypes in chapters 6, 7, 8 and 10.
 It is the same three parts, and `mapM_` takes it the way `map` takes `unpack`.
-`mapM_` is not `map`, and what it does with what it is handed belongs with the border between what runs and what becomes hardware rather than here.
+`mapM_` is not `map`, and what it does with what it is handed belongs with [the border between what runs and what becomes hardware](simulation-and-synthesis.md#putstr-does-not-print) rather than here.
 
 ## The functions we wrote go in the same slot
 
