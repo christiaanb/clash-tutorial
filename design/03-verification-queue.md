@@ -36,6 +36,14 @@ rewriting it.
 - **Capture by copying from the terminal, not by retyping.** Trailing
   whitespace and exact spacing matter when the reader is comparing their screen
   to the page.
+- **Put a file that compiles back in the project before the next capture.**
+  `stack run clashi` builds the library from `src/Example/Project.hs` before
+  `clashi` starts, so a capture session left holding a deliberately broken file
+  — the ones the explanation pages' failures are captured from — kills the
+  *next* capture at startup: the build fails, no prompt is ever printed, and
+  `tools/clashi_capture.py` reports `AssertionError: ''` at whichever command
+  came first, which says nothing about the cause. The broken state belongs
+  inside a session, between an `edit` and the `edit` that undoes it.
 - **Where a claim in `design/` turns out to be wrong, fix `design/` in the same
   commit as the chapter.** A design document that has silently drifted from the
   built code is worse than none, because the next person will trust it.
@@ -370,6 +378,61 @@ plausible.
   run time while the same expression with `Just Run` is `True`. The page quotes
   `pack Clear` as a block and the two failures as inline fragments. Re-run if
   the resolver moves.
+- **What a class, a method and a constraint print, and the three ways an
+  instance is refused.** Captured 2026-08-14 through `tools/clashi_capture.py`
+  against a project generated from `template/`, with the reader's file derived
+  by `tools/reader_file.py` from `Ch08.hs`, `Ch12.hs` and `Ch13.hs` in turn.
+  **`:i` on a class is unusable and `:i` on its method is the instrument.** `:i
+  BitPack` is 128 lines, `:i NFDataX` 110 and `:i Functor` 38, nearly all of it
+  instance lists; asking for a method instead prints the class with GHC's own
+  `...` elision and no instances, so `:i fmap` is five lines, `:i show` and `:i
+  fromInteger` six, and `:i KnownNat` — a class small enough to ask about
+  directly — six, `class KnownNat n where natSing :: GHC.Internal.TypeNats.SNat
+  n` with `{-# MINIMAL natSing #-}` under a kind line ending in `Constraint`.
+  `:i pack` is the exception at twenty lines, because the `default` signature
+  and its `Generic`/`GBitPack` context are printed in full, so no page asks for
+  it. **`:i (+)` answers twice**, twelve lines: `class Num a where (+) :: a -> a
+  -> a` with `infixl 6 +`, then a blank line, then `type (+) :: Natural ->
+  Natural -> Natural`, `type family (+) a b` from `GHC.Internal.TypeNats` and a
+  second `infixl 6 +`. **Constraints that carry things.** `:i SNat` is nine
+  lines and its constructor is `SNat :: KnownNat n => SNat n`, which the entry
+  above also records. On chapter 13's file, `:i hasClock` is two lines,
+  `hasClock :: HiddenClock dom => Clock dom`, and `hasReset` and `hasEnable`
+  match it; `:i HiddenClockResetEnable` is a synonym, `(HiddenClock dom,
+  HiddenReset dom, HiddenEnable dom) :: Constraint`, under a kind line `Domain
+  -> Constraint`; `:i exposeClockResetEnable` is four lines,
+  `(HiddenClockResetEnable dom => r) -> KnownDomain dom => Clock dom -> Reset
+  dom -> Enable dom -> r`, and is the only place in the book where a constraint
+  and an argument list are shown being exchanged. Use `:i`, not `:t`, on that
+  name: it is a bare identifier. **Instances, asked for and reported back.** On
+  chapter 12's file `:i St` is seven lines and shows both forms of the request
+  at once, `instance Generic (St n)` at 144:13 and `instance KnownNat n =>
+  NFDataX (St n)` at 146:1. `:i Command` stays unquotable at every chapter: 17
+  lines at chapter 8 and 23 at chapter 12, the tail of both being the `BitSize`
+  type instance in terms of `GConstructorCount` and `GFieldSize`. **Three
+  refusals, all quoted as inline fragments.** `pack (St glider False)` is
+  `[GHC-39999]`, `No instance for ‘BitPack St’ arising from a use of ‘pack’` —
+  chapter 8's `St` derives only `Generic` and `NFDataX`, so the contrast with
+  `pack Step` needs no edit. `St glider False` is `[GHC-39999]`, `No instance
+  for ‘Show St’ arising from a use of ‘print’`, `In a stmt of an interactive
+  GHCi command: print it`, and there is *no* `Possible fix` in it. Removing
+  `KnownNat n` from chapter 12's `step` alone gives one error block rather than
+  the four that removing it from the shared signature of the four shifts gives:
+  `No instance for ‘KnownNat n’ arising from a use of ‘neighbourCounts’` and
+  `Possible fix: add (KnownNat n) to the context of the type signature for: step
+  :: forall (n :: Nat). Board n -> Board n`. Adding `Show` to chapter 8's `St`
+  and an `instance Show St` beside it is `[GHC-59692]`, `Duplicate instance
+  declarations:` with both places named. **Two evaluations and three types.**
+  `(maxBound :: Unsigned 4) + 1` is `0` and `(maxBound :: Signed 8) + 1` is
+  `-128`. `:t unpack (pack Step)` is `(BitSize a ~ 66, BitPack a) => a`, an
+  unresolved constraint printed rather than an error. `:t (\b -> fmap step b)`
+  is `Functor f => f Board -> f Board`, `:t fmap step (Just glider)` is `Maybe
+  Board` and `:t fmap step (fromList [glider])` is `Signal dom Board`. Counted
+  while writing: `KnownNat n` appears ten times in chapter 12's reader file,
+  seven in signatures and three in standalone deriving lines, and chapter 6's
+  reader file contains no `=>` at all and neither the word `KnownDomain` nor
+  `NFDataX`. `type-classes.md` states all of the above. Re-run if the resolver
+  moves.
 - **What NVC does with a delta cycle loop.** Checked 2026-08-11, NVC 1.20.1, on
   a four line entity outside the book's tree whose whole architecture is
   `s <= not s;`: `** Fatal: 0ms+10000: limit of 10000 delta cycles reached`,

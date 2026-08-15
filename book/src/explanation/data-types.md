@@ -45,7 +45,7 @@ The sixty-four payload bits that arrive with it are read as a board or discarded
 
 The five names in the `deriving` line are requests rather than part of the declaration, and chapter 8 glosses all five.
 One of them decides everything the cost section of this page counts: `BitPack` is what settles that a `Command` is sixty-six bits and which of them is the tag.
-What a request of that kind is, and what the compiler does to answer it, takes another question to answer.
+What a request of that kind is, and what the compiler does to answer it, is [a question of its own](type-classes.md#deriving-is-a-request-for-instances).
 
 ## A constructor is a function that has not been applied yet
 

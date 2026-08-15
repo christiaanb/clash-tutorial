@@ -21,6 +21,7 @@ After the `=>`, left to right: a clock, a reset, an enable, a value of type `a`,
 The value of type `a` is the one the register holds while the reset is asserted, and the `Signal dom a` after it is what the register takes on every clock edge where the reset is not.
 A `Signal dom a` is a value that has one `a` in it for every cycle of the clock domain `dom`, and the domain this tutorial uses is called `System`.
 The two constraints before the `=>` are requirements the compiler settles on its own here, and there is nothing to type for them.
+What those two requirements are, and what a constraint is in general, is explained in [Constraints are arguments the compiler writes](../explanation/type-classes.md).
 
 There is no process to open, no sensitivity list to get right and no edge to test.
 The clock is an argument, and the register exists because `register` was applied to it.

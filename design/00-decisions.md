@@ -972,6 +972,63 @@ one took only its primary link (chapter 8, at the end of "Four things the
 outside can say"); the chapter 7 and 9 secondaries stay unbuilt, and the "Where
 you met this" list names chapters 7, 9, 10 and 12 as well.
 
+**`type-classes.md` shipped eleventh, and what running it settled first was
+which command the page is allowed to ask.** `:i` on a *class* is unusable —
+`:i BitPack` is 128 lines, `:i NFDataX` 110 and `:i Functor` 38, all of it
+instance lists — and `:i` on a class *method* is the instrument, because GHC
+prints the class with its own `...` elision and no instances at all: `:i fmap`
+is five lines, `:i show` and `:i fromInteger` six, and `:i (+)` twelve. `:i
+pack` is the exception at twenty, since the `default` signature is printed in
+full, so the page never asks for it and lets the two `pack` failures carry that
+class instead. `:i (+)` also answered a question the outline did not ask: it
+prints twice, once as the class method and once as the `Natural` type family,
+with an `infixl 6 +` under each, which is `type-level-numbers.md`'s two worlds
+of numbers in one block. `:i
+Command` was rejected for the reason the queue already gives (unshowable, and 23
+lines at chapter 12); `:i St` does the same work in seven lines and does it
+better, because at chapter 12 it shows both forms of the request at once —
+`Generic` asked for in the clause at 144:13 and `KnownNat n => NFDataX (St n)`
+asked for standalone at 146:1, with the `=>` on only one of them. The outline's
+central claim, that a constraint can carry a value, has four pieces of evidence
+and three of them were found rather than reasoned about: `:i KnownNat` is six
+lines whose kind ends in `Constraint` and whose one method returns an `SNat n`;
+`:i SNat` is a constructor with a constraint written in front of it, which is a
+`data` declaration storing evidence where another would store a value; `:i
+hasClock` is a `Clock dom` with no arguments whatsoever; and `:i
+exposeClockResetEnable` converts a constraint into three arguments in one
+signature. That last pair is the page's strongest evidence and the reason it can
+call chapter 13's "the constraint is how they reach it" literal rather than
+figurative. The missing-instance beat needed a promise that was absent, and
+chapter 8's file has one for free: `Command` derives `BitPack` and `St` does
+not, so `pack Step` prints sixty-six bits and `pack (St glider False)` is `No
+instance for ‘BitPack St’ arising from a use of ‘pack’`, one word of a
+`deriving` line apart. `St glider False` at the prompt is the same shape and
+became the page's first cost sentence: `No instance for ‘Show St’ arising from a
+use of ‘print’`, `In a stmt of an interactive GHCi command: print it`, which
+names a function the reader never typed, over a word missing somewhere else in
+the file, with no suggested fix. Two costs the outline did not list. Instances
+are one per type per class, so deriving `Show` on `St` while also writing the
+instance by hand is `[GHC-59692] Duplicate instance declarations` naming both
+places, and a second way of printing something needs a second type — stated as
+a rule of the language rather than as a limitation to wait out. And a
+requirement travels, which is why `KnownNat n` is written ten times in chapter
+12's reader file, seven of them signatures and three of them standalone
+deriving lines, all downstream of one library function that counts. The
+suggestion beat was captured on `step` rather than on the four shifts, because
+the shifts share one signature and break four times over: one error block, and
+`Possible fix: add (KnownNat n) to the context of the type signature for: step
+:: forall (n :: Nat). Board n -> Board n`. Every error on the page is quoted
+inline rather than as a block, following `vec-and-lists.md` and `purity.md`,
+which keeps the `<interactive>:6:1` counters out of the book — they move with
+how many commands a session typed before the failure. Unlike the ten pages
+before it, this one took a second chapter link. Chapter 13's closing beat asks
+the question in so many words, so leaving it dangling once the answer ships
+would have been the one link the book actually promised; chapter 6 keeps the
+primary, and the chapter 8 secondary stays unbuilt. It also turned two forward
+pointers in shipped pages into links, `higher-order.md`'s `Num c` sentence and
+`data-types.md`'s `deriving` sentence, which is the second and third time a
+shipped page has been edited by a later one.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:

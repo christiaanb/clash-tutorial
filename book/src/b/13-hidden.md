@@ -261,6 +261,7 @@ In a design where a clock has to reach several levels of hierarchy, the three ar
 **What the shorter notation costs is the instrument this book has been using.**
 `:i mealy` under `Clash.Explicit.Prelude` printed a clock, a reset and an enable as three ordinary arguments, and that is what chapter 7 read to find out what a `mealy` machine wanted.
 Under `Clash.Prelude` those three lines are `HiddenClockResetEnable dom`, and what that is takes another question to answer.
+It is answered in [Constraints are arguments the compiler writes](../explanation/type-classes.md), where the three wires are followed back to the constraint that delivers them.
 Reading a signature was the first thing chapter 1 taught, and this is the one place in the book where the shorter form makes it harder rather than easier.
 
 ## Where this goes
