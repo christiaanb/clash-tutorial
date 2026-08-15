@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-64bfbd94.js";
+            window.path_to_searchindex_js = "searchindex-157a44c6.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-9b0b8f7c.js"></script>
+        <script src="toc-be3cf189.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -838,7 +838,8 @@ register ::
 <p>After the <code>=&gt;</code>, left to right: a clock, a reset, an enable, a value of type <code>a</code>, and a <code>Signal dom a</code>, giving back a <code>Signal dom a</code>.
 The value of type <code>a</code> is the one the register holds while the reset is asserted, and the <code>Signal dom a</code> after it is what the register takes on every clock edge where the reset is not.
 A <code>Signal dom a</code> is a value that has one <code>a</code> in it for every cycle of the clock domain <code>dom</code>, and the domain this tutorial uses is called <code>System</code>.
-The two constraints before the <code>=&gt;</code> are requirements the compiler settles on its own here, and there is nothing to type for them.</p>
+The two constraints before the <code>=&gt;</code> are requirements the compiler settles on its own here, and there is nothing to type for them.
+What those two requirements are, and what a constraint is in general, is explained in <a href="#constraints-are-arguments-the-compiler-writes">Constraints are arguments the compiler writes</a>.</p>
 <p>There is no process to open, no sensitivity list to get right and no edge to test.
 The clock is an argument, and the register exists because <code>register</code> was applied to it.</p>
 <h2 id="closing-the-loop"><a class="header" href="#closing-the-loop">Closing the loop</a></h2>
@@ -2723,6 +2724,7 @@ In a design where a clock has to reach several levels of hierarchy, the three ar
 <p><strong>What the shorter notation costs is the instrument this book has been using.</strong>
 <code>:i mealy</code> under <code>Clash.Explicit.Prelude</code> printed a clock, a reset and an enable as three ordinary arguments, and that is what chapter 7 read to find out what a <code>mealy</code> machine wanted.
 Under <code>Clash.Prelude</code> those three lines are <code>HiddenClockResetEnable dom</code>, and what that is takes another question to answer.
+It is answered in <a href="#constraints-are-arguments-the-compiler-writes">Constraints are arguments the compiler writes</a>, where the three wires are followed back to the constraint that delivers them.
 Reading a signature was the first thing chapter 1 taught, and this is the one place in the book where the shorter form makes it harder rather than easier.</p>
 <h2 id="where-this-goes-12"><a class="header" href="#where-this-goes-12">Where this goes</a></h2>
 <p>The design is finished, and so is the tutorial’s spine.
@@ -3157,7 +3159,7 @@ zipWith (+) :: Num c =&gt; Vec n c -&gt; Vec n c -&gt; Vec n c
 <p>That is one adder handed to something that will place a row of them, and what comes back is a function of two vectors that has not been given any yet.
 <code>addCounts = zipWith (zipWith (+))</code> is that once more, one level up: <code>zipWith (+)</code> is itself a function of two arguments, so it goes where <code>zipWith</code>’s first argument goes, and what comes back adds two vectors of vectors element by element.
 <code>addCounts</code>’s signature is what fixes the sizes: <code>Counts -&gt; Counts -&gt; Counts</code>, eight rows of eight four-bit numbers on both sides.
-The <code>Num c</code> in front of the <code>=&gt;</code> is a requirement rather than an argument, and what those are is a longer question that chapter 4 needed no part of.</p>
+The <code>Num c</code> in front of the <code>=&gt;</code> is a requirement rather than an argument, and chapter 4 needed no part of <a href="#constraints-are-arguments-the-compiler-writes">what those are</a>.</p>
 <p>Chapter 9 is where handing <code>(+)</code> over is paid out.
 The generated VHDL for this design has three <code>for … generate</code> blocks nested inside each other, seven by eight by eight, and one <code>+</code> at the centre of them, which is the four hundred and forty-eight additions chapter 4 counted.
 The construct is still in the output.
@@ -4155,7 +4157,7 @@ It lands on one of the four because the type holds nothing else for it to land o
 The sixty-four payload bits that arrive with it are read as a board or discarded according to the tag, which is the rule a hand-built decode has to be given, and this one has no way of being given a different one.</p>
 <p>The five names in the <code>deriving</code> line are requests rather than part of the declaration, and chapter 8 glosses all five.
 One of them decides everything the cost section of this page counts: <code>BitPack</code> is what settles that a <code>Command</code> is sixty-six bits and which of them is the tag.
-What a request of that kind is, and what the compiler does to answer it, takes another question to answer.</p>
+What a request of that kind is, and what the compiler does to answer it, is <a href="#deriving-is-a-request-for-instances">a question of its own</a>.</p>
 <h2 id="a-constructor-is-a-function-that-has-not-been-applied-yet"><a class="header" href="#a-constructor-is-a-function-that-has-not-been-applied-yet">A constructor is a function that has not been applied yet</a></h2>
 <p><code>Load</code> has a <code>Board</code> written after it in the declaration, and chapter 8 read that as the difference between it and the other three: it is not a value by itself, it takes a board and becomes one.
 That is chapter 1’s <code>plus 3</code> again, and it is worth checking that the resemblance is not a figure of speech.
@@ -4286,6 +4288,249 @@ It is a property of the language’s defaults rather than of records: there is a
 <li>Chapter 9, <a href="#an-entity">An entity</a>: a record built by naming its fields, and the payload decoded on every cycle whatever the tag says.</li>
 <li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: the other constructor of that same annotation type.</li>
 <li>Chapter 12, <a href="#one-description-two-sizes">One description, two sizes</a>: the same two declarations with a size variable in them.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="constraints-are-arguments-the-compiler-writes"><a class="header" href="#constraints-are-arguments-the-compiler-writes">Constraints are arguments the compiler writes</a></h1>
+<p>Chapter 6 asked a register what it wanted before writing anything that used it:</p>
+<pre><code>clashi&gt; :i register
+register ::
+  (KnownDomain dom, NFDataX a) =&gt;
+  Clock dom
+  -&gt; Reset dom -&gt; Enable dom -&gt; a -&gt; Signal dom a -&gt; Signal dom a
+  	-- Defined in ‘Clash.Explicit.Signal’
+</code></pre>
+<p>The chapter read the arguments off the lines after the <code>=&gt;</code> and dealt with everything before it in one sentence: the two constraints are “requirements the compiler settles on its own here, and there is nothing to type for them.”
+That is true, and it was all a reader needed in order to write <code>life</code>.
+It also put off the largest question the book leaves standing.</p>
+<p>The reader had already walked past a <code>=&gt;</code> in chapter 4, in <code>rotateLeftS</code>’s signature.
+Chapter 10’s <code>outputVerifier'</code> has five requirements standing in front of a single one of them, chapter 12 spends its first section putting one requirement into seven signatures, and chapter 13 ends on one: <code>HiddenClockResetEnable System</code> where three arguments used to be, and an admission that what that is “takes another question to answer.”</p>
+<p>This page is that answer.
+Three things that do not look related to it are the same mechanism underneath: the five words in chapter 8’s <code>deriving</code> line, the bare <code>1</code> chapter 2 wrote in a truth table, and the clock that reaches <code>mealy</code> in chapter 13 without being passed to it.</p>
+<h2 id="the-reading-that-does-not-survive-10"><a class="header" href="#the-reading-that-does-not-survive-10">The reading that does not survive</a></h2>
+<p>VHDL has nothing in this shape, so there is no single wrong reading to correct, and three near neighbours are each close enough to mislead.</p>
+<p>A generic is the first.
+It is declared above the ports, it parameterises the entity, and its value arrives at instantiation, so reading the context as a generic clause gets the position on the page right and the supplier exactly wrong: nothing at the call site supplies a constraint.</p>
+<p>An overloaded subprogram is the second, and it is the closest thing VHDL has.
+Two functions may share a name and be told apart by the types of their arguments, which is what a class method does.
+What VHDL has no way to write is the <em>requirement</em>: a signature cannot say that it works for any type that has a <code>+</code>, so a subprogram that needs one is written per type or written once and copied, and the compiler is never asked to check that the operation exists before the call is allowed.</p>
+<p>The third is to read <code>=&gt;</code> as another arrow with odd punctuation.
+That reading makes <code>register</code> a function of seven things, and chapter 6 hands it five.</p>
+<p>The reading that costs the most is the mildest one: that a context is documentation, a note about what the function assumes.
+It is not a note.
+It is the reason the definition below it is able to do anything at all, and something is really handed over to make it so.</p>
+<h2 id="a-class-is-a-promise-and-an-instance-is-a-type-keeping-it"><a class="header" href="#a-class-is-a-promise-and-an-instance-is-a-type-keeping-it">A class is a promise, and an instance is a type keeping it</a></h2>
+<p>The smallest class in the book is the one chapter 12 puts into seven signatures:</p>
+<pre><code>clashi&gt; :i KnownNat
+type KnownNat :: Nat -&gt; Constraint
+class KnownNat n where
+  natSing :: GHC.Internal.TypeNats.SNat n
+  {-# MINIMAL natSing #-}
+  	-- Defined in ‘GHC.Internal.TypeNats’
+</code></pre>
+<p>The first line is the one to read twice.
+<a href="#the-eight-is-in-the-type-and-the-type-is-not-a-number">Every kind line the reader has seen</a> ended in <code>Type</code>, because <code>Board</code> is a type and <code>Vec</code> becomes one; this one ends in <code>Constraint</code>.
+<code>KnownNat 8</code> is not a type and nothing can have it: it is a claim about a type, and the only thing to do with a claim is require it, prove it or fail to.</p>
+<p>What follows the claim is what it promises.
+A class lists operations, <code>natSing</code> is the one operation <code>KnownNat</code> has, and <code>{-# MINIMAL natSing #-}</code> is the compiler saying what an instance is obliged to supply.</p>
+<p>An instance is a type keeping that promise, and chapter 8 printed two of them with the word never defined:</p>
+<pre><code>clashi&gt; :i St
+type St :: Type
+data St = St {board :: Board, running :: Bool}
+  	-- Defined at src/Example/Project.hs:94:1
+instance Generic St -- Defined at src/Example/Project.hs:95:13
+instance NFDataX St -- Defined at src/Example/Project.hs:95:22
+</code></pre>
+<p>Read the last two lines aloud and they are a record of two promises: <code>St</code> keeps <code>Generic</code>’s and keeps <code>NFDataX</code>’s.
+Both were made at line 95, columns 13 and 22, and those are the two words in <code>deriving (Generic, NFDataX)</code>.</p>
+<p>A promise that was not made cannot be called on.
+Chapter 8’s <code>pack Step</code> printed sixty-six bits; the state beside it will not pack at all, and the refusal names the missing promise rather than anything about the value: <code>[GHC-39999]</code>, <code>No instance for ‘BitPack St’ arising from a use of ‘pack’</code>, over <code>In the expression: pack (St glider False)</code>.
+Nothing is wrong with that value.
+It is the state chapter 8’s <code>mealy</code> holds while the reset is asserted, and every run of that design starts from it.
+What it does not have is one word in a <code>deriving</code> line, and <code>pack</code> is the operation that word promises.</p>
+<p>The prompt’s own printing works the same way, which is why a value can be perfectly good and still not be printable:</p>
+<pre><code>clashi&gt; :i show
+type Show :: Type -&gt; Constraint
+class Show a where
+  ...
+  show :: a -&gt; String
+  ...
+  	-- Defined in ‘GHC.Internal.Show’
+</code></pre>
+<p>Typing <code>St glider False</code> at the prompt is <code>[GHC-39999]</code>, <code>No instance for ‘Show St’ arising from a use of ‘print’</code>, and under it <code>In a stmt of an interactive GHCi command: print it</code>.
+<code>print</code> is the prompt’s, not the reader’s: everything typed at it is printed by calling <code>show</code>, so a type that never promised one cannot be looked at, however well the design runs on it.</p>
+<p>In VHDL the equivalent is writing a <code>to_string</code> for the record and calling it, and overload resolution picking it out from the argument type is genuinely the same idea.
+What has no VHDL spelling is the <code>Show a =&gt;</code> in front of that function: a way of demanding, in a signature, that the operation exist for whatever type turns up there.</p>
+<h2 id="-is-not--"><a class="header" href="#-is-not--"><code>=&gt;</code> is not <code>-&gt;</code></a></h2>
+<p>Chapter 6’s <code>life</code> is the whole of the argument.
+It hands <code>register</code> five things, in the order the signature lists them after the <code>=&gt;</code>, and there is no sixth or seventh.
+There is no <code>=&gt;</code> anywhere in chapter 6’s file, and the words <code>KnownDomain</code> and <code>NFDataX</code> do not appear in it at all.</p>
+<p>So what happens to the two requirements is not that they are met somewhere else in the file.
+The compiler works out, from the types at the use site, which instance is meant, and hands the definition of <code>register</code> what that instance promised.
+A constraint is an argument in the sense that something really is passed; it is not an argument in the sense the reader cares about, because the caller does not write it and cannot choose it.</p>
+<p>An unsettled requirement can be watched waiting:</p>
+<pre><code>clashi&gt; :t unpack (pack Step)
+unpack (pack Step) :: (BitSize a ~ 66, BitPack a) =&gt; a
+</code></pre>
+<p>Sixty-six bits go in, and what comes out is <em>whatever type</em> keeps <code>BitPack</code>’s promise in sixty-six bits.
+The requirement is still standing because nothing has said which type that is, and <code>(unpack (pack Step) :: Command)</code> — <a href="#four-constructors-and-nothing-else">the annotated form another page asks about</a> — settles it: the annotation picks the type, the type picks the instance, and the constraint goes away.
+That is the ordinary case rather than a curiosity: the type is <a href="#solving-not-guessing">solved for</a> first, and the instance follows from the type.</p>
+<h2 id="a-requirement-can-hand-over-a-value"><a class="header" href="#a-requirement-can-hand-over-a-value">A requirement can hand over a value</a></h2>
+<p><code>KnownNat</code>’s one method returns an <code>SNat n</code>, and the type it returns is worth following:</p>
+<pre><code>clashi&gt; :i SNat
+type role SNat nominal
+type SNat :: Nat -&gt; Type
+data SNat n where
+  SNat :: KnownNat n =&gt; SNat n
+  	-- Defined in ‘Clash.Promoted.Nat’
+instance ShowX (SNat n) -- Defined in ‘Clash.Promoted.Nat’
+instance Lift (SNat n) -- Defined in ‘Clash.Promoted.Nat’
+instance Show (SNat n) -- Defined in ‘Clash.Promoted.Nat’
+</code></pre>
+<p><code>SNat</code> is a constructor with a requirement written in front of it, which is a <code>data</code> declaration storing a constraint where another declaration would store a value.
+That is the plainest evidence on this page that a constraint is a thing and not a checkbox: it can be put in a box and carried around.</p>
+<p>What <code>KnownNat n</code> carries is the number, and <a href="#knownnat-is-the-way-back-down">reading it as the trip back down</a> is what makes chapter 12’s edit make sense.
+It also decides where the words go, which chapter 12 states as a rule and does not explain: <code>rotateLeftS</code> has to count, so it demands the number, so everything that calls it has to be able to produce one, and the demand travels up the file until a signature carries it.
+Leaving it off is not a matter of style, and the compiler says so at the definition that broke.
+Chapter 12’s <code>step</code> with <code>KnownNat n</code> taken out of its signature and nothing else changed does not load: <code>[GHC-39999]</code>, <code>No instance for ‘KnownNat n’ arising from a use of ‘neighbourCounts’</code>.
+Under that comes <code>Possible fix: add (KnownNat n) to the context of the type signature for: step :: forall (n :: Nat). Board n -&gt; Board n</code>, and under that the line of <code>step</code> that used the requirement, with <code>neighbourCounts</code> underlined in it.
+The message names the function that demanded the number, the signature that has to carry the demand, and the words to add, in that order.
+<code>KnownNat n</code> is written ten times in chapter 12’s file, and every one of those ten is downstream of one library function that needs to know how long a vector is.</p>
+<p>What is carried around is carried while the design is being simulated at the prompt, and it is worth saying plainly that none of it survives into hardware.
+The instance is chosen while the program is being compiled, so by the time Clash writes VHDL the number is a literal — chapter 12’s two <code>step</code> components differ by <code>1 mod 8</code> against <code>1 mod 16</code> and by nothing else — and chapter 13’s entity declarations came out byte for byte identical to chapter 12’s while the clock changed route.
+A constraint is a compile-time argument, and the price of one is paid in messages rather than in wires.</p>
+<h2 id="three-wires-delivered-the-same-way"><a class="header" href="#three-wires-delivered-the-same-way">Three wires, delivered the same way</a></h2>
+<p>Chapter 13 is where a constraint delivers something a hardware engineer can point at.
+The name it introduces is not a class at all:</p>
+<pre><code>clashi&gt; :i HiddenClockResetEnable
+type HiddenClockResetEnable :: Domain -&gt; Constraint
+type HiddenClockResetEnable dom =
+  (HiddenClock dom, HiddenReset dom, HiddenEnable dom) :: Constraint
+  	-- Defined in ‘Clash.Signal’
+</code></pre>
+<p>It is a synonym for three requirements at once, of the kind chapter 6’s <code>register</code> had two of, and the kind line says <code>Constraint</code> for the same reason <code>KnownNat</code>’s did.
+Each of the three delivers one thing, and <code>hasClock</code> is the one to look at:</p>
+<pre><code>clashi&gt; :i hasClock
+hasClock :: HiddenClock dom =&gt; Clock dom
+  	-- Defined in ‘Clash.Signal’
+</code></pre>
+<p>A <code>Clock dom</code>, and no arguments whatsoever.
+There is exactly one place a clock could come from in that signature, and it is on the left of the <code>=&gt;</code>.
+<code>hasReset :: HiddenReset dom =&gt; Reset dom</code> and <code>hasEnable :: HiddenEnable dom =&gt; Enable dom</code> sit beside it and say the same thing about the other two.</p>
+<p>The function chapter 13 has the reader write is the conversion in the other direction, and its signature is the whole chapter in three lines:</p>
+<pre><code>clashi&gt; :i exposeClockResetEnable
+exposeClockResetEnable ::
+  (HiddenClockResetEnable dom =&gt; r)
+  -&gt; KnownDomain dom =&gt; Clock dom -&gt; Reset dom -&gt; Enable dom -&gt; r
+  	-- Defined in ‘Clash.Signal’
+</code></pre>
+<p>Something that requires the three, in, and a function of three arguments, out.
+A constraint and an argument list are interchangeable here, and this is the library function that does the exchanging, which is why an annotated binder can have real ports on it while the body above it names no clock.
+Chapter 13’s sentence that “the constraint is how they reach it” is not a figure of speech, and neither is its claim that nothing was switched off: the generated entity declarations came out byte for byte identical across that chapter.</p>
+<p>What the shorter notation costs is what chapter 13 says it costs, and it is a cost about reading rather than about circuits.
+<code>:i mealy</code> printed ten lines under the explicit prelude and prints four under this one, and the three argument lines that went missing are the ones chapter 7 read to find out what a state machine wanted.</p>
+<h2 id="a-literal-is-a-class-method"><a class="header" href="#a-literal-is-a-class-method">A literal is a class method</a></h2>
+<p>The same mechanism explains something that has been going on since chapter 2, where a truth table matched on <code>2</code> and <code>3</code>.
+A literal is a call:</p>
+<pre><code>clashi&gt; :i fromInteger
+type Num :: Type -&gt; Constraint
+class Num a where
+  ...
+  fromInteger :: Integer -&gt; a
+  	-- Defined in ‘GHC.Internal.Num’
+</code></pre>
+<p>Writing <code>1</code> is writing <code>fromInteger 1</code>, so a literal has no type of its own and takes the one the context asks for, by running that type’s <code>fromInteger</code>.
+In a pattern the literal is built the same way and then compared, which is why matching on a number asks for <code>Eq</code> as well.
+The numbers in chapter 2’s rows are <code>Unsigned 4</code>s because <code>nextCell</code>’s signature says so, and the <code>1</code> and <code>0</code> in chapter 4’s <code>toCount</code> are four bits wide because <code>Counts</code> says so; <a href="#a-literal-has-no-type-of-its-own">how the context decides</a> is a separate question from what does the converting once it has.</p>
+<p><code>+</code> is a method of the same class, and the prompt answers about it twice over:</p>
+<pre><code>clashi&gt; :i (+)
+type Num :: Type -&gt; Constraint
+class Num a where
+  (+) :: a -&gt; a -&gt; a
+  ...
+  	-- Defined in ‘GHC.Internal.Num’
+infixl 6 +
+
+type (+) :: Natural -&gt; Natural -&gt; Natural
+type family (+) a b
+  	-- Defined in ‘GHC.Internal.TypeNats’
+infixl 6 +
+</code></pre>
+<p>Two answers because there are two <code>+</code>s and they live in <a href="#arithmetic-happens-up-there-too">the two worlds of numbers</a>: the class method is the adder, and the type family is the one that adds <code>4 + 4</code> while types are being settled.
+Which adder the method is depends on the instance, and the instances do not agree:</p>
+<pre><code>clashi&gt; (maxBound :: Unsigned 4) + 1
+0
+clashi&gt; (maxBound :: Signed 8) + 1
+-128
+</code></pre>
+<p>One token, two instances, two different wrap-arounds, both of them decided by a type and neither of them written down.
+The four hundred and forty-eight additions chapter 4 counted are the <code>Unsigned 4</code> instance’s, and that is where their width and their behaviour on overflow both come from.</p>
+<p>Chapter 4’s error is this page’s mechanism from the other side.
+<code>rotateLeftS b 1</code> answers that <code>SNat</code> is not a <code>Num</code>, and what that means exactly is that no instance exists, so there is no <code>fromInteger</code> to make the literal with, and there is <a href="#d1-is-a-value-whose-type-is-the-number">a good reason no such instance should exist</a>.</p>
+<h2 id="fmap-is-a-class-method-too"><a class="header" href="#fmap-is-a-class-method-too"><code>fmap</code> is a class method too</a></h2>
+<p>Chapter 6 needed a function put to work on what a signal carries, and used a name that belongs to a class:</p>
+<pre><code>clashi&gt; :i fmap
+type Functor :: (Type -&gt; Type) -&gt; Constraint
+class Functor f where
+  fmap :: (a -&gt; b) -&gt; f a -&gt; f b
+  ...
+  	-- Defined in ‘GHC.Internal.Base’
+</code></pre>
+<p><code>f</code> is not a type but something that becomes one, so what keeps this promise is a <code>Vec</code>, a <code>Maybe</code> or a <code>Signal</code> rather than a <code>Board</code>.
+One function, and the container left open:</p>
+<pre><code>clashi&gt; :t (\b -&gt; fmap step b)
+(\b -&gt; fmap step b) :: Functor f =&gt; f Board -&gt; f Board
+clashi&gt; :t fmap step (Just glider)
+fmap step (Just glider) :: Maybe Board
+clashi&gt; :t fmap step (fromList [glider])
+fmap step (fromList [glider]) :: Signal dom Board
+</code></pre>
+<p>Chapter 6’s <code>fmap step boards</code> is the third of those, and the reason it worked is that <code>Signal dom</code> keeps <code>Functor</code>’s promise.
+Nothing in chapter 6 said so, nothing had to, and the same four letters would have been the <code>Maybe</code> version if <code>boards</code> had been one.</p>
+<h2 id="deriving-is-a-request-for-instances"><a class="header" href="#deriving-is-a-request-for-instances"><code>deriving</code> is a request for instances</a></h2>
+<p>Chapter 8’s five words are five requests, and the chapter says what each one promises: the shape of the type, what a register needs, what a bundle of wires needs, and what comparing and printing need.
+What the chapter does not say is who writes them.
+<code>Generic</code> is the shape itself, and the other four are worked out from that shape by the compiler rather than by the reader, which is what makes a five-word line a fair swap for four hand-written instances.</p>
+<p>Chapter 12 splits the same request in two and the split is visible in the answer:</p>
+<pre><code>clashi&gt; :i St
+type role St nominal
+type St :: Nat -&gt; Type
+data St n = St {board :: Board n, running :: Bool}
+  	-- Defined at src/Example/Project.hs:143:1
+instance Generic (St n) -- Defined at src/Example/Project.hs:144:13
+instance KnownNat n =&gt; NFDataX (St n)
+  -- Defined at src/Example/Project.hs:146:1
+</code></pre>
+<p>Two instances of one type, one asked for inside the <code>deriving</code> clause at line 144 and one asked for on a line of its own at 146, and only the second has a <code>=&gt;</code> in it.
+An instance can need a requirement, and this one does: <code>NFDataX</code>’s promise includes producing a value of the type with nothing in it yet, and how many cells that is depends on <code>n</code>.
+A <code>deriving</code> clause has nowhere to write <code>KnownNat n =&gt;</code>, so the request moves to a line where there is somewhere to write it.
+Chapter 12 makes the same point about <code>BitPack</code>, whose width is <code>n * n + 2</code>, and the message that comes back from asking the other way is <a href="#what-it-costs-5">the worst one the tutorial meets</a>.</p>
+<p><code>deriving</code> is a request and not an instruction, which is the honest way to read that failure.
+The compiler may decline, and when it declines it does so in the vocabulary of its own solver rather than in the reader’s.</p>
+<h2 id="what-it-costs-10"><a class="header" href="#what-it-costs-10">What it costs</a></h2>
+<p><strong>The message names something you did not type, and the fix is somewhere you were not looking.</strong>
+<code>No instance for ‘Show St’ arising from a use of ‘print’</code> is a complaint about a function the reader never wrote, from a prompt that called it on their behalf, about a promise that is missing from a <code>deriving</code> line somewhere else in the file.
+There is no suggested fix in that message at all, and the word that would fix it is one the reader has to know is available.</p>
+<p><strong>Where a suggestion does come, it is the best tool in the language, and it is not always there.</strong>
+The <code>KnownNat n</code> message above prints the signature and the words to add to it, and following it mechanically is what chapter 12 asks the reader to do.
+Chapter 12’s other message, from a plain <code>deriving</code> clause on a type whose width depends on <code>n</code>, is <code>solveWanteds: too many iterations (limit = 4)</code>, which contains no name of the reader’s and no fix.</p>
+<p><strong>One type keeps a promise one way, and no use site may ask for another.</strong>
+Adding <code>Show</code> to chapter 8’s <code>St</code> and also writing an instance for it by hand stops the module loading, with <code>[GHC-59692]</code>, <code>Duplicate instance declarations:</code> and two <code>instance Show St</code> lines under it, one pointing at the word in the <code>deriving</code> clause and the other at the hand-written instance two lines below.
+In VHDL two functions with one name are ordinary, and a third with a different name is how a second way of printing a record is had.
+Here the type chooses, once, for the whole program, so a second way of packing or printing something means declaring a second type to hang it on.
+That is what makes the choice checkable and predictable at a distance, and it is the same fact viewed from either side.</p>
+<p><strong>A requirement travels, and every signature on the way pays for it.</strong>
+Chapter 12 wrote <code>KnownNat n</code> ten times for one library function that counts, and chapter 13 added a second constraint to the line that already had that one.
+A demand introduced at the bottom of a design appears as edits to signatures all the way up, and the compiler will name each of them in turn as they are reached.</p>
+<h2 id="where-you-met-this-10"><a class="header" href="#where-you-met-this-10">Where you met this</a></h2>
+<ul>
+<li>Chapter 2, <a href="#a-cell">A cell</a>: literals in a truth table, four bits wide because a signature said so.</li>
+<li>Chapter 4, <a href="#neighbours-by-moving-the-whole-board">Neighbours, by moving the whole board</a>: the first <code>=&gt;</code> in the book, and the <code>Num</code> instance that does not exist.</li>
+<li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: <code>:i register</code>’s two requirements, settled without a word in the file, and <code>fmap</code> on a <code>Signal</code>.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>:i mealy</code>, and <code>NFDataX s</code> beside the state it holds.</li>
+<li>Chapter 8, <a href="#more-than-valid">More than valid</a>: five words asking for five instances, and two of them reported back by <code>:i St</code>.</li>
+<li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: five requirements at once in <code>outputVerifier'</code>’s signature.</li>
+<li>Chapter 12, <a href="#one-description-two-sizes">One description, two sizes</a>: <code>KnownNat n</code> where the compiler asked for it, and two requests moved out of the clause to carry a context.</li>
+<li>Chapter 13, <a href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a>: a clock, a reset and an enable arriving as a constraint, and <code>exposeClockResetEnable</code> turning them back into arguments.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>
