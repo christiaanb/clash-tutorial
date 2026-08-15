@@ -1,0 +1,372 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>One value, read in two places - A Clash tutorial</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="A lesson in Clash for engineers who already design hardware.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-503719e8.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-82b17705.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Clash tutorial</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="one-value-read-in-two-places"><a class="header" href="#one-value-read-in-two-places">One value, read in two places</a></h1>
+<p>Chapter 5 wrote a generation of Life as one line:</p>
+<pre><code class="language-haskell">step :: Board -&gt; Board
+step b = zipWith (zipWith nextCell) b (neighbourCounts b)
+</code></pre>
+<p><code>b</code> is written twice on the right of the <code>=</code>, once as the board whose cells are being paired up and once inside <code>neighbourCounts b</code>, and the chapter said one thing about that and moved on.
+That is one board read in two places, not two boards.</p>
+<p>The claim is not about this line.
+Chapter 8’s <code>lifeT</code> reads <code>board st</code> five times in a definition of eight lines, and chapter 9’s generated <code>step</code> entity has one port for the board that chapter 5’s two reads share.
+Both of those are the same rule as this one, and the rule is what this page is: what makes reading a value twice safe, what it buys once the design is hardware, and what the language gave up to have it.</p>
+<h2 id="the-reading-that-does-not-survive"><a class="header" href="#the-reading-that-does-not-survive">The reading that does not survive</a></h2>
+<p>Inside a process, what a name gives back depends on where the read is, and on which of two kinds of object the name is.
+A variable takes its new value at the assignment, so two reads on either side of one give two different values.
+A signal does not: it keeps the value it had until the process suspends, so two reads on either side of an assignment to it give the same value, and that value is the old one.
+Neither rule is difficult, and both have to be carried to every read.</p>
+<p>Carried over to <code>step</code>, <code>b</code> twice is two reads of something that may have moved between them, and the question worth asking about the line is what happens in between.
+The answer is that nothing does.
+<code>step</code> contains no assignment, and neither does any other definition in this design: there is no statement anywhere in the file, so there is no before and after for two reads to fall on either side of.</p>
+<p>The habit that comes over with the reading is copying.
+Where a value can be changed by whatever is handed it, handing the same one to two places is a decision, and taking a copy is how the decision is avoided.
+<code>step (step glider)</code> in chapter 5 looks like exactly that, a board handed to something twice, with the first application’s effect on it left to be worked out.</p>
+<h2 id="a-name-has-one-definition-and-nothing-can-give-it-a-second"><a class="header" href="#a-name-has-one-definition-and-nothing-can-give-it-a-second">A name has one definition, and nothing can give it a second</a></h2>
+<p><code>=</code> is not assignment.
+<a href="currying.html#a-definition-is-an-equation">The right hand side is the value</a>, and it stays the value for as long as the module is loaded.</p>
+<p>What a reader will reach for at some point is a second <code>=</code> on the same name, and what happens is worth seeing once.
+Writing <code>glider = blinker</code> at the bottom of chapter 8’s file, under a <code>glider</code> that was defined at the top, does not replace the first definition and does not hide it.
+The module stops loading: <code>[GHC-29916]</code>, <code>Multiple declarations of ‘glider’</code>, and under that a <code>Declared at:</code> line naming both places.</p>
+<p>A definition written in several rows is a different thing, and the difference is worth having straight.
+Adding <code>step b = b</code> directly under <code>step</code>’s own definition is accepted, because it makes <code>step</code> a two row definition, and rows are <a href="pattern-matching.html#rows-are-tried-in-order-and-patterns-nest">tried in order</a> exactly as a <code>case</code>’s are.
+A lowercase name matches anything, so the first row answers everything and the second can never be reached.
+The compiler says so at the prompt, with no flag asked for: <code>[GHC-53633]</code>, <code>Pattern match is redundant</code>, <code>In an equation for ‘step’</code>.
+What the design does is the part worth checking:</p>
+<pre><code>clashi&gt; step glider == glider
+False
+</code></pre>
+<p><code>step</code> is still a generation of Life.
+The second row did not update the first, replace it, or run after it; it sat below a row that had already answered, which is what a row below another row is.</p>
+<p>The names bound inside a definition work the same way.
+<code>b</code> in <code>step b = ...</code> is bound once, by the application that supplied it, and chapter 8’s <code>st'</code> is bound once, by the <code>where</code> clause that defines it.
+There is nothing in the language that assigns to either of them, which is why nothing in this book ever has to say when a name was last written.</p>
+<h2 id="the-name-and-the-right-hand-side-are-interchangeable"><a class="header" href="#the-name-and-the-right-hand-side-are-interchangeable">The name and the right hand side are interchangeable</a></h2>
+<p>The rule earns its keep in the other direction.
+<code>step</code>’s definition says that wherever <code>step</code> is applied to something, the right hand side with that something in place of <code>b</code> is the same thing, and that is a claim the prompt will settle:</p>
+<pre><code>clashi&gt; step glider == zipWith (zipWith nextCell) glider (neighbourCounts glider)
+True
+</code></pre>
+<p>That is <code>step</code>’s definition written out at a use site, with <code>glider</code> put in for <code>b</code> in both of the places <code>b</code> appears.
+The answer is the board chapter 5 printed, and nothing downstream can tell which of the two spellings was written, because a definition has nothing else about it to tell.</p>
+<p>The property has a name worth knowing, referential transparency, and a function that has it is called pure.
+It is a property of the language rather than of the way this design happens to be written: no definition in the file can read or change anything except what it was handed.
+Printing is not the exception it looks like, and the reason is worth one sentence: <code>putStr (render b)</code> is a value that describes an action rather than the action taking place, and which side of that border a definition falls on is <a href="simulation-and-synthesis.html#putstr-does-not-print">a question of its own</a>.
+So the substitution runs both ways, and this is where the rest of the page starts: an expression that occurs twice may be given one name, a name may be written out where it is used, and neither changes what the design is.
+A compiler that is allowed both will use both.</p>
+<h2 id="fan-out-costs-nothing-to-write"><a class="header" href="#fan-out-costs-nothing-to-write">Fan out costs nothing to write</a></h2>
+<p>Chapter 9 drew a boundary around <code>step</code> and Clash generated an entity for it:</p>
+<pre><code class="language-vhdl">entity Example_Project_life_step is
+  port(b      : in life_types.array_of_array_of_8_boolean(0 to 7);
+       result : out life_types.array_of_array_of_8_boolean(0 to 7));
+end;
+</code></pre>
+<p>One board in and one board out, and both of the reads that chapter 5’s line makes are inside it: the cell rule reads <code>b(i_10)(i_9_2)</code> and the counting reads the eight shifted copies that <code>neighbourCounts b</code> made of the same port.
+Two reads in the source, one port, sixty-four wires.</p>
+<p>Chapter 8 does it at a larger size, and over a register rather than over an argument:</p>
+<pre><code class="language-haskell">lifeT :: St -&gt; Maybe Command -&gt; (St, Board)
+lifeT st cmd = (st', board st)
+  where
+    st' = case cmd of
+      Just (Load b) -&gt; St b False
+      Just Step     -&gt; St (step (board st)) False
+      Just Run      -&gt; St (board st) True
+      Just Pause    -&gt; St (board st) False
+      Nothing       -&gt; if running st then St (step (board st)) True else st
+</code></pre>
+<p><code>board st</code> appears five times in eight lines: in four of the five rows of the <code>case</code>, and once in the pair <code>lifeT</code> returns.
+The row that does not read it is <code>Just (Load b)</code>, which is the one row that replaces the board rather than keeping or advancing it.
+Chapter 9’s generated file is where those reads land:</p>
+<pre><code class="language-vhdl">  with (\c$ds_case_alt_selection_1\(65 downto 64)) select
+    \c$ds_case_alt\ &lt;= ( St_0_sel0_board =&gt; b
+                       , St_0_sel1_running =&gt; false ) when "00",
+                       ( St_0_sel0_board =&gt; result_0
+                       , St_0_sel1_running =&gt; false ) when "01",
+                       ( St_0_sel0_board =&gt; st.St_0_sel0_board
+                       , St_0_sel1_running =&gt; true ) when "10",
+                       ( St_0_sel0_board =&gt; st.St_0_sel0_board
+                       , St_0_sel1_running =&gt; false ) when others;
+</code></pre>
+<p><code>st</code> is the register, and <code>st.St_0_sel0_board</code> is <code>board st</code>.
+The last two rows are <code>Run</code> and <code>Pause</code>, and both of them route the register’s own board back into the register’s input, which is what keeping a value for another cycle is in hardware.
+The <code>"01"</code> row is <code>Step</code>, and <code>result_0</code> arrives from the one <code>step</code> instantiation, whose input is that same field again.
+One register, five reads of the board it holds, and no board copied anywhere, because a read of a register is a wire off it and there is nothing else for it to be.</p>
+<h2 id="clash-substitutes-in-both-directions"><a class="header" href="#clash-substitutes-in-both-directions">Clash substitutes in both directions</a></h2>
+<p>Chapter 9 generated this design twice, and the first time it produced one file of 548 lines with everything in it: the register, the command decode, the four shifts, the adder tree and all sixty-four copies of the cell rule.
+Clash inlines everything unless it is told where not to, and inlining is this page’s rule used as hard as it can be used, on every name in the design at once.</p>
+<p>The second generation added <code>{-# OPAQUE step #-}</code> and produced 211 lines and 343 lines in two files instead.
+What chapter 9 says about the pair is the sentence this page needs: the entity declaration is byte for byte the same one.
+A definition substituted in and a definition left standing behind a boundary are the same design, and the only difference the pragma made is where Clash wrote the logic down.</p>
+<p>The other direction is in the same file:</p>
+<pre><code class="language-vhdl">  Example_Project_life_step_result_0 : entity Example_Project_life_step
+    port map
+      (result =&gt; result_0, b      =&gt; result_fun_arg);
+</code></pre>
+<p><code>lifeT</code> names <code>step</code> twice, in the <code>Just Step</code> row and in the running case of the <code>Nothing</code> row, and there is one instantiation here feeding both.
+Two occurrences of the same expression were replaced by one name, which is legal for the same reason the <code>==</code> above answered <code>True</code>.
+Chapter 13 checks that the pair survives a change of notation: after the switch to the hidden prelude, both <code>step</code> entities are byte for byte what chapter 12 wrote, and there is still one instantiation of each.</p>
+<p>What the rule hands out is permission, and both of these are decisions Clash took with that permission rather than promises the language makes.</p>
+<h2 id="order-stops-mattering"><a class="header" href="#order-stops-mattering">Order stops mattering</a></h2>
+<p>Chapter 5 said that <code>step (step glider)</code> is two blocks in series and never two cycles, and this is why.
+The inner application leaves nothing behind for the outer one to find, so there is nothing to sequence and no order to get wrong.
+The only thing connecting the two is that one’s result is the other’s argument, and in hardware that is a wire.</p>
+<p>The same fact is what makes a <code>where</code> clause readable in any order.
+<code>lifeT</code> above returns <code>(st', board st)</code> two lines before the clause that defines <code>st'</code>, and that is not a forward reference the compiler has to be clever about.
+A <code>where</code> clause is a set of equations rather than a list of steps, so the order they are written in is ours to choose and the order they are worked out in is decided by which of them needs which.
+Chapter 10’s test bench is the sharper case: <code>done</code> is defined in terms of <code>clk</code> and <code>clk</code> in terms of <code>done</code>, on two consecutive lines, and there is no order in which either could have come first.</p>
+<p>One shape this rule does not settle on its own is a definition that mentions its own name, which is what chapter 6’s <code>boards</code> does.
+That one has an answer of its own, and it is <a href="laziness.html">A definition that refers to itself</a>: the name on both sides is the wire from the register’s output back to its input, and what decides whether such an equation says anything is a separate question.</p>
+<h2 id="what-it-costs"><a class="header" href="#what-it-costs">What it costs</a></h2>
+<p>State has to be somewhere, and it has to be written down.
+A variable in a clocked process holds its value across an edge with nothing said about it, and there is no equivalent here: nothing survives a cycle except what was handed to a register, and a design that remembers something has to carry that something as a value through the function that computes the next one.
+That is chapter 7’s <code>mealy</code> and chapter 8’s <code>St</code>, and the two halves of <code>lifeT</code>’s returned pair are the price in full, the next state and the output written separately because they are separate things.
+What is bought with it is chapter 6’s other claim: the registers in the design are exactly the ones that were written down, and no tool read the shape of anything and decided that a register is what we must have meant.</p>
+<p>Reading a value twice saves no wires.
+A fan out is a fan out in any language, and <code>b</code> reaching two places costs in VHDL what it costs here.
+What the rule removes is the question of whether the two reads agree, and every answer to that question in this book is yes, before anything is run.</p>
+<p>Sharing is a permission and not a guarantee.
+One instantiation for two named uses is a fact about the file chapter 9 generated rather than something the language undertakes, and a design that needs a boundary to exist has to ask for it.
+<code>{-# OPAQUE #-}</code> is the one instrument the tutorial uses for that, it asks about inlining rather than about sharing, and chapter 9 states its price: Clash does not optimise across the boundary it creates.</p>
+<p>The hierarchy that is written is not the hierarchy that comes out.
+548 lines with every definition of the design flattened into them is the default, and it is what a rule this strong looks like when a compiler is left to use it.
+The names in the source are still the way the design is read and changed; they are not, without a pragma, the way it is generated.</p>
+<h2 id="where-you-met-this"><a class="header" href="#where-you-met-this">Where you met this</a></h2>
+<ul>
+<li>Chapter 5, <a href="../b/05-a-generation.html">A generation</a>: <code>b</code> twice on one line, and <code>step (step glider)</code> as two blocks in series.</li>
+<li>Chapter 6, <a href="../b/06-it-runs.html">It runs by itself</a>: the first register, asked for by name, and nothing about it inferred.</li>
+<li>Chapter 7, <a href="../b/07-an-input.html">An input that cannot be misread</a>: <code>mealy</code>, and state as a value handed in and handed back.</li>
+<li>Chapter 8, <a href="../b/08-more-than-valid.html">More than valid</a>: <code>board st</code> five times in eight lines, and <code>st'</code> used above the clause that defines it.</li>
+<li>Chapter 9, <a href="../b/09-an-entity.html">An entity</a>: one port for two reads, one register for five, one instantiation for two uses, and 548 lines of everything inlined into one entity.</li>
+<li>Chapter 13, <a href="../b/13-hidden.html">What the rest of the world writes</a>: both <code>step</code> entities byte for byte across a change of notation.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../explanation/polymorphism.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../explanation/laziness.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../explanation/polymorphism.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../explanation/laziness.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
