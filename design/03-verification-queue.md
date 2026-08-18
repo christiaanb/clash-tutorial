@@ -433,6 +433,53 @@ plausible.
   reader file contains no `=>` at all and neither the word `KnownDomain` nor
   `NFDataX`. `type-classes.md` states all of the above. Re-run if the resolver
   moves.
+- **What an action, a generator and an undefined value print, and what Clash
+  does when the border is crossed.** Captured 2026-08-14 through
+  `tools/clashi_capture.py` against a project generated from `template/`, with
+  the reader's file derived by `tools/reader_file.py` from `Ch10.hs`.
+  **Actions.** `:i putStr` is one line in the same-line form, `putStr :: String
+  -> IO ()` from `GHC.Internal.System.IO`; `:t putStr (render glider)` is `IO
+  ()`, `:t [putStr (render glider), putStr (render blinker)]` is `[IO ()]`, `:t
+  (\b -> putStr (render b))` is `Board -> IO ()` and `:t mapM_ (\b -> putStr
+  (render b)) [glider, blinker]` is `IO ()`. `:i mapM_` is two lines,
+  `(Foldable t, Monad m) => (a -> m b) -> t a -> m ()` from
+  `GHC.Internal.Data.Foldable`; `:i mapM` obeys the method rule the entry above
+  records and prints six lines of `Traversable` with GHC's own elision, the
+  method being `mapM :: Monad m => (a -> m b) -> t a -> m (t b)`. **Crossings
+  and generators.** `:i sampleN` is `(Foldable f, NFDataX a) => Int -> f a ->
+  [a]` and `:i fromList` is `NFDataX a => [a] -> Signal dom a`, both from
+  `Clash.Signal.Internal`; `:i systemClockGen` is `Clock System` from
+  `Clash.Explicit.Signal`, `:i resetGen` is `KnownDomain dom => Reset dom`, `:i
+  enableGen` is `Enable dom` in the same-line form, and `:i tbSystemClockGen` is
+  `Signal System Bool -> Clock System` from `Clash.Explicit.Testbench`. `:k IO`
+  is `Type -> Type` and `:k Signal` is `Domain -> Type -> Type`. **Undefined
+  values.** `:i showX` is six lines under a kind line ending in `Constraint`;
+  `errorX "no value" :: Unsigned 4` is `*** Exception: X: no value` followed by
+  a `CallStack` naming `<interactive>`, which moves and is never quoted, and
+  `showX (errorX "no value" :: Unsigned 4)` is `"undefined"`. **Two edits, each
+  generated and each undone.** A `Synthesize` annotation on `lifeGen = life
+  systemClockGen resetGen enableGen` generates rather than failing: `:vhdl`
+  prints `Dubious primitive instantiation for
+  Clash.Signal.Internal.tbClockGen: Clash.Signal.Internal.tbClockGen is not
+  synthesizable! (disable with -fclash-no-prim-warn)`, in ANSI colour codes that
+  keep it out of any block, and writes a 79-line `lifeGen.vhdl` whose entity has
+  `cmd` and `cells` and no clock port, with the clock and the reset driven
+  inside `-- pragma translate_off`. A `Synthesize` annotation on a `pictures ::
+  IO ()` holding chapter 6's prompt line fails instead, in several hundred lines
+  of core: `Clash.Normalize(200): Expr belonging to bndr:
+  Example.Project.pictures2 … remains recursive after normalization`, then `***
+  Exception: Clash.Normalize(243): Callgraph after normalization contains
+  following recursive components`, with `GHC.Prim.State# RealWorld` inside the
+  type it prints. Both are quoted as inline fragments only. **Pragmas,
+  counted.** Chapter 10's three entity files, 211 plus 343 plus 227 lines,
+  contain no `pragma` at all; `testBench.vhdl` at 629 lines has six pairs, being
+  the `mod 8` in each of the two `index` blocks, the whole `tbClockGen` process,
+  two around the `assert` block's declarations and its body, and the `resetGen`
+  driver. **Counted while writing:** `sampleN`, `fromList`, `putStr` and
+  `mapM_` appear in none of the thirteen chapters' end states, and `render` and
+  `renderCounts` are the only definitions in the reader's file that are not
+  circuits. `simulation-and-synthesis.md` states all of the above. Re-run if the
+  resolver moves.
 - **What NVC does with a delta cycle loop.** Checked 2026-08-11, NVC 1.20.1, on
   a four line entity outside the book's tree whose whole architecture is
   `s <= not s;`: `** Fatal: 0ms+10000: limit of 10000 delta cycles reached`,
@@ -531,8 +578,13 @@ plausible.
   (V31).
 - **`--ieee-warnings=off` must be a global option, before `-a`.** After `-r`,
   NVC answers that it `may have no effect as the IEEE packages have already
-  been initialised`. What it suppresses is 257 `NUMERIC_STD."=": metavalue
-  detected` warnings in 771 lines, all at time zero (V3, V31).
+  been initialised`. What it suppresses is 257 metavalue warnings in 771
+  lines, all at time zero: 129 in the first delta cycle and 128 four deltas
+  later, of which 256 read `NUMERIC_STD."=": metavalue detected, returning
+  FALSE` and come from the two comparisons in `nextCell` on each of the
+  sixty-four cells, and one is a `NUMERIC_STD.">"` from the test bench's own
+  counter. Re-counted 2026-08-14 while writing `simulation-and-synthesis.md`;
+  this entry attributed all 257 to `"="` until then (V3, V31).
 - **Omit `--std` entirely.** Clash emits VHDL-93 and NVC defaults to 2008; the
   mismatch is harmless for everything Clash's netlists use — same exit codes
   and warnings either way (V4).

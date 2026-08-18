@@ -32,6 +32,7 @@
 - [A definition that refers to itself](./explanation/laziness.md)
 - [A type that lists every value it can have](./explanation/data-types.md)
 - [Constraints are arguments the compiler writes](./explanation/type-classes.md)
+- [What runs, and what is hardware](./explanation/simulation-and-synthesis.md)
 
 ---
 

@@ -1029,6 +1029,44 @@ pointers in shipped pages into links, `higher-order.md`'s `Num c` sentence and
 `data-types.md`'s `deriving` sentence, which is the second and third time a
 shipped page has been edited by a later one.
 
+**`simulation-and-synthesis.md` shipped twelfth, and running it turned the
+outline's central claim into a claim with an exception.** The outline said the
+border "is a *type* border, checkable, with `Signal` and `IO` marking the
+sides", and that is true of the printing layer and false of the generators,
+which is what two edits established. A `Synthesize` annotation on `lifeGen =
+life systemClockGen resetGen enableGen` does not fail: Clash prints `Dubious
+primitive instantiation for Clash.Signal.Internal.tbClockGen:
+Clash.Signal.Internal.tbClockGen is not synthesizable!` and generates a 79-line
+entity with `cmd` and `cells` and no clock port, whose clock and reset are
+driven between `-- pragma translate_off` and `-- pragma translate_on`, so what
+a synthesis tool would read is a design whose clock net has no driver. A
+`Synthesize` annotation on an `IO ()` does fail, and its message is about
+recursion rather than about the border: several hundred lines of core, opening
+`Clash.Normalize(243): Callgraph after normalization contains following
+recursive components` with `GHC.Prim.State# RealWorld` in the type it prints.
+Those two are the page's cost section, and they are the first place in the book
+where the honest answer is that the type does not say. Three things running
+added. The layers can be counted rather than asserted: `sampleN`, `fromList`,
+`putStr` and `mapM_` appear in none of the thirteen chapters' end states, and
+`render` and `renderCounts` are the only definitions in the reader's file that
+are not circuits. `mapM_` decomposes without a word about monads, because the
+underscore is visible in the types alone — `:i mapM_` ends `m ()` and `:i mapM`
+ends `m (t b)` — and `:t [putStr (render glider), putStr (render blinker)]`
+being `[IO ()]` is the whole argument that an action is a value. And the
+pragmas are countable on both sides: chapter 10's three entity files hold none
+at all, and `testBench.vhdl` holds six pairs, wrapping the clock, the reset,
+the assertion's declarations, the assertion, and a `mod 8` on each of the two
+indices. The queue's 257-warning entry was corrected in the same pass: 256 of
+them are `"="` from the two comparisons in `nextCell` and one is `">"` from the
+test bench's counter, where the entry had attributed all 257 to `"="`. Like ten
+of the eleven pages before it, this one took only its primary link (chapter 6,
+before the ritual sentence in "Five cycles"); the chapter 3 and 10 secondaries
+stay unbuilt, and the "Where you met this" list names chapters 3, 7, 8, 9, 10
+and 11 as well. It also turned the last two forward pointers in shipped pages
+into links, `purity.md`'s sentence about `putStr` and `higher-order.md`'s about
+`mapM_`, which is the fourth and fifth time a shipped page has been edited by a
+later one.
+
 **Deferred but owed.** The `fold` depth argument (D9 assigned it here when
 chapter 12 was replaced) and the VHDL-to-Clash rosetta stone (the voice guide
 assigns it here) are explanation pages, and they are not in this first batch:
