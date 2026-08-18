@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-157a44c6.js";
+            window.path_to_searchindex_js = "searchindex-503719e8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-be3cf189.js"></script>
+        <script src="toc-82b17705.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -871,6 +871,7 @@ life ::
 <p>Three arguments and a signal of boards, with <code>System</code> in place of the <code>dom</code> that <code>register</code> left open.</p>
 <h2 id="five-cycles"><a class="header" href="#five-cycles">Five cycles</a></h2>
 <p>The clock, the reset and the enable have to come from somewhere, and in simulation they come from <code>systemClockGen</code>, <code>resetGen</code> and <code>enableGen</code>.
+What those three are, and where the line between what runs at the prompt and what becomes hardware falls, is explained in <a href="#what-runs-and-what-is-hardware">What runs, and what is hardware</a>.
 Those three are typed in that order every time a design is run at the prompt, from here to chapter 12, and they never vary:</p>
 <pre><code>clashi&gt; :t life systemClockGen resetGen enableGen
 life systemClockGen resetGen enableGen :: Signal System Board
@@ -3184,7 +3185,7 @@ Inside <code>shiftW</code> there is no name for the row, and supplying an argume
 The argument we want to fix is the second, partial application cannot reach past the first, and the lambda is how a function with the distance already in it and the vector still to come is built instead.</p>
 <p>The other lambda in the book is at the prompt rather than in the file, in <code>mapM_ (\b -&gt; putStr (render b))</code>, which the reader retypes in chapters 6, 7, 8 and 10.
 It is the same three parts, and <code>mapM_</code> takes it the way <code>map</code> takes <code>unpack</code>.
-<code>mapM_</code> is not <code>map</code>, and what it does with what it is handed belongs with the border between what runs and what becomes hardware rather than here.</p>
+<code>mapM_</code> is not <code>map</code>, and what it does with what it is handed belongs with <a href="#putstr-does-not-print">the border between what runs and what becomes hardware</a> rather than here.</p>
 <h2 id="the-functions-we-wrote-go-in-the-same-slot"><a class="header" href="#the-functions-we-wrote-go-in-the-same-slot">The functions we wrote go in the same slot</a></h2>
 <p>Nothing about the argument position prefers library functions.
 <code>countBoard</code> is ours, and handing it over reads exactly as <code>unpack</code> did:</p>
@@ -3877,7 +3878,7 @@ True
 The answer is the board chapter 5 printed, and nothing downstream can tell which of the two spellings was written, because a definition has nothing else about it to tell.</p>
 <p>The property has a name worth knowing, referential transparency, and a function that has it is called pure.
 It is a property of the language rather than of the way this design happens to be written: no definition in the file can read or change anything except what it was handed.
-Printing is not the exception it looks like, and the reason is worth one sentence: <code>putStr (render b)</code> is a value that describes an action rather than the action taking place, and which side of that border a definition falls on is a question of its own.
+Printing is not the exception it looks like, and the reason is worth one sentence: <code>putStr (render b)</code> is a value that describes an action rather than the action taking place, and which side of that border a definition falls on is <a href="#putstr-does-not-print">a question of its own</a>.
 So the substitution runs both ways, and this is where the rest of the page starts: an expression that occurs twice may be given one name, a name may be written out where it is used, and neither changes what the design is.
 A compiler that is allowed both will use both.</p>
 <h2 id="fan-out-costs-nothing-to-write"><a class="header" href="#fan-out-costs-nothing-to-write">Fan out costs nothing to write</a></h2>
@@ -4531,6 +4532,275 @@ A demand introduced at the bottom of a design appears as edits to signatures all
 <li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: five requirements at once in <code>outputVerifier'</code>’s signature.</li>
 <li>Chapter 12, <a href="#one-description-two-sizes">One description, two sizes</a>: <code>KnownNat n</code> where the compiler asked for it, and two requests moved out of the clause to carry a context.</li>
 <li>Chapter 13, <a href="#what-the-rest-of-the-world-writes">What the rest of the world writes</a>: a clock, a reset and an enable arriving as a constraint, and <code>exposeClockResetEnable</code> turning them back into arguments.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="what-runs-and-what-is-hardware"><a class="header" href="#what-runs-and-what-is-hardware">What runs, and what is hardware</a></h1>
+<p>Chapter 6 got the design running with one line, and said one sentence about the three names that made it possible: “the clock, the reset and the enable have to come from somewhere, and in simulation they come from <code>systemClockGen</code>, <code>resetGen</code> and <code>enableGen</code>”.
+Those three are then typed in that order every time a design is run at the prompt, from there to chapter 12, and they never vary.
+That is a rule the reader follows rather than a thing the reader knows, and it is the third of four the tutorial hands out one at a time.
+Chapter 3 gave the first: <code>render</code> produces a <code>String</code>, “and a <code>String</code> is not a circuit”.
+Chapter 7 gave the second: “<code>fromList</code> belongs to simulation, alongside <code>sampleN</code> and the three generators.”
+Chapter 10 gave the fourth from the other end, in the generated VHDL: “What is not a circuit sits between <code>-- pragma translate_off</code> and <code>-- pragma translate_on</code>.”</p>
+<p>Four rules, in four chapters, none of them argued.
+There is one model underneath all four, and this page is that model.</p>
+<h2 id="the-reading-that-does-not-survive-11"><a class="header" href="#the-reading-that-does-not-survive-11">The reading that does not survive</a></h2>
+<p>In VHDL, simulation and synthesis are the same language, and often the same file.
+What separates them is convention held up by three things: the subset of the language a given synthesis tool accepts, a pragma that tool has agreed to honour, and the discipline of the person writing it.
+A test bench is not a different kind of VHDL; it is VHDL that nobody is going to synthesise, and what stops it reaching a netlist is that nobody asks.</p>
+<p>The habit that comes over is to look for the pragma and the discipline, and to treat the border as something to be careful about.
+Here it is mostly something to be told about, and the thing doing the telling is the type.
+<code>Board -&gt; Board</code>, <code>Signal System Board</code> and <code>IO ()</code> are three different types, and no value of the third kind can turn up inside the first two without a type saying so.</p>
+<p>The near miss is worth naming, because the pragmas really are there.
+Chapter 10’s <code>testBench.vhdl</code> has six pairs of them.
+They are output rather than input: the split was settled in Haskell, and Clash wrote the comments a VHDL tool needs afterwards.
+There is one place where the type does not settle it, and it is this page’s last section.</p>
+<h2 id="three-layers-and-one-file"><a class="header" href="#three-layers-and-one-file">Three layers, and one file</a></h2>
+<p>The whole design is one Haskell file, and three different kinds of thing live in it.
+Chapter 5’s generation is the first:</p>
+<pre><code class="language-haskell">step :: Board -&gt; Board
+step b = zipWith (zipWith nextCell) b (neighbourCounts b)
+</code></pre>
+<p>A board in, a board out, and, as chapter 5 said of its type, “nothing in that type mentions time”.
+It becomes logic.</p>
+<p>Chapter 6’s <code>life</code> is the second:</p>
+<pre><code class="language-haskell">life ::
+  Clock System -&gt; Reset System -&gt; Enable System -&gt;
+  Signal System Board
+life clk rst en = boards
+  where
+    boards = register clk rst en glider (fmap step boards)
+</code></pre>
+<p>Its arguments and its result are <code>Signal</code>s, and a <code>register</code> sits in the middle of it.
+It becomes logic with registers in it.</p>
+<p>The third is the line the reader retypes in chapters 6, 7, 8 and 10, and it is not in the file at all: <code>mapM_ (\b -&gt; putStr (render b)) (sampleN 5 (life systemClockGen resetGen enableGen))</code>.
+It becomes nothing.
+Nothing in it is generated, nothing in it is a wire, and the only reason it exists is that a person wants to see something.</p>
+<p>That third layer never entered the reader’s file, and the check is cheap: <code>sampleN</code>, <code>fromList</code>, <code>putStr</code> and <code>mapM_</code> do not appear in any of the thirteen chapters’ end states.
+Two definitions in the file are not circuits either, <code>render</code> from chapter 3 and <code>renderCounts</code> from chapter 4, and both of them make text.
+What keeps them out of the VHDL is not that Clash inspected them: chapter 9’s rule is that “a binder carrying that annotation is what it goes looking for”, so <code>render</code> was never a candidate for generation in the first place.</p>
+<p>The two types that carry the second and third layers have the same shape as each other, which is easier to see with <a href="#the-eight-is-in-the-type-and-the-type-is-not-a-number">the command another page introduces for asking about a type</a>:</p>
+<pre><code>clashi&gt; :k IO
+IO :: Type -&gt; Type
+clashi&gt; :k Signal
+Signal :: Domain -&gt; Type -&gt; Type
+</code></pre>
+<p>Each of them takes a type and gives back a type.
+<code>Signal System Board</code> is a board for every cycle of a clock domain, and <code>IO ()</code> is an action that produces nothing when something performs it.
+Neither is a board, and the difference between them is the whole of this page.</p>
+<h2 id="putstr-does-not-print"><a class="header" href="#putstr-does-not-print"><code>putStr</code> does not print</a></h2>
+<p>The most useful thing the prompt says about printing is what <code>putStr</code> is:</p>
+<pre><code>clashi&gt; :i putStr
+putStr :: String -&gt; IO () 	-- Defined in ‘GHC.Internal.System.IO’
+</code></pre>
+<p>A string in, and an <code>IO ()</code> out.
+That is a function like any other, and applying it prints nothing:</p>
+<pre><code>clashi&gt; :t putStr (render glider)
+putStr (render glider) :: IO ()
+</code></pre>
+<p><code>putStr (render glider)</code> is a value, of a type that describes an action, and building it is as inert as building a board.
+Values of that type can be collected like any others:</p>
+<pre><code>clashi&gt; :t [putStr (render glider), putStr (render blinker)]
+[putStr (render glider), putStr (render blinker)] :: [IO ()]
+</code></pre>
+<p>Two actions in a list, and neither of them has happened.
+What performs one is the prompt: an expression of type <code>IO ()</code> typed at <code>clashi</code> is run rather than printed, which is why chapter 3’s <code>putStr (render glider)</code> put a board on the screen and why the same expression inside brackets does not.</p>
+<p><code>mapM_</code> is what turns a list of boards into one such action:</p>
+<pre><code>clashi&gt; :i mapM_
+mapM_ :: (Foldable t, Monad m) =&gt; (a -&gt; m b) -&gt; t a -&gt; m ()
+  	-- Defined in ‘GHC.Internal.Data.Foldable’
+</code></pre>
+<p>The two names before the <code>=&gt;</code> are <a href="#-is-not--">requirements rather than arguments</a>, and which types meet them is settled at the use site, so chapter 6’s line makes <code>t</code> a list and <code>m</code> an <code>IO</code>.
+Read it that way and the first argument is a function from a board to an action, the second is a list of boards, and the result is one action that produces <code>()</code>.
+Both halves are worth naming.
+The first argument is <a href="#a-function-with-no-name">a function handed to a function</a>, exactly as <code>unpack</code> is handed to <code>map</code>, and the prompt agrees about its type:</p>
+<pre><code>clashi&gt; :t (\b -&gt; putStr (render b))
+(\b -&gt; putStr (render b)) :: Board -&gt; IO ()
+</code></pre>
+<p>And <code>()</code> is a type with one value in it and no information, which is what the underscore in the name is about.
+The version without the underscore keeps the results:</p>
+<pre><code>clashi&gt; :i mapM
+type Traversable :: (Type -&gt; Type) -&gt; Constraint
+class (Functor t, Foldable t) =&gt; Traversable t where
+  ...
+  mapM :: Monad m =&gt; (a -&gt; m b) -&gt; t a -&gt; m (t b)
+  ...
+  	-- Defined in ‘GHC.Internal.Data.Traversable’
+</code></pre>
+<p><code>m (t b)</code> against <code>m ()</code>: one gives back a collection of whatever the actions produced, and the other throws it away.
+Printing produces nothing worth keeping, so chapter 6 wants the underscore, and what comes out is a single action:</p>
+<pre><code>clashi&gt; :t mapM_ (\b -&gt; putStr (render b)) [glider, blinker]
+mapM_ (\b -&gt; putStr (render b)) [glider, blinker] :: IO ()
+</code></pre>
+<p>One action, built out of two, and still nothing has been printed.</p>
+<h2 id="the-two-crossings-the-prompt-uses"><a class="header" href="#the-two-crossings-the-prompt-uses">The two crossings the prompt uses</a></h2>
+<p>A design is signals and a screen is not, so something has to cross between them, and the tutorial uses exactly two names for it.
+<code>sampleN</code> comes out:</p>
+<pre><code>clashi&gt; :i sampleN
+sampleN :: (Foldable f, NFDataX a) =&gt; Int -&gt; f a -&gt; [a]
+  	-- Defined in ‘Clash.Signal.Internal’
+</code></pre>
+<p>An ordinary <code>Int</code> decides how many cycles are looked at, and what comes back is <a href="#the-bridges-and-the-one-that-is-not-one">a list rather than a vector</a>, because how long a person watches is not a fact about the circuit.
+There is no <code>Signal</code> in the result, which is what makes the boards printable.</p>
+<p><code>fromList</code> goes in:</p>
+<pre><code>clashi&gt; :i fromList
+fromList :: NFDataX a =&gt; [a] -&gt; Signal dom a
+  	-- Defined in ‘Clash.Signal.Internal’
+</code></pre>
+<p>Chapter 7 introduced it with the sentence this page is here to justify: it “belongs to simulation, alongside <code>sampleN</code> and the three generators”, and “it is how a signal is made to drive a design at the prompt”.</p>
+<p>The evidence that both of them are outside the design is chapter 10, which needed those same two jobs done by hardware.
+Its stimulus is not a <code>fromList</code> and its check is not a <code>sampleN</code>: they are <code>stimuliGenerator</code> and <code>outputVerifier'</code>, both of which take a clock and a reset, and both of which came out of <code>:vhdl</code> as counters, a constant array and a comparison.
+Two ways to drive eight commands into a design, one of which exists only while the prompt is running, and nothing but the types says which is which.</p>
+<h2 id="the-generators-are-the-simulator-standing-in-for-a-board"><a class="header" href="#the-generators-are-the-simulator-standing-in-for-a-board">The generators are the simulator standing in for a board</a></h2>
+<p>The three names chapter 6 asks for without explaining have unremarkable types:</p>
+<pre><code>clashi&gt; :i systemClockGen
+systemClockGen :: Clock System
+  	-- Defined in ‘Clash.Explicit.Signal’
+clashi&gt; :i resetGen
+resetGen :: KnownDomain dom =&gt; Reset dom
+  	-- Defined in ‘Clash.Signal.Internal’
+clashi&gt; :i enableGen
+enableGen :: Enable dom 	-- Defined in ‘Clash.Signal.Internal’
+</code></pre>
+<p>A <code>Clock System</code>, a <code>Reset dom</code> and an <code>Enable dom</code>, which are the types of the first three ports chapter 9 named <code>clk</code>, <code>rst</code> and <code>en</code>.
+Nothing in them says simulation.
+What they are is the simulator agreeing to stand where a crystal, a reset controller and whatever drives the enable will stand later, and the reason they can is that a clock is a value in this language rather than a construct.</p>
+<p>Chapter 11 is where the last of the three turned out to be worth reading once.
+<code>en</code> is <code>true</code> for the whole run of the waveform, and the generated file says why in one line: <code>en_0 &lt;= true;</code>.
+The enable that has been typed since chapter 6 is a constant, and it always was.</p>
+<p>The fourth generator is the one chapter 10 needs, and its type is not like the others:</p>
+<pre><code>clashi&gt; :i tbSystemClockGen
+tbSystemClockGen :: Signal System Bool -&gt; Clock System
+  	-- Defined in ‘Clash.Explicit.Testbench’
+</code></pre>
+<p>A clock computed from a signal.
+That is what lets chapter 10’s simulation stop itself, and it is also a thing with no meaning whatsoever in hardware: a clock that exists while a boolean says so is a statement about a simulator’s time, not about a net.</p>
+<h2 id="the-border-written-into-the-vhdl"><a class="header" href="#the-border-written-into-the-vhdl">The border, written into the VHDL</a></h2>
+<p>Chapter 10’s test bench is where all of this is on one page, in one <code>where</code> clause:</p>
+<pre><code class="language-haskell">{-# ANN testBench (TestBench 'life) #-}
+testBench :: Signal System Bool
+testBench = done
+  where
+    commands = stimuliGenerator clk rst
+      (  Nothing
+      :&gt; Nothing
+      :&gt; Just Step
+      :&gt; Just Run
+      :&gt; Nothing
+      :&gt; Just Pause
+      :&gt; Just (Load blinker)
+      :&gt; Nothing
+      :&gt; Nil )
+    expected = outputVerifier' clk rst
+      (  glider
+      :&gt; glider
+      :&gt; glider
+      :&gt; glider1
+      :&gt; glider1
+      :&gt; glider2
+      :&gt; glider2
+      :&gt; blinker
+      :&gt; Nil )
+    done = expected (life clk rst enableGen commands)
+    clk = tbSystemClockGen (fmap not done)
+    rst = resetGen
+</code></pre>
+<p>Five bindings, and the border runs between the third and the fourth.
+<code>commands</code>, <code>expected</code> and <code>done</code> are circuit, and chapter 10 says so in as many words: a test bench “is a circuit, and it is one on purpose”.
+<code>clk</code> and <code>rst</code> are the simulator, by the argument of the section above.
+Nothing about the layout separates them, and nothing has to, because <code>Signal System Bool</code> and <code>Clock System</code> are different types.</p>
+<p><code>'life</code> on the first line is the other thing to read.
+It is a quoted name: a reference to the binder called <code>life</code>, not an application of it, which is what lets one annotation say which entity this test bench belongs to and one <code>:vhdl</code> generate both.</p>
+<p>What Clash then does with the two halves is visible in the file it writes.
+The entity is 781 lines across three files and does not contain the word <code>pragma</code> anywhere.
+The test bench is one file of 629 lines with six pairs of pragmas in it, and they wrap exactly the things that are not circuit.
+The reset is one:</p>
+<pre><code class="language-vhdl">  -- resetGen begin
+  resetGen : block
+    constant reset_delay : time := 100000 ps - 1 ps + (integer'(1) * 10000 ps);
+  begin
+  -- pragma translate_off
+  \c$Example.Project.testBench_app_arg_0\
+    &lt;= '1',
+       '0' after reset_delay;
+  -- pragma translate_on
+  end block;
+  -- resetGen end
+</code></pre>
+<p><code>resetGen</code> in the Haskell, <code>resetGen</code> in the VHDL, and the only thing driving that reset is between the comments.
+The clock is the second, and chapter 10 already read it as the reason the simulation ends: the whole <code>clkGen</code> process, with its <code>wait for</code> statements, sits inside one such pair.
+The comparison is the third:</p>
+<pre><code class="language-vhdl">  -- assert begin
+  r_assert : block
+    -- pragma translate_off
+    signal actual : Example_Project_testBench_types.array_of_array_of_8_boolean(0 to 7);
+    signal expected : Example_Project_testBench_types.array_of_array_of_8_boolean(0 to 7);
+    -- pragma translate_on
+  begin
+</code></pre>
+<p>Even the two signals holding the boards being compared are declared inside the pair, and the <code>assert</code> itself and its <code>report</code> follow them in a second one.
+The counter that decides which board to compare is outside, because a counter is a circuit.</p>
+<p>The two remaining pairs are smaller and say the same thing about a detail.
+Each of the two counters indexes a constant array of eight elements, and each index is taken modulo eight inside a pair of pragmas and not outside it.
+The counter is three bits wide, so in hardware there is no value it could take that is out of range; a simulator evaluating that conversion before anything has driven the counter is the case the <code>mod 8</code> is there for.</p>
+<h2 id="an-undefined-value-is-a-value-only-simulation-has"><a class="header" href="#an-undefined-value-is-a-value-only-simulation-has">An undefined value is a value only simulation has</a></h2>
+<p>Chapter 8 printed a value that is partly not there:</p>
+<pre><code>clashi&gt; pack Step
+0b01_...._...._...._...._...._...._...._...._...._...._...._...._...._...._...._....
+</code></pre>
+<p>Chapter 10 found those same bits in the generated stimulus, where <code>Just Step</code> is “a <code>1</code>, then the tag <code>01</code>, then sixty-four don’t-cares where the board of a <code>Load</code> would go”, and chapter 11 found them on a waveform as sixty-four <code>-</code> on seven cycles out of eight.
+Those are three notations for one thing, and the fourth is what happens when something asks for such a value rather than carrying it.
+<code>errorX "no value" :: Unsigned 4</code> at the prompt is <code>*** Exception: X: no value</code>, and it is an exception rather than a number because there is no number to give.</p>
+<p>That is why the test bench’s requirements include one the reader has otherwise never met.
+Chapter 10’s <code>:i outputVerifier'</code> lists <code>ShowX a</code> among five <a href="#a-requirement-can-hand-over-a-value">requirements the compiler settles</a>, and <code>ShowX</code> is <code>Show</code> for values that may not be there:</p>
+<pre><code>clashi&gt; :i showX
+type ShowX :: Type -&gt; Constraint
+class ShowX a where
+  ...
+  showX :: a -&gt; String
+  ...
+  	-- Defined in ‘Clash.XException’
+</code></pre>
+<p><code>showX (errorX "no value" :: Unsigned 4)</code> is <code>"undefined"</code>, where typing the same value at the prompt throws the exception above, and a verifier that has to report what it got needs the version that cannot fail.</p>
+<p>The same phenomenon crosses into VHDL with the design, and NVC counts it.
+Chapter 10 turns off 257 warnings with a flag, and this is what they are.
+256 of them read <code>NUMERIC_STD."=": metavalue detected, returning FALSE</code> and come from the two comparisons chapter 2’s truth table makes, once for each of the sixty-four cells, in each of two delta cycles; the remaining one is a <code>"&gt;"</code> from the test bench’s own counter.
+A metavalue is a bit that is neither <code>0</code> nor <code>1</code>, which at time zero is every bit that nothing has driven yet, and the standard numeric package is complaining that it was asked to compare one.
+None of that is a fault in the design, and there is nothing for a circuit to report in the same place: a wire carries a level whether or not anything reads it.
+It is the same undefined-ness as the <code>.</code> and the <code>-</code>, wearing the notation the simulator has for it.</p>
+<h2 id="what-it-costs-11"><a class="header" href="#what-it-costs-11">What it costs</a></h2>
+<p><strong>All three layers are the same language, and only the type says which is which.</strong>
+<code>step</code>, <code>life</code> and the prompt line are all Haskell, all in the same session, and all written the same way.
+Nothing about the look of a definition says whether it becomes gates, and a reader who has not read its signature cannot tell.
+That is the price of not having an entity and architecture to put things in, and the tutorial pays it deliberately: every top level definition in the book carries a signature, and the signature is where the answer is.</p>
+<p><strong>The generators are the place where the type does not say, and Clash’s answer is a warning rather than a refusal.</strong>
+<code>systemClockGen</code> has the type of a port, so nothing stops it being applied inside a binder that carries a <code>Synthesize</code> annotation.
+Doing that generates: Clash prints <code>Dubious primitive instantiation for Clash.Signal.Internal.tbClockGen: Clash.Signal.Internal.tbClockGen is not synthesizable!</code> and writes the entity anyway, with the clock and the reset driven between <code>-- pragma translate_off</code> and <code>-- pragma translate_on</code> and no clock port at all:</p>
+<pre><code class="language-vhdl">entity lifeGen is
+  port(cmd   : in lifeGen_types.Maybe;
+       cells : out std_logic_vector(63 downto 0));
+end;
+</code></pre>
+<p>What a synthesis tool reads there is a design whose clock net has no driver.
+The warning is easy to miss in a run that prints twenty other lines, and it is the one thing on this page that a reader has to watch for rather than be told by a type.</p>
+<p><strong>Crossing the other way is refused, and the refusal is not phrased as a border.</strong>
+Putting a <code>Synthesize</code> annotation on a definition of type <code>IO ()</code> and generating produces several hundred lines about a binder the reader never wrote, opening <code>Clash.Normalize(243): Callgraph after normalization contains following recursive components</code>, with <code>GHC.Prim.State# RealWorld</code> inside the type it prints out.
+What Clash met is the recursion inside <code>mapM_</code> and the token GHC uses to sequence actions, and what it says is about those.
+The border holds, and the message is in the compiler’s vocabulary rather than in the one this page has been using.</p>
+<p><strong>The pragma is still a comment, and it still depends on the tool honouring it.</strong>
+<code>-- pragma translate_off</code> is a convention of exactly the kind VHDL has always had, and deciding the split in Haskell has not replaced the mechanism at the bottom.
+What it replaces is the discipline: the author no longer keeps the two apart by being careful, and the tool at the far end does what it always did.</p>
+<p><strong>Turning the noise off turns all of it off.</strong>
+<code>--ieee-warnings=off</code> silences the 257 warnings at time zero, and it silences the same class of warning for the rest of the run, so a metavalue reaching a comparison at 150 nanoseconds would go unmentioned too.
+Chapter 10 can afford that because what decides whether the run passed is the assertion, which reports on its own, and a design whose checking leans on those warnings needs the flag reconsidered rather than copied.</p>
+<h2 id="where-you-met-this-11"><a class="header" href="#where-you-met-this-11">Where you met this</a></h2>
+<ul>
+<li>Chapter 3, <a href="#a-board-and-a-picture">A board, and a picture</a>: <code>render</code>, a <code>String</code>, and the first thing in the book that is not a circuit.</li>
+<li>Chapter 6, <a href="#it-runs-by-itself">It runs by itself</a>: the three generators, <code>sampleN</code>, and <code>mapM_</code> with a lambda in front of it.</li>
+<li>Chapter 7, <a href="#an-input-that-cannot-be-misread">An input that cannot be misread</a>: <code>fromList</code>, named as belonging to simulation.</li>
+<li>Chapter 8, <a href="#more-than-valid">More than valid</a>: sixty-four bits of <code>.</code> behind a tag that says they mean nothing.</li>
+<li>Chapter 9, <a href="#an-entity">An entity</a>: the annotation that decides what <code>:vhdl</code> looks for, and 781 lines with no pragma in them.</li>
+<li>Chapter 10, <a href="#a-test-bench-that-leaves-haskell">A test bench that leaves Haskell</a>: five bindings with the border running through them, <code>'life</code> as a quoted name, the pragmas in the generated file, and 257 warnings at time zero.</li>
+<li>Chapter 11, <a href="#the-waveform">The waveform</a>: <code>en_0 &lt;= true;</code> for the whole run, and the don’t cares on the bus.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="where-to-go-next"><a class="header" href="#where-to-go-next">Where to go next</a></h1>

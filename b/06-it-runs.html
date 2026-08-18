@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-157a44c6.js";
+            window.path_to_searchindex_js = "../searchindex-503719e8.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-be3cf189.js"></script>
+        <script src="../toc-82b17705.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -223,6 +223,7 @@ life ::
 <p>Three arguments and a signal of boards, with <code>System</code> in place of the <code>dom</code> that <code>register</code> left open.</p>
 <h2 id="five-cycles"><a class="header" href="#five-cycles">Five cycles</a></h2>
 <p>The clock, the reset and the enable have to come from somewhere, and in simulation they come from <code>systemClockGen</code>, <code>resetGen</code> and <code>enableGen</code>.
+What those three are, and where the line between what runs at the prompt and what becomes hardware falls, is explained in <a href="../explanation/simulation-and-synthesis.html">What runs, and what is hardware</a>.
 Those three are typed in that order every time a design is run at the prompt, from here to chapter 12, and they never vary:</p>
 <pre><code>clashi&gt; :t life systemClockGen resetGen enableGen
 life systemClockGen resetGen enableGen :: Signal System Board
